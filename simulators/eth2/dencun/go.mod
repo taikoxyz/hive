@@ -8,7 +8,7 @@ require (
 	github.com/ethereum/go-ethereum v1.14.5
 	github.com/ethereum/hive v0.0.0-20240610172825-2430a68c753a
 	github.com/ethereum/hive/simulators/eth2/common v0.0.0-20230316220410-1364352c32a6
-	github.com/ethereum/hive/simulators/ethereum/engine v0.0.0-20240305231022-f69df863de20
+	github.com/ethereum/hive/simulators/ethereum/engine v0.0.0-20240610181627-c741e58c51e2
 	github.com/lithammer/dedent v1.1.0
 	github.com/marioevz/blobber v1.1.1-0.20240306221924-a7e22e59ea34
 	github.com/marioevz/mock-builder v1.2.1-0.20240312201838-ad9ba388e88b
@@ -19,7 +19,7 @@ require (
 require (
 	github.com/VictoriaMetrics/fastcache v1.12.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/ferranbt/fastssz v0.1.2 // indirect
+	github.com/ferranbt/fastssz v0.1.3 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/holiman/uint256 v1.2.4 // indirect
@@ -44,6 +44,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.10.0 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
+	github.com/cockroachdb/datadriven v1.0.3-0.20230801171734-e384cf455877 // indirect
 	github.com/cockroachdb/errors v1.11.1 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/pebble v1.1.0 // indirect
@@ -77,8 +78,9 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/websocket v1.5.1 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.11.3 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.5 // indirect
-	github.com/herumi/bls-eth-go-binary v1.28.1 // indirect
+	github.com/herumi/bls-eth-go-binary v1.29.1 // indirect
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
 	github.com/huin/goupnp v1.3.0 // indirect
 	github.com/ipfs/go-cid v0.4.1 // indirect
@@ -144,15 +146,16 @@ require (
 	github.com/raulk/go-watchdog v1.3.0 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
+	github.com/rs/cors v1.8.3 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/supranational/blst v0.3.11 // indirect
 	github.com/thomaso-mirodin/intmath v0.0.0-20160323211736-5dc6d854e46e // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
-	github.com/wealdtech/go-bytesutil v1.2.0 // indirect
-	github.com/wealdtech/go-eth2-types/v2 v2.8.0 // indirect
-	github.com/wealdtech/go-eth2-util v1.8.0 // indirect
+	github.com/wealdtech/go-bytesutil v1.2.1 // indirect
+	github.com/wealdtech/go-eth2-types/v2 v2.8.1 // indirect
+	github.com/wealdtech/go-eth2-util v1.8.1 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.uber.org/dig v1.17.1 // indirect
 	go.uber.org/fx v1.20.1 // indirect
@@ -165,6 +168,7 @@ require (
 	golang.org/x/net v0.24.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/tools v0.20.0 // indirect
+	google.golang.org/api v0.126.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230711160842-782d3b101e98 // indirect
 	google.golang.org/grpc v1.58.3 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
