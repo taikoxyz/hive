@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/ethereum/hive/internal/libhive"
 	"io"
 	"os"
 	"strings"
@@ -75,6 +76,11 @@ func generateCommand(args []string) {
 			cfg.outputs = outputFunctionNames()
 		}
 		cfg.outputs = splitAndTrim(*outlist)
+	}
+
+	// create output dir
+	if err := libhive.CreateWorkspace(cfg.outputDir); err != nil {
+		panic(err)
 	}
 
 	cfg, err := cfg.withDefaults()

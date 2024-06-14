@@ -101,7 +101,7 @@ func (r *Runner) buildSimulators(ctx context.Context, simList []string) error {
 }
 
 func (r *Runner) Run(ctx context.Context, sim string, env SimEnv) (SimResult, error) {
-	if err := createWorkspace(env.LogDir); err != nil {
+	if err := CreateWorkspace(env.LogDir); err != nil {
 		return SimResult{}, err
 	}
 	writeInstanceInfo(env.LogDir)
@@ -114,7 +114,7 @@ func (r *Runner) Run(ctx context.Context, sim string, env SimEnv) (SimResult, er
 //
 // Note: Sim* options in env are ignored, but Client* options and LogDir still apply.
 func (r *Runner) RunDevMode(ctx context.Context, env SimEnv, endpoint string) error {
-	if err := createWorkspace(env.LogDir); err != nil {
+	if err := CreateWorkspace(env.LogDir); err != nil {
 		return err
 	}
 	clientDefs := make([]*ClientDefinition, 0)
@@ -284,8 +284,8 @@ func shutdownServer(server APIServer) {
 	}
 }
 
-// createWorkspace ensures that the hive output directory exists.
-func createWorkspace(logdir string) error {
+// CreateWorkspace ensures that the hive output directory exists.
+func CreateWorkspace(logdir string) error {
 	stat, err := os.Stat(logdir)
 	if err != nil {
 		if os.IsNotExist(err) {

@@ -13,3 +13,9 @@ hivechain:
 hiveview:
 	@echo "Building hiveview..."
 	@go build -o build/bin/hiveview ./cmd/hiveview
+
+clean:
+	@echo "Cleaning..."
+	@rm -rf build/bin/*
+	@rm -rf chain
+	@rm -rf workspace
