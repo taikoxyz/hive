@@ -95,5 +95,3 @@ require (
 	google.golang.org/protobuf v1.33.0 // indirect
 	rsc.io/tmplfunc v0.0.3 // indirect
 )
-
-replace github.com/ethereum/hive/hiveproxy => ./hiveproxy
