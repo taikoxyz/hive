@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/ethereum/hive/internal/libhive"
 	"io"
 	"os"
 	"strings"
@@ -30,6 +29,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	ethlog "github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ethereum/hive/internal/libhive"
 )
 
 func main() {

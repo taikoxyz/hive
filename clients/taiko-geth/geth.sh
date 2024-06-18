@@ -43,18 +43,25 @@
 #  - HIVE_GRAPHQL_ENABLED         enables graphql on port 8545
 #  - HIVE_LES_SERVER              set to '1' to enable LES server
 
+# Set default values
+HIVE_LOGLEVEL=${HIVE_LOGLEVEL:-3}
+
 # Immediately abort the script on any error encountered
 set -e
 
-geth=/usr/local/bin/geth
-FLAGS="--state.scheme=path"
+FLAGS="--datadir /data --state.scheme=path"
+# Configure http.
+FLAGS="$FLAGS --http --http.addr=0.0.0.0 --http.api=admin,debug,eth,miner,net,personal,txpool,web3"
+# Configure ws.
+FLAGS="$FLAGS --ws --ws.addr=0.0.0.0 --ws.api=admin,debug,eth,miner,net,personal,txpool,web3"
+# Configure auth rpc
+FLAGS="$FLAGS --authrpc.addr 0.0.0.0 --authrpc.port 8551 --allow-insecure-unlock --authrpc.jwtsecret /jwt.hex"
+# It doesn't make sense to dial out, use only a pre-set bootnode.
+FLAGS="$FLAGS --bootnodes=$HIVE_BOOTNODE"
 
 if [ "$HIVE_LOGLEVEL" != "" ]; then
     FLAGS="$FLAGS --verbosity=$HIVE_LOGLEVEL"
 fi
-
-# It doesn't make sense to dial out, use only a pre-set bootnode.
-FLAGS="$FLAGS --bootnodes=$HIVE_BOOTNODE"
 
 # If a specific network ID is requested, use that
 if [ "$HIVE_NETWORK_ID" != "" ]; then
@@ -94,20 +101,5 @@ else
     echo "Warning: blocks folder not found."
 fi
 
-set -e
-
-# Configure http.
-FLAGS="$FLAGS --http --http.api=admin,debug,eth,miner,net,personal,txpool,web3"
-
-# Configure ws.
-FLAGS="$FLAGS --ws --ws.api=admin,debug,eth,miner,net,personal,txpool,web3"
-
-# Configure auth rpc
-FLAGS="$FLAGS --authrpc.addr 0.0.0.0 --authrpc.port 8551 --allow-insecure-unlock --authrpc.jwtsecret /jwt.hex"
-
-# Run the taiko-client-geth implementation with the requested flags.
-FLAGS="$FLAGS --nat=none"
-# Disable disk space free monitor
-FLAGS="$FLAGS --datadir.minfreedisk=0"
 echo "Running taiko-geth with flags $FLAGS"
-$geth $FLAGS
+geth $FLAGS
