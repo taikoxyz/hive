@@ -10,6 +10,9 @@ RUN apt-get update && \
 COPY --from=prysmctl /prysmctl /usr/local/bin
 COPY --from=geth /usr/local/bin/geth /usr/local/bin
 
+# Generate the version.txt file.
+RUN /usr/local/bin/geth console --exec 'console.log(admin.nodeInfo.name)' --maxpeers=0 --nodiscover --dev 2>/dev/null | head -1 > /version.txt
+
 WORKDIR /execution
 
 COPY config.yml .

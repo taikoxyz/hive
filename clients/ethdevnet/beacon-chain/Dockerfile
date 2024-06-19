@@ -11,6 +11,9 @@ RUN apt-get update && \
 COPY --from=prysmctl /prysmctl /usr/local/bin
 COPY --from=beacon /usr/local/bin/beacon-chain /usr/local/bin
 
+# Generate the version.txt file.
+RUN /usr/local/bin/beacon-chain --version > /version.txt
+
 COPY genesis.json /
 COPY config.yml /
 COPY jwtsecret /

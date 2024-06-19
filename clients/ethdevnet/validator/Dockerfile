@@ -7,4 +7,7 @@ COPY start.sh /
 
 COPY --from=origin /usr/local/bin/validator /usr/local/bin
 
+# Generate the version.txt file.
+RUN /usr/local/bin/validator --version > /version.txt
+
 ENTRYPOINT ["/start.sh"]
