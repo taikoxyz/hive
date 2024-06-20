@@ -5,7 +5,8 @@ FROM us-docker.pkg.dev/evmchain/images/client-go:devnet AS geth
 FROM ubuntu:22.04
 
 RUN apt-get update && \
-    apt-get install bc -y
+    apt-get install bc -y && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY --from=prysmctl /prysmctl /usr/local/bin
 COPY --from=geth /usr/local/bin/geth /usr/local/bin
@@ -21,5 +22,8 @@ COPY genesis.json .
 COPY keyfile.json .
 COPY geth_password.txt .
 COPY jwtsecret .
+
+# Export the usual networking ports to allow outside access to the node
+EXPOSE 8545 8546 8551 30303 30303/udp
 
 ENTRYPOINT ["sh", "/execution/start.sh"]
