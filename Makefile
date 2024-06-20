@@ -1,6 +1,11 @@
-.PHONY: hive hivechain hiveview docker_build docker_clean
+.PHONY: hive hivechain hiveview docker_build docker_clean update
 
 all: hive hivechain hiveview
+
+update:
+	@echo "Update dependencies..."
+	@go mod tidy
+	@cd simulators/taiko/taiko-mono && git pull
 
 hive:
 	@echo "Building hive..."
