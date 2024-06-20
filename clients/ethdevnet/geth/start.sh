@@ -37,7 +37,7 @@ fi
 
 # Run geth service.
 export DEVNET=true && \
-  geth \
+  nohup geth \
   --http \
   --http.api=debug,eth,net,web3,txpool,miner \
   --http.addr=0.0.0.0  \
@@ -56,4 +56,10 @@ export DEVNET=true && \
   --password=geth_password.txt \
   --nodiscover \
   --gcmode=archive \
-  --syncmode=full 2>&1
+  --syncmode=full 2>&1 &
+
+echo "Starting deploy l1 contract..."
+sh /execution/deploy_l1_contract.sh
+
+# wait until geth finished.
+wait "$(ps aux | grep geth | grep -v grep | awk '{print $2}')"
