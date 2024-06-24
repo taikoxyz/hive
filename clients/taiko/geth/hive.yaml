@@ -1,2 +1,4 @@
 roles:
   - "geth"
+  - "beacon-chain"
+  - "validator"

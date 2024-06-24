@@ -1,65 +1,40 @@
 #!/bin/bash
 
-DATA_DIR=/l1-geth-data
+DATA_DIR=/devnet
 
-if [ ! -f "$DATA_DIR/GENESIS_LOCK" ];then
+if [ ! -f "$DATA_DIR/GENESIS_LOCK" ]; then
+
+  # Remove old data if exists.
+  rm -rf DATA_DIR=/devnet/execution/geth
+  rm -rf DATA_DIR=/devnet/consensus/beacondata
+  rm -rf DATA_DIR=/devnet/consensus/vaidatordata
+
   # Add lock file.
-  mkdir -p $DATA_DIR
   touch "$DATA_DIR/GENESIS_LOCK"
-
-  # Get current time.
-  GENESIS_TIME=$(echo "$(date +%s) / 100 * 100" | bc)
-  echo "CURRENT_TIME=$(date +%s)"
-  echo "GENESIS_TIME=$GENESIS_TIME"
 
   # Reset genesis.json
   prysmctl \
     testnet \
     generate-genesis \
     --fork=deneb \
-    --num-validators=64 \
-    --genesis-time="$GENESIS_TIME" \
-    --genesis-time-delay=100 \
-    --output-ssz=genesis.ssz \
-    --chain-config-file=config.yml \
-    --geth-genesis-json-in=genesis.json \
-    --geth-genesis-json-out=genesis.json
+    --num-validators=1 \
+    --genesis-time-delay=15 \
+    --output-ssz=$DATA_DIR/consensus/genesis.ssz \
+    --chain-config-file=$DATA_DIR/consensus/config.yml \
+    --geth-genesis-json-in=$DATA_DIR/execution/genesis.json \
+    --geth-genesis-json-out=$DATA_DIR/execution/genesis.json
 
-  cat genesis.json
+  cat $DATA_DIR/execution/genesis.json
 
   # Init geth.
-  geth init --datadir=$DATA_DIR genesis.json
-
-  # Move keystore file into data/keystore.
-  mv keyfile.json $DATA_DIR/keystore
+  rm -rf $DATA_DIR/execution/geth
+  geth init --datadir=$DATA_DIR/execution $DATA_DIR/execution/genesis.json
 fi
 
+# Run beacon-chain service.
+nohup sh /devnet/beacon-chain.sh >/devnet/beacon-chain.log 2>&1 &
 
-# Run geth service.
-export DEVNET=true && \
-  nohup geth \
-  --http \
-  --http.api=debug,eth,net,web3,txpool,miner \
-  --http.addr=0.0.0.0  \
-  --http.vhosts=* \
-  --http.corsdomain=* \
-  --ws \
-  --ws.api=debug,eth,net,web3,txpool,miner \
-  --ws.addr=0.0.0.0 \
-  --ws.origins=* \
-  --authrpc.vhosts=* \
-  --authrpc.addr=0.0.0.0 \
-  --authrpc.jwtsecret=jwtsecret \
-  --datadir=$DATA_DIR \
-  --allow-insecure-unlock \
-  --unlock=0x123463a4b065722e99115d6c222f267d9cabb524 \
-  --password=geth_password.txt \
-  --nodiscover \
-  --gcmode=archive \
-  --syncmode=full 2>&1 &
+# Run validator service.
+nohup sh /devnet/validator.sh >/devnet/validator.log 2>&1 &
 
-echo "Starting deploy l1 contract..."
-sh /execution/deploy_l1_contract.sh
-
-# wait until geth finished.
-wait "$(ps aux | grep geth | grep -v grep | awk '{print $2}')"
+sh /devnet/geth.sh
