@@ -11,16 +11,17 @@ import (
 
 func main() {
 	suite := hivesim.Suite{
-		Name:        "taiko",
-		Description: ``,
+		Name:        "init",
+		Description: `Test framework initialization`,
 	}
 	suite.Add(hivesim.ClientTestSpec{
 		Role:        "geth",
-		Name:        "deploy l1 contract",
-		Description: "deploy l1 contract",
+		Name:        "contract",
+		Description: "Deploy taiko contract on l1 chain",
 		Run:         deployL1Contract,
 		AlwaysRun:   false,
 	})
+	hivesim.MustRun(hivesim.New(), suite)
 }
 
 // Deploy a contract on L1
@@ -29,7 +30,7 @@ func deployL1Contract(t *hivesim.T, c *hivesim.Client) {
 	if err := os.Setenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT", url); err != nil {
 		t.Fatal(err)
 	}
-
+	fmt.Println("----------------", url)
 	// deploy l1 contract.
 	cmd := exec.Command("sh", "/taiko/deploy_l1_contract.sh")
 	if err := runTAP(t, c.Type, cmd); err != nil {
@@ -84,5 +85,4 @@ func reportTAP(t *hivesim.T, clientName string, output io.Reader) error {
 		result := hivesim.TestResult{Pass: test.Ok, Details: test.Diagnostic}
 		t.Sim.EndTest(t.SuiteID, testID, result)
 	}
-	return nil
 }

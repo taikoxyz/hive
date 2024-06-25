@@ -10,3 +10,4 @@ chain
 # build output for rust simulators files
 simulators/**/Cargo.lock
 simulators/**/target
+simulators/taiko/.env

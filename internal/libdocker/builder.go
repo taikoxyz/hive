@@ -62,15 +62,15 @@ func (b *Builder) BuildClientImage(ctx context.Context, client libhive.ClientDes
 func (b *Builder) BuildSimulatorImage(ctx context.Context, name string) (string, error) {
 	dir := b.config.Inventory.SimulatorDirectory(name)
 	buildContextPath := dir
-	buildDockerfile := "Dockerfile"
+	buildDockerfile := "Dockerfile.debug"
 	// build context dir of simulator can be overridden with "hive_context.txt" file containing the desired build path
 	if contextPathBytes, err := os.ReadFile(filepath.Join(filepath.FromSlash(dir), "hive_context.txt")); err == nil {
 		buildContextPath = filepath.Join(dir, strings.TrimSpace(string(contextPathBytes)))
 		if strings.HasPrefix(buildContextPath, "../") {
 			return "", fmt.Errorf("cannot access build directory outside of Hive root: %q", buildContextPath)
 		}
-		if p, err := filepath.Rel(buildContextPath, filepath.Join(filepath.FromSlash(dir), "Dockerfile")); err != nil {
-			return "", fmt.Errorf("failed to derive relative simulator Dockerfile path: %v", err)
+		if p, err := filepath.Rel(buildContextPath, filepath.Join(filepath.FromSlash(dir), "Dockerfile.debug")); err != nil {
+			return "", fmt.Errorf("failed to derive relative simulator Dockerfile.debug path: %v", err)
 		} else {
 			buildDockerfile = p
 		}
@@ -81,7 +81,7 @@ func (b *Builder) BuildSimulatorImage(ctx context.Context, name string) (string,
 }
 
 // BuildImage creates a container by archiving the given file system,
-// which must contain a file called "Dockerfile".
+// which must contain a file called "Dockerfile.debug".
 func (b *Builder) BuildImage(ctx context.Context, name string, fsys fs.FS) error {
 	opts := b.buildConfig(ctx, name)
 	pipeR, pipeW := io.Pipe()

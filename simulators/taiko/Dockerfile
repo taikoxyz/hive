@@ -15,6 +15,7 @@ WORKDIR /taiko
 RUN mkdir -p /taiko/taiko-mono/packages/
 
 COPY deploy_l1_contract.sh .
+COPY get_env.sh .
 COPY taiko-mono/packages/protocol /taiko/taiko-mono/packages/protocol
 
 COPY --from=builder /usr/local/bin/taiko /usr/local/bin/taiko

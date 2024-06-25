@@ -1,9 +1,9 @@
 #!/bin/bash
 
-
+L1_NODE_HTTP_ENDPOINT=${L1_NODE_HTTP_ENDPOINT:-http://172.23.0.2:8545}
 
 # wait until geth service is ready.
-until cast chain-id --rpc-url "$L2_EXECUTION_ENGINE_HTTP_ENDPOINT" 2>/dev/null; do
+until cast chain-id --rpc-url "$L1_NODE_HTTP_ENDPOINT" 2>/dev/null; do
   sleep 1
 done
 
@@ -29,9 +29,12 @@ export GUARDIAN_PROVERS="0x70997970C51812dc3A010C7d01b50e0d17dc79C8,0xf39Fd6e51a
 export L2_GENESIS_HASH=0x982852b735b5543adb7668de3ec13004f67cfb2e9efdd688b3d41c0fc56a9cba
 
 cd /taiko/taiko-mono/packages/protocol && forge script script/DeployOnL1.s.sol:DeployOnL1 \
-  --fork-url http://localhost:8545 \
+  --fork-url "$L1_NODE_HTTP_ENDPOINT" \
   --broadcast \
   --ffi \
   -vvvv \
   --private-key $PRIVATE_KEY \
   --block-gas-limit 100000000
+
+# get contract addresses.
+sh /taiko/get_env.sh
