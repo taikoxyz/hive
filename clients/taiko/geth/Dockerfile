@@ -7,7 +7,7 @@ FROM us-docker.pkg.dev/evmchain/images/client-go:devnet AS geth
 FROM debian:latest
 
 RUN apt-get update && apt-get install -y \
-  procps vim && \
+  procps && \
   rm -rf /var/lib/apt/lists/*
 
 

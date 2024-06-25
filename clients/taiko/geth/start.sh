@@ -18,7 +18,7 @@ if [ ! -f "$DATA_DIR/GENESIS_LOCK" ]; then
     generate-genesis \
     --fork=deneb \
     --num-validators=1 \
-    --genesis-time-delay=15 \
+    --genesis-time-delay=3 \
     --output-ssz=$DATA_DIR/consensus/genesis.ssz \
     --chain-config-file=$DATA_DIR/consensus/config.yml \
     --geth-genesis-json-in=$DATA_DIR/execution/genesis.json \

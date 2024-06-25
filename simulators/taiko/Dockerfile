@@ -1,26 +1,17 @@
-FROM --platform=linux/amd64 ghcr.io/foundry-rs/foundry:nightly AS foundry
+FROM golang:1.21-alpine as builder
 
-FROM golang:1.21-alpine AS builder
-
-# Build Delve, aims to debug.
-RUN go install github.com/go-delve/delve/cmd/dlv@latest
+#RUN apk update && apk add --no-cache gcc musl-dev linux-headers git make build-base
 
 WORKDIR /taiko
 
-COPY . .
+COPY go.mod go.sum *.go ./
 
-# Install dependencies.
-RUN apk update && apk add --no-cache gcc #musl-dev linux-headers git make build-base
+RUN go mod download
 
-# Use -gcflags="all=-N -l" aims to debug.
-RUN go mod download && go build -gcflags="all=-N -l" -v -o /usr/local/bin/taiko ./
+RUN go build -o /usr/local/bin/taiko
 
-FROM alpine:latest
+FROM ethereum/solc:0.8.24
 
-COPY taiko-mono /taiko-mono
-COPY --from=builder /usr/local/bin/taiko /usr/local/bin
-COPY --from=foundry /usr/local/bin/forge /usr/local/bin
+COPY --from=builder /usr/local/bin/taiko /usr/local/bin/taiko
 
-RUN apk update && apk add --no-cache libstdc++
-
-CMD ["/dlv", "--listen=:40000", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/usr/local/bin/taiko"]
+ENTRYPOINT ["taiko"]
