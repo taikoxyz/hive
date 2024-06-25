@@ -9,10 +9,6 @@ import (
 	"os/exec"
 )
 
-var (
-	privateKey = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
-)
-
 func main() {
 	suite := hivesim.Suite{
 		Name:        "taiko",
@@ -29,20 +25,13 @@ func main() {
 
 // Deploy a contract on L1
 func deployL1Contract(t *hivesim.T, c *hivesim.Client) {
-	cmd := exec.Command("forge", "/taiko-mono/packages/protocol/script/DeployOnL1.s.sol:DeployOnL1",
-		"--fork-url",
-		fmt.Sprintf("http://%v:8545", c.IP),
-		"--broadcast",
-		"--ffi",
-		"-vvvvv",
-		"--evm-version",
-		"cancun",
-		"--private-key",
-		privateKey,
-		"--block-gas-limit",
-		"100000000",
-		"--legacy",
-	)
+	url := fmt.Sprintf("http://%v:8545", c.IP)
+	if err := os.Setenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT", url); err != nil {
+		t.Fatal(err)
+	}
+
+	// deploy l1 contract.
+	cmd := exec.Command("sh", "/taiko/deploy_l1_contract.sh")
 	if err := runTAP(t, c.Type, cmd); err != nil {
 		t.Fatal(err)
 	}
