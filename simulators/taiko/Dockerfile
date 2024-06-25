@@ -5,6 +5,7 @@ FROM golang:1.21-alpine as builder
 WORKDIR /taiko
 
 COPY go.mod go.sum *.go ./
+COPY taiko-mono /taiko/taiko-mono
 
 RUN go mod download
 
