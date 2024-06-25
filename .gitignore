@@ -7,9 +7,6 @@ build/bin
 # genesis chain folder
 chain
 
-# ignore taiko-mono repo
-simulators/**/taiko-mono
-
 # build output for rust simulators files
 simulators/**/Cargo.lock
 simulators/**/target
