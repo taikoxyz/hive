@@ -27,13 +27,13 @@ type InventoryClient struct {
 	Meta        ClientMetadata
 }
 
-// ClientDirectory returns the directory containing the given client's Dockerfile.debug.
+// ClientDirectory returns the directory containing the given client's Dockerfile.
 // The client name may contain a branch specifier.
 func (inv Inventory) ClientDirectory(client ClientDesignator) string {
 	return filepath.Join(inv.BaseDir, "clients", filepath.FromSlash(client.Client))
 }
 
-// SimulatorDirectory returns the directory of containing the given simulator's Dockerfile.debug.
+// SimulatorDirectory returns the directory of containing the given simulator's Dockerfile.
 func (inv Inventory) SimulatorDirectory(name string) string {
 	return filepath.Join(inv.BaseDir, "simulators", filepath.FromSlash(name))
 }
@@ -100,7 +100,7 @@ func findSimulators(dir string) (map[string]struct{}, error) {
 		}
 		name := info.Name()
 		// If we hit a dockerfile, add the parent and stop looking in this directory.
-		if name == "Dockerfile.debug" {
+		if name == "Dockerfile" {
 			rel, _ := filepath.Rel(dir, filepath.Dir(path))
 			name := filepath.ToSlash(rel)
 			names[name] = struct{}{}
@@ -132,24 +132,24 @@ func findClients(dir string) (map[string]InventoryClient, error) {
 		// Add Dockerfiles.
 		file := info.Name()
 		switch {
-		case file == "Dockerfile.debug":
+		case file == "Dockerfile":
 			clients[clientName] = InventoryClient{
 				Meta: ClientMetadata{
 					Roles: []string{"eth1"}, // default role
 				},
 			}
-		case strings.HasPrefix(file, "Dockerfile.debug."):
+		case strings.HasPrefix(file, "Dockerfile."):
 			client, ok := clients[clientName]
 			if !ok {
-				log15.Warn(fmt.Sprintf("found %s in directory without Dockerfile.debug", file), "path", filepath.Dir(path))
+				log15.Warn(fmt.Sprintf("found %s in directory without Dockerfile", file), "path", filepath.Dir(path))
 				return nil
 			}
-			client.Dockerfiles = append(client.Dockerfiles, strings.TrimPrefix(file, "Dockerfile.debug."))
+			client.Dockerfiles = append(client.Dockerfiles, strings.TrimPrefix(file, "Dockerfile."))
 			clients[clientName] = client
 		case file == "hive.yaml":
 			client, ok := clients[clientName]
 			if !ok {
-				log15.Warn("found hive.yaml in directory without Dockerfile.debug", "path", filepath.Dir(path))
+				log15.Warn("found hive.yaml in directory without Dockerfile", "path", filepath.Dir(path))
 				return nil
 			}
 			md, err := loadClientMetadata(path)
@@ -191,7 +191,7 @@ type ClientDesignator struct {
 	Nametag string `yaml:"nametag,omitempty"`
 
 	// DockerfileExt is the extension of the Docker that should be used to build the
-	// client. Example: setting this to "git" will build using "Dockerfile.debug.git".
+	// client. Example: setting this to "git" will build using "Dockerfile.git".
 	DockerfileExt string `yaml:"dockerfile,omitempty"`
 
 	// Arguments passed to the docker build.
@@ -220,9 +220,9 @@ func (c ClientDesignator) buildString() string {
 // Dockerfile gives the name of the Dockerfile to use when building the client.
 func (c ClientDesignator) Dockerfile() string {
 	if c.DockerfileExt == "" {
-		return "Dockerfile.debug"
+		return "Dockerfile"
 	}
-	return "Dockerfile.debug." + c.DockerfileExt
+	return "Dockerfile." + c.DockerfileExt
 }
 
 // Name returns the full client name including nametag.
@@ -327,7 +327,7 @@ func validateClients(inv *Inventory, list []ClientDesignator) error {
 		// Validate DockerfileExt.
 		if c.DockerfileExt != "" {
 			if !slices.Contains(ic.Dockerfiles, c.DockerfileExt) {
-				return fmt.Errorf("client %s doesn't have Dockerfile.debug.%s", c.Client, c.DockerfileExt)
+				return fmt.Errorf("client %s doesn't have Dockerfile.%s", c.Client, c.DockerfileExt)
 			}
 		}
 		// Check build arguments.
