@@ -28,8 +28,8 @@ github.com/ethereum/c-kzg-4844 v1.0.0 h1:0X1LBXxaEtYD9xsyj9B9ctQEZIpnvVDeoBx8aHE
 github.com/ethereum/c-kzg-4844 v1.0.0/go.mod h1:VewdlzQmpT5QSrVhbBuGoCdFJkpaJlO1aQputP83wc0=
 github.com/ethereum/go-ethereum v1.14.5 h1:szuFzO1MhJmweXjoM5nSAeDvjNUH3vIQoMzzQnfvjpw=
 github.com/ethereum/go-ethereum v1.14.5/go.mod h1:VEDGGhSxY7IEjn98hJRFXl/uFvpRgbIIf2PpXiyGGgc=
-github.com/ethereum/hive v0.0.0-20240618143411-2abbb1680895 h1:LNb8wD/QCw/NePHHxr5VoqGb/flfsM+vhDgnH7xmljI=
-github.com/ethereum/hive v0.0.0-20240618143411-2abbb1680895/go.mod h1:ghNXZW+/WQClcyiwZpbTzUCyxwql7YeMacYd44v+BJE=
+github.com/ethereum/hive v0.0.0-20240621132721-7b407a5e0d1c h1:YznbZcP5PgAclfvst6/Rh709SETGp66hMeQBYp6iK+I=
+github.com/ethereum/hive v0.0.0-20240621132721-7b407a5e0d1c/go.mod h1:ghNXZW+/WQClcyiwZpbTzUCyxwql7YeMacYd44v+BJE=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
 github.com/fsnotify/fsnotify v1.5.4/go.mod h1:OVB6XrOHzAwXMpEM7uPOzcehqUV2UqJxmVXmkdnm1bU=
@@ -68,6 +68,8 @@ github.com/holiman/uint256 v1.2.4 h1:jUc4Nk8fm9jZabQuqr2JzednajVmBpC+oiTiXZJEApU
 github.com/holiman/uint256 v1.2.4/go.mod h1:EOMSn4q6Nyt9P6efbI3bueV4e1b3dGlUCXeiRV4ng7E=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
 github.com/ianlancetaylor/demangle v0.0.0-20200824232613-28f6c0f3b639/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
+github.com/joho/godotenv v1.5.1 h1:7eLL/+HRGLY0ldzfGMeQkb7vMd0as4CfYvUVzLqw0N0=
+github.com/joho/godotenv v1.5.1/go.mod h1:f4LDr5Voq0i2e/R5DDNOoa2zzDfwtkZa6DnEwAbqwq4=
 github.com/lithammer/dedent v1.1.0 h1:VNzHMVCBNG1j0fh3OrsFRkVUwStdDArbgBWoPAffktY=
 github.com/lithammer/dedent v1.1.0/go.mod h1:jrXYCQtgg0nJiN+StA2KgR7w6CiQNv9Fd/Z9BP0jIOc=
 github.com/mattn/go-colorable v0.1.13 h1:fFA4WZxdEF4tXPZVKMLwD8oUnCTTo08duU7wxecdEvA=

@@ -2,40 +2,58 @@ package main
 
 import (
 	"fmt"
-	"github.com/ethereum/hive/hivesim"
-	"github.com/shogo82148/go-tap"
+	"github.com/joho/godotenv"
 	"io"
 	"os"
 	"os/exec"
+
+	"github.com/ethereum/hive/hivesim"
+	"github.com/shogo82148/go-tap"
 )
 
 func main() {
-	suite := hivesim.Suite{
+	init := hivesim.Suite{
 		Name:        "init",
 		Description: `Test framework initialization`,
 	}
-	suite.Add(hivesim.ClientTestSpec{
+	init.Add(hivesim.ClientTestSpec{
 		Role:        "geth",
 		Name:        "contract",
 		Description: "Deploy taiko contract on l1 chain",
 		Run:         deployL1Contract,
 		AlwaysRun:   false,
 	})
-	hivesim.MustRun(hivesim.New(), suite)
+	init.Add(hivesim.ClientTestSpec{
+		Role:        "geth",
+		Name:        "contract",
+		Description: "Show contract addresses",
+		Run:         showEnv,
+		AlwaysRun:   false,
+	})
+	hivesim.MustRun(hivesim.New(), init)
 }
 
 // Deploy a contract on L1
 func deployL1Contract(t *hivesim.T, c *hivesim.Client) {
 	url := fmt.Sprintf("http://%v:8545", c.IP)
-	if err := os.Setenv("L2_EXECUTION_ENGINE_HTTP_ENDPOINT", url); err != nil {
+	if err := os.Setenv("L1_NODE_HTTP_ENDPOINT", url); err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println("----------------", url)
 	// deploy l1 contract.
 	cmd := exec.Command("sh", "/taiko/deploy_l1_contract.sh")
 	if err := runTAP(t, c.Type, cmd); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func showEnv(t *hivesim.T, c *hivesim.Client) {
+	if err := godotenv.Load("/taiko/.env"); err != nil {
+		t.Fatal(err)
+	}
+	l1Address := os.Getenv("TAIKO_L1_ADDRESS")
+	fmt.Println("l1Address: ", l1Address)
+	tokenAddress := os.Getenv("TAIKO_TOKEN_ADDRESS")
+	fmt.Println("tokenAddress: ", tokenAddress)
 }
 
 func runTAP(t *hivesim.T, clientName string, cmd *exec.Cmd) error {

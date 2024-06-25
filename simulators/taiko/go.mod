@@ -2,7 +2,11 @@ module github.com/ethereum/hive/simulators/taiko
 
 go 1.21
 
-require github.com/ethereum/hive v0.0.0-20240618143411-2abbb1680895
+require (
+	github.com/ethereum/hive v0.0.0-20240621132721-7b407a5e0d1c
+	github.com/joho/godotenv v1.5.1
+	github.com/shogo82148/go-tap v0.0.3
+)
 
 require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
@@ -20,7 +24,6 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
-	github.com/shogo82148/go-tap v0.0.3 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect

@@ -7,6 +7,8 @@ until cast chain-id --rpc-url "$L1_NODE_HTTP_ENDPOINT" 2>/dev/null; do
   sleep 1
 done
 
+echo "Start deploying taiko contracts on l1 chain..."
+
 export PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 export TAIKO_L2_ADDRESS=0x1670010000000000000000000000000000010001
 export L2_SIGNAL_SERVICE=0x1670010000000000000000000000000000010005

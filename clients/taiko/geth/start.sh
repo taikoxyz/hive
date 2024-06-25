@@ -24,7 +24,7 @@ if [ ! -f "$DATA_DIR/GENESIS_LOCK" ]; then
     --geth-genesis-json-in=$DATA_DIR/execution/genesis.json \
     --geth-genesis-json-out=$DATA_DIR/execution/genesis.json
 
-  cat $DATA_DIR/execution/genesis.json
+  # cat $DATA_DIR/execution/genesis.json
 
   # Init geth.
   rm -rf $DATA_DIR/execution/geth

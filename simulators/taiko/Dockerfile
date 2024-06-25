@@ -12,11 +12,13 @@ FROM ethereum/solc:0.8.24
 
 WORKDIR /taiko
 
-RUN mkdir -p /taiko/taiko-mono/packages/
+RUN apk add --no-cache --update jq #&& mkdir -p /taiko/taiko-mono/packages/
 
+COPY jwtsecret .
 COPY deploy_l1_contract.sh .
 COPY get_env.sh .
-COPY taiko-mono/packages/protocol /taiko/taiko-mono/packages/protocol
+COPY taiko-mono /taiko/taiko-mono
+#COPY taiko-mono/packages/protocol /taiko/taiko-mono/packages/protocol
 
 COPY --from=builder /usr/local/bin/taiko /usr/local/bin/taiko
 COPY --from=foundry /usr/local/bin/forge /usr/local/bin
