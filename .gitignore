@@ -8,7 +8,7 @@ build/bin
 chain
 
 # ignore taiko-mono repo
-simulators/taiko/taiko-mono
+simulators/**/taiko-mono
 
 # build output for rust simulators files
 simulators/**/Cargo.lock
