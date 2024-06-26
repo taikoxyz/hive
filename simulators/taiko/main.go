@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/joho/godotenv"
 	"io"
 	"os"
 	"os/exec"
 
 	"github.com/ethereum/hive/hivesim"
+	"github.com/joho/godotenv"
 	"github.com/shogo82148/go-tap"
 )
 
@@ -21,13 +21,6 @@ func main() {
 		Name:        "contract",
 		Description: "Deploy taiko contract on l1 chain",
 		Run:         deployL1Contract,
-		AlwaysRun:   false,
-	})
-	init.Add(hivesim.ClientTestSpec{
-		Role:        "geth",
-		Name:        "contract",
-		Description: "Show contract addresses",
-		Run:         showEnv,
 		AlwaysRun:   false,
 	})
 	hivesim.MustRun(hivesim.New(), init)
@@ -44,9 +37,8 @@ func deployL1Contract(t *hivesim.T, c *hivesim.Client) {
 	if err := runTAP(t, c.Type, cmd); err != nil {
 		t.Fatal(err)
 	}
-}
 
-func showEnv(t *hivesim.T, c *hivesim.Client) {
+	// Show contract addresses
 	if err := godotenv.Load("/taiko/.env"); err != nil {
 		t.Fatal(err)
 	}
