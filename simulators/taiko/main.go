@@ -1,98 +1,82 @@
 package main
 
 import (
-	"fmt"
-	"io"
-	"os"
-	"os/exec"
-
 	"github.com/ethereum/hive/hivesim"
-	"github.com/joho/godotenv"
-	"github.com/shogo82148/go-tap"
+)
+
+var (
+	l1geth = hivesim.Suite{
+		Name:        "geth",
+		Description: `l1-geth initialization`,
+	}
+	l2Geth = hivesim.Suite{
+		Name:        "taiko-geth",
+		Description: `taiko-geth initialization`,
+	}
+	taikoClient = hivesim.Suite{
+		Name:        "taikoClient",
+		Description: `taikoClient connection test`,
+	}
 )
 
 func main() {
-	init := hivesim.Suite{
-		Name:        "init",
-		Description: `Test framework initialization`,
-	}
-	init.Add(hivesim.ClientTestSpec{
+	// l1 geth initialization and test cases.
+	l1geth.Add(hivesim.ClientTestSpec{
 		Role:        "geth",
 		Name:        "contract",
 		Description: "Deploy taiko contract on l1 chain",
 		Run:         deployL1Contract,
 		AlwaysRun:   false,
 	})
-	hivesim.MustRun(hivesim.New(), init)
-}
+	l1geth.Add(hivesim.ClientTestSpec{
+		Role:        "geth",
+		Name:        "set env",
+		Description: "",
+		Run:         setL1Env,
+		AlwaysRun:   false,
+	})
 
-// Deploy a contract on L1
-func deployL1Contract(t *hivesim.T, c *hivesim.Client) {
-	url := fmt.Sprintf("http://%v:8545", c.IP)
-	if err := os.Setenv("L1_NODE_HTTP_ENDPOINT", url); err != nil {
-		t.Fatal(err)
-	}
-	// deploy l1 contract.
-	cmd := exec.Command("sh", "/taiko/deploy_l1_contract.sh")
-	if err := runTAP(t, c.Type, cmd); err != nil {
-		t.Fatal(err)
-	}
+	// taiko geth initialization and test cases.
+	l2Geth.Add(hivesim.ClientTestSpec{
+		Role:        "taiko-geth",
+		Name:        "taiko-geth",
+		Description: "Set environment variables for taiko-geth",
+		Run:         setL2Env,
+		AlwaysRun:   false,
+	})
+	l2Geth.Add(hivesim.ClientTestSpec{
+		Role: "taiko-geth", Name: "taiko-geth",
+		Description: "test taiko-geth connection",
+		Run:         testGeth,
+		AlwaysRun:   false,
+	})
 
-	// Show contract addresses
-	if err := godotenv.Load("/taiko/.env"); err != nil {
-		t.Fatal(err)
-	}
-	l1Address := os.Getenv("TAIKO_L1_ADDRESS")
-	fmt.Println("l1Address: ", l1Address)
-	tokenAddress := os.Getenv("TAIKO_TOKEN_ADDRESS")
-	fmt.Println("tokenAddress: ", tokenAddress)
-}
+	// taikoClient connection and test cases.
+	params := taikoClientEnv()
+	taikoClient.Add(hivesim.ClientTestSpec{
+		Role: "taikoClient", Name: "taikoClient",
+		Description: "test taikoClient connection",
+		Parameters:  params, AlwaysRun: false,
+		Run: nil,
+	})
+	taikoClient.Add(hivesim.ClientTestSpec{
+		Role: "proposer", Name: "proposer",
+		Description: "test proposer connection",
+		Parameters:  params, AlwaysRun: false,
+		Run: nil,
+	})
+	taikoClient.Add(hivesim.ClientTestSpec{
+		Role: "prover", Name: "prover",
+		Description: "test prover connection",
+		Parameters:  params, AlwaysRun: false,
+		Run: nil,
+	})
 
-func runTAP(t *hivesim.T, clientName string, cmd *exec.Cmd) error {
-	// Set up output streams.
-	cmd.Stderr = os.Stderr
-	output, err := cmd.StdoutPipe()
-	if err != nil {
-		return fmt.Errorf("can't set up test command stdout pipe: %v", err)
+	// Run the simulations.
+	suites := []hivesim.Suite{
+		//l1geth,
+		l2Geth,
+		//taikoClient,
 	}
-	defer output.Close()
-
-	// Forward TAP output to the simulator log.
-	outputTee := io.TeeReader(output, os.Stdout)
-
-	// Run the test command.
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("can't start test command: %v", err)
-	}
-	if err := reportTAP(t, clientName, outputTee); err != nil {
-		cmd.Process.Kill()
-		cmd.Wait()
-		return err
-	}
-	return cmd.Wait()
-}
-
-func reportTAP(t *hivesim.T, clientName string, output io.Reader) error {
-	// Parse the output.
-	parser, err := tap.NewParser(output)
-	if err != nil {
-		return fmt.Errorf("error parsing TAP: %v", err)
-	}
-	for {
-		test, err := parser.Next()
-		if test == nil {
-			if err == io.EOF {
-				return nil
-			}
-			return err
-		}
-		// Forward result to hive.
-		name := fmt.Sprintf("%s (%s)", test.Description, clientName)
-		testID, err := t.Sim.StartTest(t.SuiteID, hivesim.TestStartInfo{Name: name})
-		if err != nil {
-			return fmt.Errorf("can't report sub-test result: %v", err)
-		}
-		result := hivesim.TestResult{Pass: test.Ok, Details: test.Diagnostic}
-		t.Sim.EndTest(t.SuiteID, testID, result)
-	}
+	hivesim.MustRun(hivesim.New(), suites...)
 }

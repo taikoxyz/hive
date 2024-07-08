@@ -34,6 +34,6 @@ COPY jwtsecret          /devnet/execution
 COPY keyfile.json       /devnet/execution/keystore
 
 # Export the usual networking ports to allow outside access to the node
-EXPOSE 8545 8546 8551 30303 30303/udp
+EXPOSE 4000 8545 8546 8551 30303 30303/udp
 
 ENTRYPOINT ["sh", "/devnet/start.sh"]

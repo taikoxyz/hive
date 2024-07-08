@@ -1,19 +1,14 @@
 ARG baseimage=us-docker.pkg.dev/evmchain/images/taiko-client
-ARG tag=hekla
+ARG tag=taiko-client-v0.29.0
 
-FROM $baseimage:$tag as builder
+FROM $baseimage:$tag
 
-FROM alpine:latest
-
-RUN apk add --no-cache --update libstdc++
 # Generate the version.txt file.
-RUN /usr/local/bin/taiko --version >/version.txt
+RUN taiko-client --version > /version.txt
 
-WORKDIR /proposer
+WORKDIR /taiko-client
 
 ADD common.sh .
 ADD proposer.sh .
 
-COPY --from=builder /usr/local/bin/taiko-client /usr/local/bin/taiko-client
-
-ENTRYPOINT ["sh", "/proposer/proposer.sh"]
+ENTRYPOINT ["sh", "/taiko-client/proposer.sh"]
