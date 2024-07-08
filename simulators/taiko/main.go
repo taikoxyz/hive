@@ -30,22 +30,28 @@ func main() {
 	})
 	l1geth.Add(hivesim.ClientTestSpec{
 		Role:        "geth",
-		Name:        "set env",
+		Name:        "setL1Env",
 		Description: "",
 		Run:         setL1Env,
 		AlwaysRun:   false,
+	})
+	l1geth.Add(hivesim.ClientTestSpec{
+		Role:      "geth",
+		Name:      "testGeth",
+		Run:       testGeth,
+		AlwaysRun: false,
 	})
 
 	// taiko geth initialization and test cases.
 	l2Geth.Add(hivesim.ClientTestSpec{
 		Role:        "taiko-geth",
-		Name:        "taiko-geth",
+		Name:        "setL2Env",
 		Description: "Set environment variables for taiko-geth",
 		Run:         setL2Env,
 		AlwaysRun:   false,
 	})
 	l2Geth.Add(hivesim.ClientTestSpec{
-		Role: "taiko-geth", Name: "taiko-geth",
+		Role: "taiko-geth", Name: "testGeth",
 		Description: "test taiko-geth connection",
 		Run:         testGeth,
 		AlwaysRun:   false,
@@ -74,7 +80,7 @@ func main() {
 
 	// Run the simulations.
 	suites := []hivesim.Suite{
-		//l1geth,
+		l1geth,
 		l2Geth,
 		//taikoClient,
 	}

@@ -14,7 +14,6 @@ WORKDIR /geth
 # Inject the startup script.
 ADD geth.sh .
 ADD jwt.hex .
-RUN chmod +x .
 
 # Export the usual networking ports to allow outside access to the node
 EXPOSE 8545 8546 8551 30303 30303/udp

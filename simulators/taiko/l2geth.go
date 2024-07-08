@@ -15,13 +15,18 @@ func setL2Env(t *hivesim.T, c *hivesim.Client) {
 }
 
 func testGeth(t *hivesim.T, c *hivesim.Client) {
-	client, err := ethclient.Dial(fmt.Sprintf("http://%v:8545", c.IP))
+	url := fmt.Sprintf("http://%v:8545", c.IP)
+
+	client, err := ethclient.Dial(url)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	chainID, err := client.ChainID(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println("taiko-geth message, chainid: ", chainID.Uint64())
+
+	t.Logf("http endpoint: %s", url)
+	t.Logf("geth message, chainid: %d", chainID.Uint64())
 }
