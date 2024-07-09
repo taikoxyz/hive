@@ -9,11 +9,11 @@ set -e
 
 FLAGS="--datadir /geth/data --state.scheme path"
 # Configure http.
-FLAGS="$FLAGS --http --http.api admin,debug,eth,miner,net,personal,txpool,web3"
+FLAGS="$FLAGS --http --http.addr 0.0.0.0 --http.api admin,debug,eth,miner,net,personal,txpool,web3"
 # Configure ws.
-FLAGS="$FLAGS --ws --ws.api admin,debug,eth,miner,net,personal,txpool,web3"
+FLAGS="$FLAGS --ws --ws.addr 0.0.0.0 --ws.api admin,debug,eth,miner,net,personal,txpool,web3"
 # Configure auth rpc
-FLAGS="$FLAGS --authrpc.port 8551 --allow-insecure-unlock --authrpc.jwtsecret /geth/jwt.hex"
+FLAGS="$FLAGS --authrpc.addr 0.0.0.0 --authrpc.port 8551 --allow-insecure-unlock --authrpc.jwtsecret /geth/jwt.hex"
 # Configure log level
 FLAGS="$FLAGS --verbosity $HIVE_LOGLEVEL"
 # If a specific network ID is requested, use that

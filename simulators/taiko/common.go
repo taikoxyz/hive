@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/hive/hivesim"
 	"github.com/shogo82148/go-tap"
 	"io"
@@ -9,9 +11,28 @@ import (
 	"os/exec"
 )
 
-func setEnv(t *hivesim.T, key string, value string) {
-	if err := os.Setenv(key, value); err != nil {
-		t.Fatal(err)
+const (
+	envFile = "/taiko/.env"
+	network = "hive_taiko_network"
+)
+
+var networkCreated = make(map[hivesim.SuiteID]bool)
+
+// createNetwork ensures there is a separate network to be able to send the client traffic
+// from two separate IP addrs.
+func createAndConnectNetwork(t *hivesim.T, container string) {
+	if !networkCreated[t.SuiteID] {
+		if err := t.Sim.CreateNetwork(t.SuiteID, network); err != nil {
+			t.Fatal("can't create network:", err)
+		}
+		if err := t.Sim.ConnectContainer(t.SuiteID, network, "simulation"); err != nil {
+			t.Fatal("can't connect simulation to network:", err)
+		}
+		networkCreated[t.SuiteID] = true
+	}
+
+	if err := t.Sim.ConnectContainer(t.SuiteID, network, container); err != nil {
+		t.Fatal("can't connect container to network:", err)
 	}
 }
 
@@ -62,4 +83,20 @@ func reportTAP(t *hivesim.T, clientName string, output io.Reader) error {
 		result := hivesim.TestResult{Pass: test.Ok, Details: test.Diagnostic}
 		t.Sim.EndTest(t.SuiteID, testID, result)
 	}
+}
+
+func testGeth(t *hivesim.T, c *hivesim.Client) {
+	url := fmt.Sprintf("http://%v:8545", c.IP)
+
+	client, err := ethclient.Dial(url)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = client.ChainID(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("container id: %s", c.Container)
 }

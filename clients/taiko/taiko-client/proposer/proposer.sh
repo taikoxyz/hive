@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
-source /taiko-client/common.sh
+. /taiko-client/common.sh
 
 # default env
 export JWT_SECRET="/taiko-client/nodes/jwt.hex"

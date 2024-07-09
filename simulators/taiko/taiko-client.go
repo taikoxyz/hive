@@ -1,21 +1,42 @@
 package main
 
-import "os"
+import (
+	"context"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/hive/hivesim"
+	"github.com/joho/godotenv"
+	"os"
+)
 
-func taikoClientEnv() map[string]string {
-	return map[string]string{
-		"L1_WS":                      os.Getenv("L1_WS"),
-		"L1_HTTP":                    os.Getenv("L1_HTTP"),
-		"L1_BEACON":                  os.Getenv("L1_BEACON"),
-		"L2_HTTP":                    os.Getenv("L2_HTTP"),
-		"L2_WS":                      os.Getenv("L2_WS"),
-		"L2_AUTH":                    os.Getenv("L2_AUTH"),
-		"TAIKO_L1":                   os.Getenv("TAIKO_L1"),
-		"TAIKO_L2":                   os.Getenv("TAIKO_L2"),
-		"TAIKO_TOKEN":                os.Getenv("TAIKO_TOKEN"),
-		"L1_PROPOSER_PRIV_KEY":       os.Getenv("L1_PROPOSER_PRIV_KEY"),
-		"L2_SUGGESTED_FEE_RECIPIENT": os.Getenv("L2_SUGGESTED_FEE_RECIPIENT"),
-		"PROVER_SET":                 os.Getenv("PROVER_SET"),
-		"L1_PROVER_PRIV_KEY":         os.Getenv("L1_PROVER_PRIV_KEY"),
+func clientSuite() []hivesim.ClientTestSpec {
+	params, _ := godotenv.Read(envFile)
+	return []hivesim.ClientTestSpec{
+		{
+			Role:        "driver",
+			Name:        "taikoClient",
+			Description: "test taikoClient connection",
+			Parameters:  params,
+			Run:         testConnection,
+			AlwaysRun:   true,
+		},
 	}
+}
+
+func testConnection(t *hivesim.T, c *hivesim.Client) {
+	createAndConnectNetwork(t, c.Container)
+
+	l1Url := os.Getenv("L1_WS")
+	t.Logf("l1 l1Url: %s", l1Url)
+	l2Url := os.Getenv("L2_WS")
+	t.Logf("l2 l1Url: %s", l2Url)
+
+	l1Cli, err := ethclient.Dial(l1Url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	chainID, err := l1Cli.ChainID(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("l1 chainID: %d", chainID.Uint64())
 }

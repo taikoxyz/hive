@@ -9,13 +9,47 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func setL1Env(t *hivesim.T, c *hivesim.Client) {
-	// Show contract addresses
-	if err := godotenv.Load("/taiko/.env"); err != nil {
-		t.Fatal(err)
+func l1Suite() []hivesim.ClientTestSpec {
+	return []hivesim.ClientTestSpec{
+		{
+			Role:        "geth",
+			Name:        "contract",
+			Description: "Deploy taiko contract on l1 chain",
+			Run:         deployL1Contract,
+			AlwaysRun:   true,
+		},
+		{
+			Role:        "geth",
+			Name:        "setL1Env",
+			Description: "",
+			Run:         setL1Env,
+			AlwaysRun:   true,
+		},
 	}
-	setEnv(t, "L1_WS", fmt.Sprintf("ws://%v:8546", c.IP))
-	setEnv(t, "L1_BEACON", fmt.Sprintf("http://%v:4000", c.IP))
+}
+
+func setL1Env(t *hivesim.T, c *hivesim.Client) {
+	// Create and connect network.
+	createAndConnectNetwork(t, c.Container)
+
+	envs, err := godotenv.Read(envFile)
+	if err != nil {
+		t.Fatal("failed to load env file", err)
+	}
+
+	envs["L1_HTTP"] = fmt.Sprintf("http://%v:8545", c.IP)
+	envs["L1_WS"] = fmt.Sprintf("ws://%v:8546", c.IP)
+	envs["L1_BEACON"] = fmt.Sprintf("http://%v:4000", c.IP)
+	envs["L1_PROPOSER_PRIV_KEY"] = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+	envs["L1_PROVER_PRIV_KEY"] = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+
+	t.Logf("===================, %v", envs)
+
+	if err = godotenv.Write(envs, envFile); err != nil {
+		t.Fatal("failed to write env file", err)
+	}
+
+	t.Logf("TAIKO_L1=%s", os.Getenv("TAIKO_L1"))
 }
 
 // Deploy a contract on L1

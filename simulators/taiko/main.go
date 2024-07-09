@@ -4,85 +4,21 @@ import (
 	"github.com/ethereum/hive/hivesim"
 )
 
-var (
-	l1geth = hivesim.Suite{
-		Name:        "geth",
-		Description: `l1-geth initialization`,
-	}
-	l2Geth = hivesim.Suite{
-		Name:        "taiko-geth",
-		Description: `taiko-geth initialization`,
-	}
-	taikoClient = hivesim.Suite{
-		Name:        "taikoClient",
-		Description: `taikoClient connection test`,
-	}
-)
-
 func main() {
-	// l1 geth initialization and test cases.
-	l1geth.Add(hivesim.ClientTestSpec{
-		Role:        "geth",
-		Name:        "contract",
-		Description: "Deploy taiko contract on l1 chain",
-		Run:         deployL1Contract,
-		AlwaysRun:   false,
-	})
-	l1geth.Add(hivesim.ClientTestSpec{
-		Role:        "geth",
-		Name:        "setL1Env",
-		Description: "",
-		Run:         setL1Env,
-		AlwaysRun:   false,
-	})
-	l1geth.Add(hivesim.ClientTestSpec{
-		Role:      "geth",
-		Name:      "testGeth",
-		Run:       testGeth,
-		AlwaysRun: false,
-	})
 
-	// taiko geth initialization and test cases.
-	l2Geth.Add(hivesim.ClientTestSpec{
-		Role:        "taiko-geth",
-		Name:        "setL2Env",
-		Description: "Set environment variables for taiko-geth",
-		Run:         setL2Env,
-		AlwaysRun:   false,
-	})
-	l2Geth.Add(hivesim.ClientTestSpec{
-		Role: "taiko-geth", Name: "testGeth",
-		Description: "test taiko-geth connection",
-		Run:         testGeth,
-		AlwaysRun:   false,
-	})
-
-	// taikoClient connection and test cases.
-	params := taikoClientEnv()
-	taikoClient.Add(hivesim.ClientTestSpec{
-		Role: "taikoClient", Name: "taikoClient",
-		Description: "test taikoClient connection",
-		Parameters:  params, AlwaysRun: false,
-		Run: nil,
-	})
-	taikoClient.Add(hivesim.ClientTestSpec{
-		Role: "proposer", Name: "proposer",
-		Description: "test proposer connection",
-		Parameters:  params, AlwaysRun: false,
-		Run: nil,
-	})
-	taikoClient.Add(hivesim.ClientTestSpec{
-		Role: "prover", Name: "prover",
-		Description: "test prover connection",
-		Parameters:  params, AlwaysRun: false,
-		Run: nil,
-	})
-
-	// Run the simulations.
-	suites := []hivesim.Suite{
-		l1geth,
-		l2Geth,
-		//taikoClient,
+	suite := hivesim.Suite{
+		Name:        "taiko",
+		Description: ``,
 	}
-	hivesim.MustRun(hivesim.New(), suites...)
+
+	var runners []hivesim.ClientTestSpec
+	runners = append(runners, l1Suite()...)
+	runners = append(runners, l2Suite()...)
+	runners = append(runners, clientSuite()...)
+
+	for _, runner := range runners {
+		suite.Add(runner)
+	}
+
+	hivesim.MustRun(hivesim.New(), suite)
 }
