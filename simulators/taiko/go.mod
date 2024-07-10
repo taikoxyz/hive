@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/ethereum/go-ethereum v1.14.5
-	github.com/ethereum/hive v0.0.0-20240621132721-7b407a5e0d1c
+	github.com/ethereum/hive v0.0.0-20240703203925-7ea610c96f4c
 	github.com/joho/godotenv v1.5.1
 	github.com/shogo82148/go-tap v0.0.3
 )
@@ -42,3 +42,5 @@ require (
 	gopkg.in/inconshreveable/log15.v2 v2.0.0-20200109203555-b30bc20e4fd1 // indirect
 	rsc.io/tmplfunc v0.0.3 // indirect
 )
+
+replace github.com/ethereum/hive v0.0.0-20240703203925-7ea610c96f4c => github.com/taikoxyz/hive v0.0.0-20240709105753-817846b93125
