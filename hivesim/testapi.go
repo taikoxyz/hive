@@ -76,7 +76,7 @@ func RunSuite(host *Simulation, suite Suite) error {
 	if err != nil {
 		return err
 	}
-	defer host.EndSuite(suiteID)
+	//defer host.EndSuite(suiteID)
 
 	// Collect suite ID for tests.
 	suite.SuiteID = suiteID
