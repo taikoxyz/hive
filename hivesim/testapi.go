@@ -21,6 +21,7 @@ type Suite struct {
 	Category    string // Category of the test suite [Optional]
 	Description string // Description of the test suite (if empty, suite won't appear in documentation) [Optional]
 	Tests       []AnyTest
+	SuiteID     SuiteID // SuiteID is the unique identifier for the suite.
 }
 
 func (s *Suite) request() *simapi.TestRequest {
@@ -76,6 +77,9 @@ func RunSuite(host *Simulation, suite Suite) error {
 		return err
 	}
 	defer host.EndSuite(suiteID)
+
+	// Collect suite ID for tests.
+	suite.SuiteID = suiteID
 
 	for _, test := range suite.Tests {
 		if err := test.runTest(host, suiteID, &suite); err != nil {
