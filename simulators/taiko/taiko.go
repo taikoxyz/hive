@@ -2,78 +2,102 @@ package main
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/ethereum/hive/hivesim"
-	"time"
 )
 
-type containerParams struct {
-	// This filters client types by role.
-	// If no role is specified, the test runs for all available client types.
-	Role string
-
-	// Parameters and Files are launch options for client instances.
-	Parameters hivesim.Params
-	Files      map[string]string
-}
-
 type TaikoTestSpec struct {
-	cParams    map[string]*containerParams
+	*hivesim.T
+
+	cDefines   []*hivesim.ClientDefinition
 	containers map[string]*hivesim.Client
 
-	suites []hivesim.Suite
-	specs  []*hivesim.ClientTestSpec
+	wait   sync.WaitGroup
+	stopCh chan struct{}
 }
 
 func NewCommonSpec() *TaikoTestSpec {
-	return &TaikoTestSpec{
-		cParams:    make(map[string]*containerParams),
+	taiko := &TaikoTestSpec{
 		containers: make(map[string]*hivesim.Client),
+		stopCh:     make(chan struct{}),
 	}
+
+	taiko.init()
+
+	return taiko
 }
 
-func (c *TaikoTestSpec) StartTest() {
+func (t *TaikoTestSpec) Release() {
+	// Wait until all the suites finished.
+	t.wait.Wait()
+
+	// Release containers.
+	for role, cn := range t.containers {
+		if err := t.Sim.StopClient(t.SuiteID, t.TestID, cn.Container); err != nil {
+			t.Errorf("failed to stop container %s: %v", role, err)
+		}
+	}
+
+	close(t.stopCh)
+}
+
+func (t *TaikoTestSpec) init() {
 	suite := hivesim.Suite{
-		Name: "taiko-test-enter",
+		Name: "taiko-test-spec",
 		Tests: []hivesim.AnyTest{
 			hivesim.TestSpec{
-				Name: "taiko-test-enter",
-				Run:  c.tests,
+				Name: "taiko-test-spec",
+				Run:  t.run,
 			},
 		},
 	}
 	hivesim.MustRun(hivesim.New(), suite)
 }
 
-func (c *TaikoTestSpec) tests(t *hivesim.T) {
-	cNames, err := t.Sim.ClientTypes()
+func (t *TaikoTestSpec) run(sim *hivesim.T) {
+	t.T = sim
+
+	defines, err := t.Sim.ClientTypes()
 	if err != nil {
 		t.Fatalf("failed to get client types: %v", err)
 	}
-	for _, ct := range c.cParams {
-		for _, cn := range cNames {
-			if ct.Role != "" && !cn.HasRole(ct.Role) {
-				continue
-			}
-			client := t.StartClient(cn.Name, ct.Parameters, hivesim.WithStaticFiles(ct.Files))
-			c.containers[ct.Role] = client
-			t.Logf("started container %s: %s", ct.Role, client.Container)
-		}
-	}
-	defer func() {
-		for role, cn := range c.containers {
-			if err := t.Sim.StopClient(t.SuiteID, t.TestID, cn.Container); err != nil {
-				t.Errorf("failed to stop container %s: %v", role, err)
-			}
-		}
-	}()
+	t.cDefines = defines
 
-	for _, suite := range c.suites {
+	<-t.stopCh
+	t.Logf("The taiko-test-spec is stopped.")
+}
+
+func (t *TaikoTestSpec) startClient(role string, params hivesim.Params, files map[string]string) (*hivesim.Client, error) {
+	if client, ok := t.containers[role]; ok {
+		t.Logf("container %s already started: %s", role, client.Container)
+		return client, nil
+	}
+	for _, cn := range t.cDefines {
+		if role != "" && !cn.HasRole(role) {
+			continue
+		}
+		client := t.StartClient(cn.Name, params, hivesim.WithStaticFiles(files))
+		t.containers[role] = client
+		t.Logf("started container %s: %s", role, client.Container)
+		return client, nil
+	}
+	return nil, fmt.Errorf("container role %s not match", role)
+}
+
+func (t *TaikoTestSpec) RunSuite(suites ...hivesim.Suite) {
+	t.wait.Add(1)
+	defer t.wait.Done()
+
+	for _, suite := range suites {
 		for i, test := range suite.Tests {
 			switch tp := test.(type) {
 			case hivesim.ClientTestSpec:
-				if _, ok := c.containers[tp.Role]; !ok {
-					t.Errorf("container %s does not exist", tp.Role)
-					continue
+				// Init container.
+				container, err := t.startClient(tp.Role, tp.Parameters, tp.Files)
+				if err != nil {
+					t.Errorf("failed to start container %s: %v", tp.Role, err)
+					return
 				}
 				suite.Tests[i] = hivesim.TestSpec{
 					Name:        tp.Name,
@@ -81,42 +105,16 @@ func (c *TaikoTestSpec) tests(t *hivesim.T) {
 					Category:    tp.Category,
 					AlwaysRun:   tp.AlwaysRun,
 					Run: func(t *hivesim.T) {
-						tp.Run(t, c.containers[tp.Role])
+						tp.Run(t, container)
 					},
 				}
 			case hivesim.TestSpec:
-			}
-		}
-	}
-
-	// Run all the suites
-	hivesim.MustRun(hivesim.New(), c.suites...)
-
-	time.Sleep(100 * time.Second)
-
-	t.Log("all the tests done")
-}
-
-func (c *TaikoTestSpec) AddSuite(suites ...hivesim.Suite) error {
-	for _, suite := range suites {
-		for _, test := range suite.Tests {
-			switch tp := test.(type) {
-			case hivesim.ClientTestSpec:
-				if _, ok := c.cParams[tp.Role]; ok {
-					return fmt.Errorf("container role %s already exist", tp.Role)
-				}
-				c.cParams[tp.Role] = &containerParams{
-					Role:       tp.Role,
-					Parameters: tp.Parameters,
-					Files:      tp.Files,
-				}
-			case hivesim.TestSpec:
 			default:
-				return fmt.Errorf("unsupported type: %v", tp)
+				t.Errorf("unsupported type: %v", tp)
 			}
 		}
-		c.suites = append(c.suites, suite)
-	}
 
-	return nil
+		t.Logf("running suite %s", suite.Name)
+		hivesim.MustRunSuite(hivesim.New(), suite)
+	}
 }

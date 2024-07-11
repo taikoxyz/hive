@@ -17,20 +17,17 @@ func clientSuite() hivesim.Suite {
 	params, _ := godotenv.Read(envFile)
 	fmt.Printf("++++++++====++++++++++, %v", params)
 
-	client.Add(hivesim.ClientTestSpec{
-		Role:        "driver",
+	client.Add(hivesim.TestSpec{
 		Name:        "taikoClient",
 		Description: "test taikoClient connection",
-		Parameters:  params,
 		Run:         testConnection,
 		AlwaysRun:   true,
 	})
 	return client
 }
 
-func testConnection(t *hivesim.T, c *hivesim.Client) {
-	createAndConnectNetwork(t, c.Container)
-
+func testConnection(t *hivesim.T) {
+	//createAndConnectNetwork(t, c.Container)
 	l1Url := os.Getenv("L1_WS")
 	t.Logf("l1 l1Url: %s", l1Url)
 	l2Url := os.Getenv("L2_WS")
@@ -44,5 +41,5 @@ func testConnection(t *hivesim.T, c *hivesim.Client) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("l1 chainID: %d", chainID.Uint64())
+	t.Logf("testConnection test, l1 chainID: %d", chainID.Uint64())
 }

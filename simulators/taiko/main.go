@@ -1,9 +1,13 @@
 package main
 
+import "time"
+
 func main() {
 	taiko := NewCommonSpec()
-	if err := taiko.AddSuite(l1InitSuite(), l2InitSuite() /*, clientSuite()*/); err != nil {
-		panic(err)
-	}
-	taiko.StartTest()
+	taiko.RunSuite(l1InitSuite(), l2InitSuite())
+	taiko.RunSuite(clientSuite())
+
+	time.Sleep(100 * time.Second)
+
+	taiko.Release()
 }
