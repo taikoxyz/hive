@@ -422,7 +422,6 @@ func (spec ClientTestSpec) runTest(host *Simulation, suiteID SuiteID, suite *Sui
 		}
 		err := runTest(host, test, func(t *T) {
 			client := t.StartClient(clientDef.Name, spec.Parameters, WithStaticFiles(spec.Files))
-			t.Sim.StopClient(t.SuiteID, t.TestID, client.Container)
 			spec.Run(t, client)
 		})
 		if err != nil {
