@@ -152,7 +152,7 @@ func runLESTests(t *hivesim.T, serverNode *hivesim.Client) {
 		Run: func(t *hivesim.T, client *hivesim.Client) {
 			err := client.RPC().Call(nil, "admin_addPeer", enode)
 			if err != nil {
-				t.Fatalf("connection failed: %v", err)
+				t.Fatalf("connection failed:", err)
 			}
 			waitSynced(client.RPC())
 			runAllTests(t, client, client.Type+" LES")

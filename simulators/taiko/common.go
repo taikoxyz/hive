@@ -1,9 +1,7 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/hive/hivesim"
 	"github.com/shogo82148/go-tap"
 	"io"
@@ -83,20 +81,4 @@ func reportTAP(t *hivesim.T, clientName string, output io.Reader) error {
 		result := hivesim.TestResult{Pass: test.Ok, Details: test.Diagnostic}
 		t.Sim.EndTest(t.SuiteID, testID, result)
 	}
-}
-
-func testGeth(t *hivesim.T, c *hivesim.Client) {
-	url := fmt.Sprintf("http://%v:8545", c.IP)
-
-	client, err := ethclient.Dial(url)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = client.ChainID(context.Background())
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Logf("container id: %s", c.Container)
 }

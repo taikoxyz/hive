@@ -196,8 +196,8 @@ github.com/supranational/blst v0.3.11 h1:LyU6FolezeWAhvQk0k6O/d49jqgO52MSDDfYgbe
 github.com/supranational/blst v0.3.11/go.mod h1:jZJtfjgudtNl4en1tzwPIV3KjUnQUvG3/j+w+fVonLw=
 github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a h1:1ur3QoCqvE5fl+nylMaIr9PVV1w343YRDtsy+Rwu7XI=
 github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a/go.mod h1:RRCYJbIwD5jmqPI9XoAFR0OcDxqUctll6zUj/+B4S48=
-github.com/taikoxyz/hive v0.0.0-20240709105753-817846b93125 h1:otDJhqygujJXUWJqLftzXLdxJS6lPLaKCMDZC/3xve0=
-github.com/taikoxyz/hive v0.0.0-20240709105753-817846b93125/go.mod h1:YIH2Bs5qgMeplR/ZTIonCqXhKvAhYYsklKZb1L2t4Yg=
+github.com/taikoxyz/hive v0.0.0-20240710083326-4c067a1ebcd4 h1:NkLsgMbqhtcqRpHWSSKKnlbwyao4Fj9FuiHl8NBfjP4=
+github.com/taikoxyz/hive v0.0.0-20240710083326-4c067a1ebcd4/go.mod h1:YIH2Bs5qgMeplR/ZTIonCqXhKvAhYYsklKZb1L2t4Yg=
 github.com/tklauser/go-sysconf v0.3.12 h1:0QaGUFOdQaIVdPgfITYzaTegZvdCjmYO52cSFAEVmqU=
 github.com/tklauser/go-sysconf v0.3.12/go.mod h1:Ho14jnntGE1fpdOqQEEaiKRpvIavV0hSfmBq8nJbHYI=
 github.com/tklauser/numcpus v0.6.1 h1:ng9scYS7az0Bk4OZLvrNXNSAO2Pxr1XXRAPyjhIx+Fk=

@@ -2,36 +2,43 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 
 	"github.com/ethereum/hive/hivesim"
 	"github.com/joho/godotenv"
 )
 
-func l1Suite() []hivesim.ClientTestSpec {
-	return []hivesim.ClientTestSpec{
-		{
-			Role:        "geth",
-			Name:        "contract",
-			Description: "Deploy taiko contract on l1 chain",
-			Run:         deployL1Contract,
-			AlwaysRun:   true,
-		},
-		{
-			Role:        "geth",
-			Name:        "setL1Env",
-			Description: "",
-			Run:         setL1Env,
-			AlwaysRun:   true,
-		},
+func l1InitSuite() hivesim.Suite {
+	l1geth := hivesim.Suite{
+		Name:        "l1geth",
+		Description: `l1-geth initialization`,
 	}
+	l1geth.Add(hivesim.ClientTestSpec{
+		Role:        "geth",
+		Name:        "initL1Geth",
+		Description: "Deploy taiko contract on l1 chain and get environment variables",
+		Run:         deployL1Contract,
+		AlwaysRun:   true,
+	})
+
+	return l1geth
 }
 
-func setL1Env(t *hivesim.T, c *hivesim.Client) {
+// Deploy a contract on L1
+func deployL1Contract(t *hivesim.T, c *hivesim.Client) {
 	// Create and connect network.
 	createAndConnectNetwork(t, c.Container)
 
+	// deploy l1 contract.
+	cmd := exec.Command("sh", "/taiko/deploy_l1_contract.sh")
+	if err := runTAP(t, c.Type, cmd); err != nil {
+		t.Fatal(err)
+	}
+
+	setL1Env(t, c)
+}
+
+func setL1Env(t *hivesim.T, c *hivesim.Client) {
 	envs, err := godotenv.Read(envFile)
 	if err != nil {
 		t.Fatal("failed to load env file", err)
@@ -49,18 +56,7 @@ func setL1Env(t *hivesim.T, c *hivesim.Client) {
 		t.Fatal("failed to write env file", err)
 	}
 
-	t.Logf("TAIKO_L1=%s", os.Getenv("TAIKO_L1"))
-}
-
-// Deploy a contract on L1
-func deployL1Contract(t *hivesim.T, c *hivesim.Client) {
-	url := fmt.Sprintf("http://%v:8545", c.IP)
-	if err := os.Setenv("L1_NODE_HTTP_ENDPOINT", url); err != nil {
-		t.Fatal(err)
-	}
-	// deploy l1 contract.
-	cmd := exec.Command("sh", "/taiko/deploy_l1_contract.sh")
-	if err := runTAP(t, c.Type, cmd); err != nil {
-		t.Fatal(err)
+	if err := godotenv.Load(envFile); err != nil {
+		t.Fatal("failed to load env file", err)
 	}
 }

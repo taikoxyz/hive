@@ -4,7 +4,6 @@
 set -e
 
 FLAGS=""
-IP_ADDR=$(hostname -i | awk '{print $1}')
 
 if [ "$HIVE_LOGLEVEL" != "" ]; then
     FLAGS="$FLAGS --loglevel $HIVE_LOGLEVEL"
@@ -23,8 +22,6 @@ fi
 if [ "$HIVE_BOOTNODE" != "" ]; then
     FLAGS="$FLAGS --bootnodes=$HIVE_BOOTNODE"
 fi
-
-FLAGS="$FLAGS --nat extip:$IP_ADDR"
 
 app $FLAGS
 

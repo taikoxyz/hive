@@ -2,24 +2,30 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/hive/hivesim"
 	"github.com/joho/godotenv"
 	"os"
 )
 
-func clientSuite() []hivesim.ClientTestSpec {
-	params, _ := godotenv.Read(envFile)
-	return []hivesim.ClientTestSpec{
-		{
-			Role:        "driver",
-			Name:        "taikoClient",
-			Description: "test taikoClient connection",
-			Parameters:  params,
-			Run:         testConnection,
-			AlwaysRun:   true,
-		},
+func clientSuite() hivesim.Suite {
+	client := hivesim.Suite{
+		Name:        "taikoClient",
+		Description: `taikoClient connection test`,
 	}
+	params, _ := godotenv.Read(envFile)
+	fmt.Printf("++++++++====++++++++++, %v", params)
+
+	client.Add(hivesim.ClientTestSpec{
+		Role:        "driver",
+		Name:        "taikoClient",
+		Description: "test taikoClient connection",
+		Parameters:  params,
+		Run:         testConnection,
+		AlwaysRun:   true,
+	})
+	return client
 }
 
 func testConnection(t *hivesim.T, c *hivesim.Client) {

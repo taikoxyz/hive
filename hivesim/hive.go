@@ -25,8 +25,6 @@ type Simulation struct {
 	m    testMatcher
 	docs *docsCollector
 	ll   int
-
-	enableEndSuite bool
 }
 
 // New looks up the hive host URI using the HIVE_SIMULATOR environment variable
@@ -121,15 +119,8 @@ func (sim *Simulation) StartSuite(suite *simapi.TestRequest, simlog string) (Sui
 	return resp, err
 }
 
-func (sim *Simulation) EnableEndSuite() {
-	sim.enableEndSuite = true
-}
-
 // EndSuite signals the end of a test suite.
 func (sim *Simulation) EndSuite(testSuite SuiteID) error {
-	if !sim.enableEndSuite {
-		return nil
-	}
 	if sim.docs != nil {
 		return sim.docs.EndSuite(testSuite)
 	}
