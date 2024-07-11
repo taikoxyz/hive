@@ -269,7 +269,7 @@ func (api *simAPI) startClient(w http.ResponseWriter, r *http.Request) {
 		options.CheckLive = uint16(v)
 	}
 
-	// startClients it!
+	// Start it!
 	info, err := api.backend.StartContainer(ctx, containerID, options)
 	if info != nil {
 		clientInfo := &ClientInfo{
