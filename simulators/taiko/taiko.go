@@ -43,6 +43,8 @@ func (t *TaikoTestSpec) Release() {
 }
 
 func (t *TaikoTestSpec) init() {
+	t.wait.Add(1)
+
 	suite := hivesim.Suite{
 		Name: "taiko-test-spec",
 		Tests: []hivesim.AnyTest{
@@ -52,7 +54,9 @@ func (t *TaikoTestSpec) init() {
 			},
 		},
 	}
-	hivesim.MustRun(hivesim.New(), suite)
+	go hivesim.MustRun(hivesim.New(), suite)
+
+	t.wait.Wait()
 }
 
 func (t *TaikoTestSpec) run(sim *hivesim.T) {
@@ -63,6 +67,8 @@ func (t *TaikoTestSpec) run(sim *hivesim.T) {
 		t.Fatalf("failed to get client types: %v", err)
 	}
 	t.cDefines = defines
+
+	t.wait.Done()
 
 	<-t.stopCh
 	t.Logf("The taiko-test-spec is stopped.")

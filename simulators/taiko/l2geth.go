@@ -39,7 +39,7 @@ func setL2Env(t *hivesim.T, c *hivesim.Client) {
 	envs["TAIKO_L2"] = "0x1670010000000000000000000000000000010001"
 	envs["L2_SUGGESTED_FEE_RECIPIENT"] = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
 
-	t.Logf("////////////////////, %v", envs)
+	t.Logf("container: %s, envs: %v", c.Container, envs)
 
 	if err := godotenv.Write(envs, envFile); err != nil {
 		t.Fatal("failed to write env file", err)
