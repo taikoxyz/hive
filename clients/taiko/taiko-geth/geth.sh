@@ -7,7 +7,7 @@ HIVE_NETWORK_ID=${HIVE_NETWORK_ID:-167001}
 # Immediately abort the script on any error encountered
 set -e
 
-FLAGS="--datadir /geth/data --state.scheme path"
+FLAGS="--taiko --taiko --datadir /geth/data --state.scheme path"
 # Configure http.
 FLAGS="$FLAGS --http --http.addr 0.0.0.0 --http.api admin,debug,eth,miner,net,personal,txpool,web3"
 # Configure ws.

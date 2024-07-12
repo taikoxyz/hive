@@ -17,8 +17,16 @@ func clientSuite() hivesim.Suite {
 
 	client.Add(hivesim.ClientTestSpec{
 		Role:        "driver",
-		Name:        "testConnection",
-		Description: "test taikoClient connection",
+		Name:        "driver",
+		Description: "driver test connection",
+		Parameters:  params,
+		Run:         testConnection,
+		AlwaysRun:   true,
+	})
+	client.Add(hivesim.ClientTestSpec{
+		Role:        "proposer",
+		Name:        "proposer",
+		Description: "proposer test connection",
 		Parameters:  params,
 		Run:         testConnection,
 		AlwaysRun:   true,
