@@ -1,3 +1,6 @@
-[submodule "simulators/taiko/taiko-mono"]
-	path = simulators/taiko/taiko-mono
+[submodule "aiko/taiko-mono"]
+	path = taiko/taiko-mono
+	url = git@github.com:taikoxyz/taiko-mono.git
+[submodule "taiko/taiko-mono"]
+	path = taiko/taiko-mono
 	url = git@github.com:taikoxyz/taiko-mono.git

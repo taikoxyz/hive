@@ -11,3 +11,8 @@ chain
 simulators/**/Cargo.lock
 simulators/**/target
 simulators/taiko/.env
+simulators/taiko/l1contract_txs.txt
+
+taiko/.env
+taiko/l1contract_txs.txt
+
