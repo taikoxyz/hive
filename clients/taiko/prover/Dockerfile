@@ -10,5 +10,6 @@ WORKDIR /taiko-client
 
 ADD common.sh .
 ADD prover.sh .
+ADD jwt.hex .
 
 ENTRYPOINT ["sh", "/taiko-client/prover.sh"]

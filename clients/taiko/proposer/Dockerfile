@@ -10,5 +10,6 @@ WORKDIR /taiko-client
 
 ADD common.sh .
 ADD proposer.sh .
+ADD jwt.hex .
 
 ENTRYPOINT ["sh", "/taiko-client/proposer.sh"]

@@ -3,7 +3,7 @@
 . /taiko-client/common.sh
 
 # default env
-export JWT_SECRET="/taiko-client/nodes/jwt.hex"
+export JWT_SECRET="/taiko-client/jwt.hex"
 
 check_env "L1_WS"
 check_env "L2_AUTH"
