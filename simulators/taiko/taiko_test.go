@@ -4,17 +4,18 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/prysmaticlabs/prysm/v4/api/client/beacon"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"sort"
 	"testing"
+
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/joho/godotenv"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestCC1(t *testing.T) {
+func TestDeployTaikoContracts(t *testing.T) {
 	cli, err := ethclient.Dial("http://localhost:8545")
 	assert.NoError(t, err)
 
@@ -59,14 +60,12 @@ func TestCC1(t *testing.T) {
 	}
 }
 
-func TestCC(t *testing.T) {
-	cli, err := beacon.NewClient("http://localhost:4000")
-	if err != nil {
-		t.Fatalf("failed to create beacon client: %v", err)
-	}
+func TestSetupTest(t *testing.T) {
+	assert.NoError(t, godotenv.Load(".env"))
 
-	// Get the genesis time.
-	_, err = cli.Get(context.Background(), cli.BaseURL().Path+"/eth/v1/beacon/genesis")
+	t.Log(os.Getenv("L1_PROPOSER_PRIV_KEY"))
+	t.Log(os.Getenv("L1_HTTP"))
+
+	err := initTaikoContract()
 	assert.NoError(t, err)
-
 }

@@ -66,6 +66,14 @@ func (t *TaikoTestSpec) run(sim *hivesim.T) {
 	if err != nil {
 		t.Fatalf("failed to get client types: %v", err)
 	}
+
+	// Show client types.
+	names := make([]string, 0, len(defines))
+	for _, cn := range defines {
+		names = append(names, cn.Name)
+	}
+	t.Logf("client types: %v", names)
+
 	t.cDefines = defines
 
 	t.wait.Done()

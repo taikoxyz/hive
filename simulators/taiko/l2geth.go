@@ -1,12 +1,10 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"github.com/ethereum/go-ethereum/ethclient"
+
 	"github.com/ethereum/hive/hivesim"
 	"github.com/joho/godotenv"
-	"math/big"
 )
 
 func l2InitSuite() hivesim.Suite {
@@ -18,8 +16,11 @@ func l2InitSuite() hivesim.Suite {
 		Role:        "taiko-geth",
 		Name:        "getL2Env",
 		Description: "Get environment variables from taiko-geth",
-		Run:         setL2Env,
-		AlwaysRun:   true,
+		Parameters: map[string]string{
+			"HIVE_CHECK_LIVE_PORT": "8545",
+		},
+		Run:       setL2Env,
+		AlwaysRun: true,
 	})
 
 	return l2Geth
@@ -29,20 +30,6 @@ func setL2Env(t *hivesim.T, c *hivesim.Client) {
 	// Create and connect network.
 	createAndConnectNetwork(t, c.Container)
 
-	client := ethclient.NewClient(c.RPC())
-
-	chainID, err := client.ChainID(context.Background())
-	if err != nil {
-		t.Fatalf("failed to get chainID: %v", err)
-	}
-	t.Logf("taiko-geth chainID: %d", chainID.Uint64())
-
-	header, err := client.HeaderByNumber(context.Background(), big.NewInt(0))
-	if err != nil {
-		t.Fatalf("failed to get header: %v", err)
-	}
-	t.Logf("taiko-geth genesis hash: %s", header.Hash().String())
-
 	envs, err := godotenv.Read(envFile)
 	if err != nil {
 		t.Fatal("failed to load env file", err)
@@ -51,8 +38,6 @@ func setL2Env(t *hivesim.T, c *hivesim.Client) {
 	envs["L2_HTTP"] = fmt.Sprintf("http://%v:8545", c.IP)
 	envs["L2_WS"] = fmt.Sprintf("ws://%v:8546", c.IP)
 	envs["L2_AUTH"] = fmt.Sprintf("http://%v:8551", c.IP)
-	envs["TAIKO_L2"] = "0x1670010000000000000000000000000000010001"
-	envs["L2_SUGGESTED_FEE_RECIPIENT"] = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
 
 	t.Logf("container: %s, envs: %v", c.Container, envs)
 
@@ -60,7 +45,7 @@ func setL2Env(t *hivesim.T, c *hivesim.Client) {
 		t.Fatal("failed to write env file", err)
 	}
 
-	if err := godotenv.Load(envFile); err != nil {
-		t.Fatal("failed to load env file", err)
+	if err = godotenv.Load(envFile); err != nil {
+		t.Fatalf("failed to load env file: %v", err)
 	}
 }

@@ -10,9 +10,8 @@ FROM alpine:latest
 WORKDIR /taiko
 
 COPY .env .
-COPY jwtsecret .
-COPY scripts/get_env.sh .
 COPY l1contract_txs.txt .
+COPY jwtsecret .
 
 COPY --from=builder /usr/local/bin/taiko /usr/local/bin/taiko
 
