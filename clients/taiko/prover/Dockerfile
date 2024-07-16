@@ -1,7 +1,7 @@
 ARG baseimage=us-docker.pkg.dev/evmchain/images/taiko-client
-ARG tag=taiko-client-v0.29.0
+ARG tag=sha256:2e4ba363a115708fad4bd0c0899b1bab8b9454dde753ec6e489b3b417d5ca1ed
 
-FROM $baseimage:$tag
+FROM $baseimage@$tag
 
 # Generate the version.txt file.
 RUN taiko-client --version >/version.txt
