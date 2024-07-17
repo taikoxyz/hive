@@ -86,18 +86,25 @@ func proverSuite() hivesim.Suite {
 }
 
 func testPriver(t *hivesim.T) {
-	tick := time.NewTicker(time.Second * 2)
-	for ; ; <-tick.C {
-		l2Client, err := ethclient.Dial(os.Getenv("L2_HTTP"))
-		if err != nil {
-			t.Errorf("failed to dial l2 client: %v", err)
-		}
-		header, err := l2Client.HeaderByNumber(context.Background(), big.NewInt(-3))
-		if err != nil {
-			t.Errorf("failed to get header: %v", err)
-		} else if header.Number.Uint64() > 0 {
-			t.Logf("finalized number changed, prover work normal, number: %d", header.Number.Uint64())
-			break
+	tick := time.NewTicker(time.Second * 3)
+	defer tick.Stop()
+	for {
+		select {
+		case <-time.After(time.Second * 100):
+			t.Errorf("prover work timeout but finalized number not changed")
+			return
+		case <-tick.C:
+			l2Client, err := ethclient.Dial(os.Getenv("L2_HTTP"))
+			if err != nil {
+				continue
+			}
+			header, err := l2Client.HeaderByNumber(context.Background(), big.NewInt(-3))
+			if err != nil {
+				t.Errorf("failed to get header: %v", err)
+			} else if header.Number.Uint64() > 0 {
+				t.Logf("finalized number changed, prover work normal, number: %d", header.Number.Uint64())
+				break
+			}
 		}
 	}
 }
