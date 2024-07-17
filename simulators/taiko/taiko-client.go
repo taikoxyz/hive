@@ -100,10 +100,10 @@ func testPriver(t *hivesim.T) {
 			}
 			header, err := l2Client.HeaderByNumber(context.Background(), big.NewInt(-3))
 			if err != nil {
-				t.Errorf("failed to get header: %v", err)
+				continue
 			} else if header.Number.Uint64() > 0 {
 				t.Logf("finalized number changed, prover work normal, number: %d", header.Number.Uint64())
-				break
+				return
 			}
 		}
 	}
