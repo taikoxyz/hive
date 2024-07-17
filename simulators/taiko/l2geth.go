@@ -9,8 +9,8 @@ import (
 
 func l2InitSuite() hivesim.Suite {
 	l2Geth := hivesim.Suite{
-		Name:        "taiko-geth",
-		Description: `taiko-geth initialization`,
+		Name:        "l2geth",
+		Description: `l2geth initialization`,
 	}
 	l2Geth.Add(hivesim.ClientTestSpec{
 		Role:        "taiko-geth",
@@ -28,7 +28,7 @@ func l2InitSuite() hivesim.Suite {
 
 func setL2Env(t *hivesim.T, c *hivesim.Client) {
 	// Create and connect network.
-	createAndConnectNetwork(t, c.Container)
+	createOrConnectNetwork(t, c.Container)
 
 	envs, err := godotenv.Read(envFile)
 	if err != nil {

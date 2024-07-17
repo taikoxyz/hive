@@ -1,7 +1,5 @@
 package main
 
-import "time"
-
 func main() {
 	taiko := NewCommonSpec()
 	taiko.RunSuite(l1InitSuite())
@@ -9,8 +7,6 @@ func main() {
 	taiko.RunSuite(driverSuite())
 	taiko.RunSuite(proposerSuite())
 	taiko.RunSuite(proverSuite())
-
-	time.Sleep(50 * time.Second)
 
 	taiko.Release()
 }

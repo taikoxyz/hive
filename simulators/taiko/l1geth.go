@@ -17,7 +17,7 @@ import (
 func l1InitSuite() hivesim.Suite {
 	l1geth := hivesim.Suite{
 		Name:        "l1geth",
-		Description: `l1-geth initialization`,
+		Description: `l1geth initialization`,
 	}
 	l1geth.Add(hivesim.ClientTestSpec{
 		Role:        "geth",
@@ -35,7 +35,7 @@ func l1InitSuite() hivesim.Suite {
 
 func deployContractByTxs(t *hivesim.T, c *hivesim.Client) {
 	// Create and connect network.
-	createAndConnectNetwork(t, c.Container)
+	createOrConnectNetwork(t, c.Container)
 
 	fp, err := os.Open("./l1contract_txs.txt")
 	if err != nil {
