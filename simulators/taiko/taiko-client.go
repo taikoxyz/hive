@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/hive/hivesim"
-	"github.com/joho/godotenv"
 	"math/big"
 	"os"
 	"time"
+
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/hive/hivesim"
+	"github.com/ethereum/hive/taiko"
+	"github.com/joho/godotenv"
 )
 
 func driverSuite() hivesim.Suite {
@@ -23,7 +25,7 @@ func driverSuite() hivesim.Suite {
 		Description: "driver join network and init taiko contracts",
 		Parameters:  params,
 		Run: func(t *hivesim.T, c *hivesim.Client) {
-			createOrConnectNetwork(t, c.Container)
+			taiko.CreateOrConnectNetwork(t, c.Container, network)
 			if err := initTaikoContract(); err != nil {
 				t.Fatalf("failed to init taiko contract: %v", err)
 			}
@@ -46,7 +48,7 @@ func proposerSuite() hivesim.Suite {
 		Description: "proposer join network and init taiko contract",
 		Parameters:  params,
 		Run: func(t *hivesim.T, c *hivesim.Client) {
-			createOrConnectNetwork(t, c.Container)
+			taiko.CreateOrConnectNetwork(t, c.Container, network)
 			if err := initTaikoContract(); err != nil {
 				t.Fatalf("failed to init taiko contract: %v", err)
 			}
@@ -69,7 +71,7 @@ func proverSuite() hivesim.Suite {
 		Description: "prover join network and init taiko contract",
 		Parameters:  params,
 		Run: func(t *hivesim.T, c *hivesim.Client) {
-			createOrConnectNetwork(t, c.Container)
+			taiko.CreateOrConnectNetwork(t, c.Container, network)
 			if err := initTaikoContract(); err != nil {
 				t.Fatalf("failed to init taiko contract: %v", err)
 			}

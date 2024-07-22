@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/hive/taiko"
 	"os"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -35,7 +36,7 @@ func l1InitSuite() hivesim.Suite {
 
 func deployContractByTxs(t *hivesim.T, c *hivesim.Client) {
 	// Create and connect network.
-	createOrConnectNetwork(t, c.Container)
+	taiko.CreateOrConnectNetwork(t, c.Container, network)
 
 	fp, err := os.Open("./l1contract_txs.txt")
 	if err != nil {

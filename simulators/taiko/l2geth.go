@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/ethereum/hive/taiko"
 
 	"github.com/ethereum/hive/hivesim"
 	"github.com/joho/godotenv"
@@ -28,7 +29,7 @@ func l2InitSuite() hivesim.Suite {
 
 func setL2Env(t *hivesim.T, c *hivesim.Client) {
 	// Create and connect network.
-	createOrConnectNetwork(t, c.Container)
+	taiko.CreateOrConnectNetwork(t, c.Container, network)
 
 	envs, err := godotenv.Read(envFile)
 	if err != nil {

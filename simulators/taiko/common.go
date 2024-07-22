@@ -13,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/hive/hivesim"
 	"github.com/ethereum/hive/taiko/bindings/taikotoken"
 )
 
@@ -21,26 +20,6 @@ const (
 	envFile = "/taiko/.env"
 	network = "hive_taiko_network"
 )
-
-var networkCreated = make(map[hivesim.SuiteID]bool)
-
-// createNetwork ensures there is a separate network to be able to send the client traffic
-// from two separate IP addrs.
-func createOrConnectNetwork(t *hivesim.T, container string) {
-	if !networkCreated[t.SuiteID] {
-		if err := t.Sim.CreateNetwork(t.SuiteID, network); err != nil {
-			t.Fatal("can't create network:", err)
-		}
-		if err := t.Sim.ConnectContainer(t.SuiteID, network, "simulation"); err != nil {
-			t.Fatal("can't connect simulation to network:", err)
-		}
-		networkCreated[t.SuiteID] = true
-	}
-
-	if err := t.Sim.ConnectContainer(t.SuiteID, network, container); err != nil {
-		t.Fatal("can't connect container to network:", err)
-	}
-}
 
 func initTaikoContract() error {
 	l1client, err := ethclient.Dial(os.Getenv("L1_HTTP"))
