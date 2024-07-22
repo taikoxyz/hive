@@ -1,4 +1,4 @@
-package main
+package taiko
 
 import (
 	"fmt"
@@ -29,7 +29,7 @@ func NewCommonSpec() *TaikoTestSpec {
 }
 
 func (t *TaikoTestSpec) Release() {
-	// Wait until all the suites finished.
+	// Wait until all the suites finished running.
 	t.wait.Wait()
 
 	// Release containers.
@@ -72,7 +72,7 @@ func (t *TaikoTestSpec) run(sim *hivesim.T) {
 	for _, cn := range defines {
 		names = append(names, cn.Name)
 	}
-	t.Logf("client types: %v", names)
+	t.Logf("docker image types: %v", names)
 
 	t.cDefines = defines
 
