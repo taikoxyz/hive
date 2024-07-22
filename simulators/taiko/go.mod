@@ -68,4 +68,4 @@ require (
 	rsc.io/tmplfunc v0.0.3 // indirect
 )
 
-replace github.com/ethereum/hive v0.0.0-20240715150805-600e094bce47 => github.com/taikoxyz/hive v0.0.0-20240716080305-2913d079b27c
+replace github.com/ethereum/hive v0.0.0-20240715150805-600e094bce47 => github.com/taikoxyz/hive v0.0.0-20240722010902-a70105e1e3c0

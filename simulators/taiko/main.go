@@ -1,7 +1,9 @@
 package main
 
+import taiko2 "github.com/ethereum/hive/taiko"
+
 func main() {
-	taiko := NewCommonSpec()
+	taiko := taiko2.NewCommonSpec()
 	taiko.RunSuite(l1InitSuite())
 	taiko.RunSuite(l2InitSuite())
 	taiko.RunSuite(driverSuite())

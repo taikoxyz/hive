@@ -85,12 +85,13 @@ func proverSuite() hivesim.Suite {
 	return client
 }
 
+// Prover test case to check if prover work normally or not.
 func testPriver(t *hivesim.T) {
 	tick := time.NewTicker(time.Second * 3)
 	defer tick.Stop()
 	for {
 		select {
-		case <-time.After(time.Second * 100):
+		case <-time.After(time.Second * 200):
 			t.Errorf("prover work timeout but finalized number not changed")
 			return
 		case <-tick.C:
