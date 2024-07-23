@@ -3,8 +3,10 @@ name: "Hive Integration Test CI/CD"
 on:
   push:
     branches: [ taiko ]
+    paths-ignore:
+      - "taiko/taiko-mono/**"
     paths:
-      - "./hive_test.go"
+      - "taiko/**"
 
 jobs:
   integration_tests:

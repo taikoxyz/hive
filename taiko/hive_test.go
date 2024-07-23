@@ -1,14 +1,13 @@
-package main
+package taiko
 
 import (
 	"context"
-	"github.com/ethereum/hive/taiko"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestTaikoSimulator(t *testing.T) {
-	hiveTest, err := taiko.NewHiveFramework(&taiko.HiveConfig{
+	hiveTest, err := NewHiveFramework(&HiveConfig{
 		SimPattern: "taiko/driver",
 		Clients: []string{
 			"taiko/geth",
