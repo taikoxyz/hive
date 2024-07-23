@@ -6,7 +6,7 @@ toolchain go1.22.4
 
 require (
 	github.com/ethereum/go-ethereum v1.14.5
-	github.com/ethereum/hive v0.0.0-20240715150805-600e094bce47
+	github.com/ethereum/hive v0.0.0-20240722233756-dfc5aa7bfc04
 	github.com/joho/godotenv v1.5.1
 	github.com/stretchr/testify v1.9.0
 )
@@ -68,4 +68,4 @@ require (
 	rsc.io/tmplfunc v0.0.3 // indirect
 )
 
-replace github.com/ethereum/hive v0.0.0-20240715150805-600e094bce47 => github.com/taikoxyz/hive v0.0.0-20240722015250-9f90dacded8e
+replace github.com/ethereum/hive v0.0.0-20240722233756-dfc5aa7bfc04 => github.com/taikoxyz/hive v0.0.0-20240723031732-8b6c9f4b623f
