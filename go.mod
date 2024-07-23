@@ -102,5 +102,3 @@ require (
 )
 
 replace github.com/ethereum/hive v0.0.0-20240715150805-600e094bce47 => github.com/taikoxyz/hive v0.0.0-20240716080305-2913d079b27c
-
-replace github.com/ethereum/go-ethereum v1.13.15 => github.com/taikoxyz/taiko-geth v0.0.0-20240504072040-7e1b8b65a3f8
