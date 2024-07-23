@@ -1,15 +1,10 @@
-name: "CI"
+name: "Hive Integration Test CI/CD"
 
 on:
   push:
     branches: [ taiko ]
     paths:
       - "./hive_test.go"
-  pull_request:
-    paths:
-      - "./"
-      - "go.mod"
-      - "go.sum"
 
 jobs:
   integration_tests:
