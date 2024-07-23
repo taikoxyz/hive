@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"github.com/ethereum/hive/taiko"
 	"os"
 	"sort"
 	"testing"
@@ -66,6 +67,6 @@ func TestSetupTest(t *testing.T) {
 	t.Log(os.Getenv("L1_PROPOSER_PRIV_KEY"))
 	t.Log(os.Getenv("L1_HTTP"))
 
-	err := initTaikoContract()
+	err := taiko.InitTaikoContract(".env")
 	assert.NoError(t, err)
 }

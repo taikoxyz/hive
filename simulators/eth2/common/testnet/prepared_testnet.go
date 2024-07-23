@@ -77,7 +77,7 @@ func getLogLevelString() string {
 	return "error"
 }
 
-// Build all artifacts require to start a testnet.
+// build all artifacts require to start a testnet.
 func PrepareTestnet(
 	env *Environment,
 	config *Config,

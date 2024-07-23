@@ -382,7 +382,7 @@ func (docs *docsCollector) ClientTypes() ([]*ClientDefinition, error) {
 // Generates the markdown index file that will point to the test suites' markdown files.
 func (docs *docsCollector) generateIndex(simName string) (string, error) {
 	headerBuilder := strings.Builder{}
-	headerBuilder.WriteString(fmt.Sprintf("# Simulator `%s` Test Cases\n\n", simName))
+	headerBuilder.WriteString(fmt.Sprintf("# SimPattern `%s` Test Cases\n\n", simName))
 	headerBuilder.WriteString("## Test Suites\n\n")
 	for _, sID := range docs.suiteIDs() {
 		s := docs.suites[sID]

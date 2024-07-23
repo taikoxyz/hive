@@ -306,7 +306,7 @@ func (tc InvalidPayloadTestCase) Execute(t *test.Env) {
 	})
 }
 
-// Build on top of the latest valid payload after an invalid payload had been received:
+// build on top of the latest valid payload after an invalid payload had been received:
 // P <- INV_P, newPayload(INV_P), fcU(head: P, payloadAttributes: attrs) + getPayload(…)
 type PayloadBuildAfterInvalidPayloadTest struct {
 	test.BaseSpec
@@ -320,7 +320,7 @@ func (s PayloadBuildAfterInvalidPayloadTest) WithMainFork(fork config.Fork) test
 }
 
 func (i PayloadBuildAfterInvalidPayloadTest) GetName() string {
-	name := fmt.Sprintf("Payload Build after New Invalid Payload: Invalid %s", i.InvalidField)
+	name := fmt.Sprintf("Payload build after New Invalid Payload: Invalid %s", i.InvalidField)
 	return name
 }
 
@@ -408,7 +408,7 @@ func (s InvalidTxChainIDTest) WithMainFork(fork config.Fork) test.Spec {
 }
 
 func (s InvalidTxChainIDTest) GetName() string {
-	name := fmt.Sprintf("Build Payload with Invalid ChainID Transaction, %s", s.TestTransactionType)
+	name := fmt.Sprintf("build Payload with Invalid ChainID Transaction, %s", s.TestTransactionType)
 	return name
 }
 

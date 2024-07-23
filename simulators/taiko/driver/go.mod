@@ -1,4 +1,4 @@
-module github.com/ethereum/hive/simulators/taiko/prover
+module github.com/ethereum/hive/simulators/taiko/driver
 
 go 1.21
 
