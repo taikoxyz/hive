@@ -5,9 +5,9 @@ if [ ! -d "taiko-mono/packages/protocol/out" ]; then
     exit 1
 fi
 
-paths=("TaikoToken.sol")
+paths=("TaikoToken.sol" "TaikoL1.sol" "TaikoL2.sol" "GuardianProver.sol")
 
-names=("TaikoToken")
+names=("TaikoToken" "TaikoL1" "TaikoL2" "GuardianProver")
 
 for (( i = 0; i < ${#paths[@]}; ++i ));
 do
@@ -18,6 +18,7 @@ do
     --pkg $lower \
     --type ${names[i]} \
     --out bindings/$lower/${names[i]}.go
+    rm bindings/$lower/${names[i]}.json
 done
 
 exit 0
