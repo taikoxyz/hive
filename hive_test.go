@@ -22,5 +22,5 @@ func TestTaikoSimulator(t *testing.T) {
 	failCount, err := hiveTest.Run(context.Background())
 	assert.NoError(t, err)
 
-	t.Log(failCount)
+	assert.Equal(t, 0, failCount)
 }
