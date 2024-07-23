@@ -1,7 +1,8 @@
-package main
+package taiko
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -87,7 +88,8 @@ func NewHiveFramework(config *HiveConfig) (*HiveFramework, error) {
 	if cfg.DockerNoCache != "" {
 		re, err := regexp.Compile(cfg.DockerNoCache)
 		if err != nil {
-			fatal("bad --docker-nocache regular expression:", err)
+			fmt.Fprintln(os.Stderr, "bad --docker-nocache regular expression:", err)
+			os.Exit(1)
 		}
 		dockerConfig.NoCachePattern = re
 	}
