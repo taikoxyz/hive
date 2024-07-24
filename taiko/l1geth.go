@@ -91,6 +91,7 @@ func setL1Env(t *hivesim.T, c *hivesim.Client, envfile string) {
 
 	envs["L1_HTTP"] = fmt.Sprintf("http://%v:8545", c.IP)
 	envs["L1_WS"] = fmt.Sprintf("ws://%v:8546", c.IP)
+	envs["L1_AUTH"] = fmt.Sprintf("http://%v:8551", c.IP)
 	envs["L1_BEACON"] = fmt.Sprintf("http://%v:3500", c.IP)
 
 	t.Logf("container: %s, envs: %v", c.Container, envs)
