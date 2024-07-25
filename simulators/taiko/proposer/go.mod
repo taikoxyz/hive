@@ -1,4 +1,4 @@
-module github.com/ethereum/hive/simulators/taiko/proposer
+module proposer
 
 go 1.21
 

@@ -1,19 +1,17 @@
-package main
+package taiko
 
 import (
 	"bufio"
 	"context"
 	"encoding/json"
-	"github.com/ethereum/hive/taiko"
-	"os"
-	"sort"
-	"testing"
-
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
+	"os"
+	"sort"
+	"testing"
 )
 
 func TestDeployTaikoContracts(t *testing.T) {
@@ -67,6 +65,19 @@ func TestSetupTest(t *testing.T) {
 	t.Log(os.Getenv("L1_PROPOSER_PRIV_KEY"))
 	t.Log(os.Getenv("L1_HTTP"))
 
-	err := taiko.InitTaikoContract(".env")
+	err := initTaikoContract(".env")
 	assert.NoError(t, err)
+}
+
+func TestL2Reorg(t *testing.T) {
+	ctx := context.Background()
+
+	err := RevertL1Geth(ctx, 10)
+	assert.NoError(t, err)
+	//var number = uint64(3)
+	//err := Revert(ctx, os.Getenv("L2_"), "0xfad2709d0bb03bf0e8ba3c99bea194575d3e98863133d1af638ed056d1d59345", number)
+	//if err != nil {
+	//	t.Fatalf("failed to revert taiko-geth to %d number, err: %s", number, err.Error())
+	//}
+
 }

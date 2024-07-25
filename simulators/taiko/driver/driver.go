@@ -19,6 +19,11 @@ func driverSuite() hivesim.Suite {
 		Run:         testDriver,
 	})
 
+	/*suite.Add(&hivesim.TestSpec{
+		Name: "testL1chainRevert",
+		Run:  testL1chainRevert,
+	})*/
+
 	return suite
 }
 
@@ -48,5 +53,15 @@ func testDriver(t *hivesim.T) {
 				return
 			}
 		}
+	}
+}
+
+func testL1chainRevert(t *hivesim.T) {
+	ctx := context.Background()
+
+	var number = uint64(2)
+	err := taiko.Revert(ctx, os.Getenv("L1_AUTH"), "0xfad2709d0bb03bf0e8ba3c99bea194575d3e98863133d1af638ed056d1d59345", number)
+	if err != nil {
+		t.Fatalf("failed to revert taiko-geth to %d number, err: %s", number, err.Error())
 	}
 }

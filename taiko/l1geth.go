@@ -5,7 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/rpc"
 	"os"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -102,5 +104,47 @@ func setL1Env(t *hivesim.T, c *hivesim.Client, envfile string) {
 
 	if err = godotenv.Load(envfile); err != nil {
 		t.Fatalf("failed to load env file: %v", err)
+	}
+}
+
+func RevertL1Geth(ctx context.Context, number uint64) error {
+	cli, err := rpc.Dial("ws://localhost:8546") //os.Getenv("L1_WS")
+	if err != nil {
+		return err
+	}
+	headers := make(chan *types.Header, 3)
+
+	l1Client := ethclient.NewClient(cli)
+
+	number, err = l1Client.BlockNumber(ctx)
+	if err != nil {
+		return err
+	}
+	number += 2
+
+	sub, err := l1Client.SubscribeNewHead(ctx, headers)
+	if err != nil {
+		return err
+	}
+	defer sub.Unsubscribe()
+
+	for {
+		select {
+		case <-time.After(time.Second * 100):
+			return fmt.Errorf("failed to revert l1 geth")
+		case header := <-headers:
+			fmt.Println("current header number", header.Number.Uint64())
+			if header.Number.Uint64() > number {
+				return fmt.Errorf("number %d is too small, cant revert l1 geth", number)
+			}
+			if header.Number.Uint64() == number {
+				time.Sleep(time.Second)
+				err = cli.CallContext(ctx, nil, "debug_setHead", fmt.Sprintf("0x%x", number-1))
+				if err != nil {
+					return fmt.Errorf("failed to revert l1 geth, err: %v", err)
+				}
+				return nil
+			}
+		}
 	}
 }
