@@ -14,3 +14,5 @@ simulators/**/target
 taiko/.env
 taiko/l1contract_txs.txt
 
+hivesim-rs/Cargo.lock
+hivesim-rs/target

@@ -109,7 +109,7 @@ func (ts BaseTestSpec) ExecutePostFork(
 	// Wait one more slot before continuing
 	testnet.WaitSlots(ctx, 1)
 
-	// startClients sending blob transactions from dedicated accounts
+	// Start sending blob transactions from dedicated accounts
 	blobTxSpammer := utils.TransactionSpammer{
 		T:                        t,
 		Name:                     "blobs",

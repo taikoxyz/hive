@@ -299,7 +299,7 @@ func (tc *BaseTransactionCreator) MakeTransaction(sender SenderAccount, nonce ui
 		txTypeToUse = types.BlobTxType
 	}
 
-	// build the transaction depending on the specified type
+	// Build the transaction depending on the specified type
 	switch txTypeToUse {
 	case types.LegacyTxType:
 		newTxData = &types.LegacyTx{

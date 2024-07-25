@@ -1,5 +1,5 @@
 // ============================================================================== //
-// Pyspec Hive SimPattern: Ported/Altered directly from the Consensus SimPattern.   //
+// Pyspec Hive Simulator: Ported/Altered directly from the Consensus Simulator.   //
 // -> https://github.com/ethereum/hive/tree/master/simulators/ethereum/consensus  //
 // ============================================================================== //
 
