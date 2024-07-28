@@ -192,6 +192,7 @@ github.com/taikoxyz/hive v0.0.0-20240725142147-bd34b52e14f1 h1:3fc2X+ITMxbPvn/P8
 github.com/taikoxyz/hive v0.0.0-20240725142147-bd34b52e14f1/go.mod h1:foQbt67P3caKNcIDJKXqpGSr+pZdKzPrsMpuQDU+Kso=
 github.com/taikoxyz/hive v0.0.0-20240728072638-da67fd754317/go.mod h1:foQbt67P3caKNcIDJKXqpGSr+pZdKzPrsMpuQDU+Kso=
 github.com/taikoxyz/hive v0.0.0-20240728073150-ab7a254d6701/go.mod h1:foQbt67P3caKNcIDJKXqpGSr+pZdKzPrsMpuQDU+Kso=
+github.com/taikoxyz/hive v0.0.0-20240728074151-c1bfeeda5378/go.mod h1:foQbt67P3caKNcIDJKXqpGSr+pZdKzPrsMpuQDU+Kso=
 github.com/tklauser/go-sysconf v0.3.12 h1:0QaGUFOdQaIVdPgfITYzaTegZvdCjmYO52cSFAEVmqU=
 github.com/tklauser/go-sysconf v0.3.12/go.mod h1:Ho14jnntGE1fpdOqQEEaiKRpvIavV0hSfmBq8nJbHYI=
 github.com/tklauser/numcpus v0.6.1 h1:ng9scYS7az0Bk4OZLvrNXNSAO2Pxr1XXRAPyjhIx+Fk=

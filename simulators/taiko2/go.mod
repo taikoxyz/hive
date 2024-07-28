@@ -2,12 +2,11 @@ module taiko2
 
 go 1.22.4
 
-replace github.com/ethereum/hive v0.0.0-20240725044506-491cad42f26b => github.com/taikoxyz/hive v0.0.0-20240728073150-ab7a254d6701
+replace github.com/ethereum/hive v0.0.0-20240725044506-491cad42f26b => github.com/taikoxyz/hive v0.0.0-20240728074151-c1bfeeda5378
 
 require (
 	github.com/ethereum/go-ethereum v1.14.7
 	github.com/ethereum/hive v0.0.0-20240725044506-491cad42f26b
-	github.com/ethereum/hive/simulators/eth2/common v0.0.0-20240725044506-491cad42f26b
 	github.com/marioevz/eth-clients v0.0.0-20231123180401-b4230c802498
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
 )
