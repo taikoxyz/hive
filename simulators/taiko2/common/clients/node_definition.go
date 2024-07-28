@@ -8,7 +8,7 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	cg "github.com/ethereum/hive/simulators/eth2/common/chain_generators"
+	cg "taiko2/common/chain_generators"
 )
 
 // Describe a node setup, which consists of:

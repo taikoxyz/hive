@@ -1,8 +1,8 @@
 package testnet
 
 import (
-	"github.com/ethereum/hive/simulators/eth2/common/clients"
-	consensus_config "github.com/ethereum/hive/simulators/eth2/common/config/consensus"
+	"taiko2/common/clients"
+	consensus_config "taiko2/common/config/consensus"
 )
 
 type Environment struct {

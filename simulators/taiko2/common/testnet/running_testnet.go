@@ -23,8 +23,6 @@ import (
 	"github.com/protolambda/ztyp/tree"
 
 	"github.com/ethereum/hive/hivesim"
-	execution_config "github.com/ethereum/hive/simulators/eth2/common/config/execution"
-	"github.com/ethereum/hive/simulators/eth2/common/utils"
 	"github.com/marioevz/blobber"
 	blobber_config "github.com/marioevz/blobber/config"
 	"github.com/marioevz/blobber/keys"
@@ -32,6 +30,8 @@ import (
 	exec_client "github.com/marioevz/eth-clients/clients/execution"
 	node "github.com/marioevz/eth-clients/clients/node"
 	builder_types "github.com/marioevz/mock-builder/types"
+	execution_config "taiko2/common/config/execution"
+	"taiko2/common/utils"
 )
 
 const (

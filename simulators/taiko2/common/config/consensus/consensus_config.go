@@ -8,13 +8,13 @@ import (
 
 	el_common "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/hive/hivesim"
-	"github.com/ethereum/hive/simulators/eth2/common/config"
 	"github.com/holiman/uint256"
 	"github.com/protolambda/zrnt/eth2/beacon/common"
 	"github.com/protolambda/ztyp/codec"
 	"github.com/protolambda/ztyp/tree"
 	"github.com/protolambda/ztyp/view"
 	"gopkg.in/yaml.v2"
+	"taiko2/common/config"
 )
 
 type ConsensusConfig struct {

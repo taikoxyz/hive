@@ -5,11 +5,11 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/hive/simulators/eth2/common/config"
-	cl "github.com/ethereum/hive/simulators/eth2/common/config/consensus"
-	el "github.com/ethereum/hive/simulators/eth2/common/config/execution"
-	"github.com/ethereum/hive/simulators/eth2/common/testnet"
-	"github.com/ethereum/hive/simulators/eth2/common/utils"
+	"taiko2/common/config"
+	cl "taiko2/common/config/consensus"
+	el "taiko2/common/config/execution"
+	"taiko2/common/testnet"
+	"taiko2/common/utils"
 )
 
 var mnemonic = "couple kiwi radio river setup fortune hunt grief buddy forward perfect empty slim wear bounce drift execute nation tobacco dutch chapter festival ice fog"

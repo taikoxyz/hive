@@ -2,7 +2,7 @@ module taiko2
 
 go 1.22.4
 
-replace github.com/ethereum/hive v0.0.0-20240725044506-491cad42f26b => github.com/taikoxyz/hive v0.0.0-20240728072638-da67fd754317
+replace github.com/ethereum/hive v0.0.0-20240725044506-491cad42f26b => github.com/taikoxyz/hive v0.0.0-20240728073150-ab7a254d6701
 
 require (
 	github.com/ethereum/go-ethereum v1.14.7

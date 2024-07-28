@@ -6,12 +6,12 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/hive/simulators/eth2/common/clients"
-	"github.com/ethereum/hive/simulators/eth2/common/config"
-	consensus_config "github.com/ethereum/hive/simulators/eth2/common/config/consensus"
-	execution_config "github.com/ethereum/hive/simulators/eth2/common/config/execution"
 	blobber_config "github.com/marioevz/blobber/config"
 	mock_builder "github.com/marioevz/mock-builder/mock"
+	"taiko2/common/clients"
+	"taiko2/common/config"
+	consensus_config "taiko2/common/config/consensus"
+	execution_config "taiko2/common/config/execution"
 )
 
 var (

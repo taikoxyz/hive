@@ -17,16 +17,16 @@ import (
 	"github.com/protolambda/zrnt/eth2/configs"
 
 	"github.com/ethereum/hive/hivesim"
-	"github.com/ethereum/hive/simulators/eth2/common/clients"
-	cl "github.com/ethereum/hive/simulators/eth2/common/config/consensus"
-	cl_genesis "github.com/ethereum/hive/simulators/eth2/common/config/consensus/genesis"
-	el "github.com/ethereum/hive/simulators/eth2/common/config/execution"
-	"github.com/ethereum/hive/simulators/eth2/common/utils"
 	beacon_client "github.com/marioevz/eth-clients/clients/beacon"
 	exec_client "github.com/marioevz/eth-clients/clients/execution"
 	validator_client "github.com/marioevz/eth-clients/clients/validator"
 	mock_builder "github.com/marioevz/mock-builder/mock"
 	builder_types "github.com/marioevz/mock-builder/types"
+	"taiko2/common/clients"
+	cl "taiko2/common/config/consensus"
+	cl_genesis "taiko2/common/config/consensus/genesis"
+	el "taiko2/common/config/execution"
+	"taiko2/common/utils"
 )
 
 var (

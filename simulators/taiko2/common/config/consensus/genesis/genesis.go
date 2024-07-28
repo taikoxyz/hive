@@ -8,10 +8,10 @@ import (
 	"taiko2/common/config/consensus/genesis/interfaces"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	consensus_config "github.com/ethereum/hive/simulators/eth2/common/config/consensus"
 	"github.com/protolambda/zrnt/eth2/beacon/common"
 	"github.com/protolambda/zrnt/eth2/beacon/phase0"
 	"github.com/protolambda/ztyp/tree"
+	consensus_config "taiko2/common/config/consensus"
 )
 
 // BuildBeaconState creates a beacon state, with either ExecutionFromGenesis or NoExecutionFromGenesis, the given timestamp, and validators derived from the given keys.

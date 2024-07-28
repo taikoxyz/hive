@@ -10,12 +10,12 @@ import (
 	"time"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/hive/simulators/eth2/common/utils"
 	beacon_client "github.com/marioevz/eth-clients/clients/beacon"
 	"github.com/protolambda/eth2api"
 	"github.com/protolambda/zrnt/eth2/beacon/common"
 	"github.com/protolambda/zrnt/eth2/beacon/deneb"
 	"github.com/protolambda/ztyp/tree"
+	"taiko2/common/utils"
 )
 
 // Interface to specify on which slot the verification will be performed
