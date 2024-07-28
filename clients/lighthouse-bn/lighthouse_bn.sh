@@ -86,7 +86,7 @@ lighthouse \
     --enr-tcp-port="${HIVE_ETH2_P2P_TCP_PORT:-9000}" \
     --enr-udp-port="${HIVE_ETH2_P2P_UDP_PORT:-9000}" \
     --enr-address="${CONTAINER_IP}" \
-    --disable-enr-auto-update=true  \
+    --disable-enr-auto-update  \
     --port="${HIVE_ETH2_P2P_TCP_PORT:-9000}" \
     --discovery-port="${HIVE_ETH2_P2P_UDP_PORT:-9000}"  \
     --target-peers="${HIVE_ETH2_P2P_TARGET_PEERS:-10}" \

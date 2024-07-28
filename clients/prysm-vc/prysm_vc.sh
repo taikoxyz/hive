@@ -12,13 +12,11 @@ do
   pubkey=$(basename "$keystore_path")
 
   /validator accounts import \
-    --prater \
     --accept-terms-of-use=true \
     --wallet-dir="/data/validators" \
     --keys-dir="/hive/input/keystores/$pubkey" \
     --account-password-file="/hive/input/secrets/$pubkey" \
     --wallet-password-file="/wallet.pass"
-
 done
 
 ls  /data/validators
@@ -49,11 +47,11 @@ echo Starting Prysm Validator Client
 /validator \
     --verbosity="$LOG" \
     --accept-terms-of-use=true \
-    --prater \
     --enable-beacon-rest-api=true \
     --beacon-rest-api-provider="http://$HIVE_ETH2_BN_API_IP:${HIVE_ETH2_BN_API_PORT:-4000}" \
     --datadir="/data/vc" \
     --wallet-dir="/data/validators" \
     --wallet-password-file="/wallet.pass" \
     --chain-config-file="/hive/input/config.yaml" \
+    --force-clear-db \
     $builder_option

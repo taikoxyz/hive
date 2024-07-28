@@ -1,5 +1,5 @@
 ARG baseimage=gcr.io/prysmaticlabs/prysm/validator
-ARG tag=latest
+ARG tag=stable
 
 FROM $baseimage:$tag as upstream
 

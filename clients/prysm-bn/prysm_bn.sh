@@ -36,8 +36,8 @@ if [ "$HIVE_TERMINAL_TOTAL_DIFFICULTY" != "" ]; then
     echo "TERMINAL_TOTAL_DIFFICULTY: $HIVE_TERMINAL_TOTAL_DIFFICULTY" >> /hive/input/config.yaml
 fi
 
-if [[ "$HIVE_ETH2_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY" != "" ]]; then
-    echo "SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY: $HIVE_ETH2_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY" >> /hive/input/config.yaml
+if [[ "$HIVE_CONFIG_NAME" != "" ]]; then
+    echo "CONFIG_NAME: $HIVE_CONFIG_NAME" >> /hive/input/config.yaml
 fi
 
 echo config.yaml:
@@ -76,12 +76,12 @@ echo Starting Prysm Beacon Node
     --jwt-secret=/jwtsecret \
     --min-sync-peers=1 \
     --subscribe-all-subnets=true \
-    --enable-debug-rpc-endpoints=true \
     $metrics_option \
     $builder_option \
     --deposit-contract="${HIVE_ETH2_CONFIG_DEPOSIT_CONTRACT_ADDRESS:-0x1111111111111111111111111111111111111111}" \
     --contract-deployment-block="${HIVE_ETH2_DEPOSIT_DEPLOY_BLOCK_NUMBER:-0}" \
     --rpc-host=0.0.0.0 --rpc-port="${HIVE_ETH2_BN_GRPC_PORT:-3500}" \
     --grpc-gateway-host=0.0.0.0 --grpc-gateway-port="${HIVE_ETH2_BN_API_PORT:-4000}" --grpc-gateway-corsdomain="*" \
-    --suggested-fee-recipient="0xa94f5374Fce5edBC8E2a8697C15331677e6EbF0B"
+    --suggested-fee-recipient="0xa94f5374Fce5edBC8E2a8697C15331677e6EbF0B" \
+    --force-clear-db
 # NOTE: gRPC/RPC ports are inverted to allow the simulator to access the REST API
