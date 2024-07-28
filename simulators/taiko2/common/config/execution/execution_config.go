@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"taiko2/common/config"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/hive/hivesim"
-	"github.com/ethereum/hive/simulators/eth2/common/config"
 )
 
 // The runtime deposit contract code, along with the storage that would otherwise have been initialized

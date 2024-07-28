@@ -2,9 +2,8 @@ package execution_config
 
 import (
 	"math/big"
+	"taiko2/common/config"
 	"testing"
-
-	"github.com/ethereum/hive/simulators/eth2/common/config"
 )
 
 func TestBuildChainConfig(t *testing.T) {

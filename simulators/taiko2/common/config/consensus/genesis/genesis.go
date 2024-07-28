@@ -2,13 +2,13 @@ package genesis
 
 import (
 	"fmt"
+	"taiko2/common/config/consensus/genesis/bellatrix"
+	"taiko2/common/config/consensus/genesis/capella"
+	"taiko2/common/config/consensus/genesis/deneb"
+	"taiko2/common/config/consensus/genesis/interfaces"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	consensus_config "github.com/ethereum/hive/simulators/eth2/common/config/consensus"
-	"github.com/ethereum/hive/simulators/eth2/common/config/consensus/genesis/bellatrix"
-	"github.com/ethereum/hive/simulators/eth2/common/config/consensus/genesis/capella"
-	"github.com/ethereum/hive/simulators/eth2/common/config/consensus/genesis/deneb"
-	"github.com/ethereum/hive/simulators/eth2/common/config/consensus/genesis/interfaces"
 	"github.com/protolambda/zrnt/eth2/beacon/common"
 	"github.com/protolambda/zrnt/eth2/beacon/phase0"
 	"github.com/protolambda/ztyp/tree"

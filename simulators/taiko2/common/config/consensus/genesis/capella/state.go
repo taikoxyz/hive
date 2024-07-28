@@ -3,6 +3,7 @@ package capella
 import (
 	"encoding/json"
 	"fmt"
+	"taiko2/common/config/consensus/genesis/interfaces"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"
@@ -11,8 +12,6 @@ import (
 	"github.com/protolambda/zrnt/eth2/configs"
 	"github.com/protolambda/ztyp/tree"
 	"github.com/protolambda/ztyp/view"
-
-	"github.com/ethereum/hive/simulators/eth2/common/config/consensus/genesis/interfaces"
 )
 
 type GenesisStateView struct {
