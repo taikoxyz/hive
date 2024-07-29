@@ -2,7 +2,7 @@ module taiko2
 
 go 1.21
 
-replace github.com/ethereum/hive v0.0.0-20240725044506-491cad42f26b => github.com/taikoxyz/hive v0.0.0-20240728074151-c1bfeeda5378
+replace github.com/ethereum/hive v0.0.0-20240729083334-8fd042df2589 => github.com/taikoxyz/hive v0.0.0-20240729090919-c63848a953ce
 
 replace github.com/protolambda/zrnt => github.com/marioevz/zrnt v0.26.2-0.20231109183115-d2098ec1f42c
 
