@@ -80,6 +80,7 @@ echo Starting Prysm Beacon Node
     $builder_option \
     --deposit-contract="${HIVE_ETH2_CONFIG_DEPOSIT_CONTRACT_ADDRESS:-0x1111111111111111111111111111111111111111}" \
     --contract-deployment-block="${HIVE_ETH2_DEPOSIT_DEPLOY_BLOCK_NUMBER:-0}" \
+    --grpc-gateway-host=0.0.0.0 \
     --rpc-host=0.0.0.0 --rpc-port="${HIVE_ETH2_BN_GRPC_PORT:-3500}" \
     --grpc-gateway-host=0.0.0.0 --grpc-gateway-port="${HIVE_ETH2_BN_API_PORT:-4000}" --grpc-gateway-corsdomain="*" \
     --suggested-fee-recipient="0xa94f5374Fce5edBC8E2a8697C15331677e6EbF0B" \

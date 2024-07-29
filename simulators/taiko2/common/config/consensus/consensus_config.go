@@ -152,7 +152,7 @@ func BuildSpec(
 	spec.Config.TERMINAL_TOTAL_DIFFICULTY = view.Uint256View(*tdd)
 	if executionGenesis.IsPostMerge() {
 		spec.Config.TERMINAL_BLOCK_HASH = tree.Root(executionGenesis.Hash)
-		spec.Config.TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH = common.Epoch(0)
+		spec.Config.TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH = common.Timestamp(0)
 	}
 
 	// Validators can exit immediately

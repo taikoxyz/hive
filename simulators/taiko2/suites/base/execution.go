@@ -7,7 +7,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/hive/hivesim"
 
-	"github.com/ethereum/hive/simulators/ethereum/engine/globals"
 	engine_helper "github.com/ethereum/hive/simulators/ethereum/engine/helper"
 	"github.com/protolambda/eth2api"
 	beacon "github.com/protolambda/zrnt/eth2/beacon/common"
@@ -19,8 +18,8 @@ import (
 var Deneb string = "deneb"
 
 var (
-	blobTxAccounts   = globals.TestAccounts[:len(globals.TestAccounts)/2]
-	normalTxAccounts = globals.TestAccounts[len(globals.TestAccounts)/2:]
+	blobTxAccounts   = utils.TestAccounts[:len(utils.TestAccounts)/2]
+	normalTxAccounts = utils.TestAccounts[len(utils.TestAccounts)/2:]
 )
 
 func WithdrawalAddress(vI beacon.ValidatorIndex) common.Address {

@@ -12,16 +12,14 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/protolambda/zrnt/eth2/beacon"
-	"github.com/protolambda/zrnt/eth2/beacon/common"
-	"github.com/protolambda/zrnt/eth2/configs"
-
 	"github.com/ethereum/hive/hivesim"
 	beacon_client "github.com/marioevz/eth-clients/clients/beacon"
 	exec_client "github.com/marioevz/eth-clients/clients/execution"
 	validator_client "github.com/marioevz/eth-clients/clients/validator"
 	mock_builder "github.com/marioevz/mock-builder/mock"
 	builder_types "github.com/marioevz/mock-builder/types"
+	"github.com/protolambda/zrnt/eth2/beacon"
+	"github.com/protolambda/zrnt/eth2/beacon/common"
 	"taiko2/common/clients"
 	cl "taiko2/common/config/consensus"
 	cl_genesis "taiko2/common/config/consensus/genesis"
@@ -37,7 +35,7 @@ var (
 
 func init() {
 	_ = depositAddress.UnmarshalText(
-		[]byte("0x4242424242424242424242424242424242424242"),
+		[]byte("0x4e59b44847b379578588920ca78fbf26c0b4956c"),
 	)
 }
 
@@ -153,7 +151,7 @@ func PrepareTestnet(
 	}
 
 	spec, err := cl.BuildSpec(
-		configs.Mainnet,
+		utils.Interop,
 		config.ForkConfig,
 		config.ConsensusConfig,
 		depositAddress,
@@ -272,6 +270,7 @@ func PrepareTestnet(
 			executionGenesis.Genesis.Timestamp,
 		),
 		"HIVE_ETH2_GENESIS_FORK": config.GenesisBeaconFork(),
+		"HIVE_CONFIG_NAME":       spec.PRESET_BASE,
 	}
 	if config.DisablePeerScoring {
 		beaconParams["HIVE_ETH2_DISABLE_PEER_SCORING"] = "1"

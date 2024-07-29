@@ -6,7 +6,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/hive/hivesim"
-	"github.com/ethereum/hive/simulators/ethereum/engine/globals"
 	"github.com/ethereum/hive/simulators/ethereum/engine/helper"
 	exec_client "github.com/marioevz/eth-clients/clients/execution"
 )
@@ -15,7 +14,7 @@ type TransactionSpammer struct {
 	*hivesim.T
 	Name                     string
 	ExecutionClients         []*exec_client.ExecutionClient
-	Accounts                 []*globals.TestAccount
+	Accounts                 []*TestAccount
 	Recipient                *common.Address
 	TransactionType          helper.TestTransactionType
 	TransactionsPerIteration int

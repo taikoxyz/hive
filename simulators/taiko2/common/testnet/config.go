@@ -2,10 +2,10 @@ package testnet
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/core/types"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
 	blobber_config "github.com/marioevz/blobber/config"
 	mock_builder "github.com/marioevz/mock-builder/mock"
 	"taiko2/common/clients"
@@ -41,8 +41,8 @@ type Config struct {
 	Eth1Consensus   execution_config.ExecutionConsensus `json:"eth1_consensus,omitempty"`
 
 	// Execution Layer specific config
-	InitialBaseFeePerGas     *big.Int                               `json:"initial_base_fee_per_gas,omitempty"`
-	GenesisExecutionAccounts map[common.Address]core.GenesisAccount `json:"genesis_execution_accounts,omitempty"`
+	InitialBaseFeePerGas     *big.Int                         `json:"initial_base_fee_per_gas,omitempty"`
+	GenesisExecutionAccounts map[common.Address]types.Account `json:"genesis_execution_accounts,omitempty"`
 
 	// Consensus Layer specific config
 	DisablePeerScoring bool `json:"disable_peer_scoring,omitempty"`

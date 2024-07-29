@@ -1,6 +1,6 @@
 module taiko2
 
-go 1.22.4
+go 1.21
 
 replace github.com/ethereum/hive v0.0.0-20240725044506-491cad42f26b => github.com/taikoxyz/hive v0.0.0-20240728074151-c1bfeeda5378
 
@@ -20,7 +20,7 @@ require (
 	github.com/lithammer/dedent v1.1.0
 	github.com/marioevz/blobber v1.1.1-0.20240306221924-a7e22e59ea34
 	github.com/marioevz/eth-clients v0.0.0-20231123180401-b4230c802498
-	github.com/marioevz/mock-builder v1.2.0
+	github.com/marioevz/mock-builder v1.2.1-0.20240312201838-ad9ba388e88b
 	github.com/pkg/errors v0.9.1
 	github.com/protolambda/bls12-381-util v0.1.0
 	github.com/protolambda/eth2api v0.0.0-20230316214135-5f8afbd6d05d

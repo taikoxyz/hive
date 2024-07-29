@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"taiko2/common/config/consensus/genesis/interfaces"
+	"taiko2/common/utils"
 
+	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"
 	"github.com/protolambda/zrnt/eth2/beacon/common"
@@ -62,11 +64,11 @@ func (g *GenesisStateView) SetGenesisExecutionHeader(
 	}
 
 	extra := executionGenesis.Extra()
-	if len(extra) > common.MAX_EXTRA_DATA_BYTES {
+	if len(extra) <= utils.ExtraVanity+utils.ExtraSeal ||
+		(len(extra)-utils.ExtraVanity+utils.ExtraSeal)%ethcommon.AddressLength != 0 {
 		return fmt.Errorf(
-			"extra data is %d bytes, max is %d",
+			"extra data(%d) is not right",
 			len(extra),
-			common.MAX_EXTRA_DATA_BYTES,
 		)
 	}
 	if len(executionGenesis.Transactions()) != 0 {

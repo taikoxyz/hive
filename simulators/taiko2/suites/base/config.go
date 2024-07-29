@@ -2,12 +2,11 @@ package suite_base
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/core/types"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/hive/simulators/ethereum/engine/globals"
 	beacon "github.com/protolambda/zrnt/eth2/beacon/common"
 	"taiko2/common/clients"
 	"taiko2/common/config"
@@ -66,7 +65,7 @@ var (
 			CapellaForkEpoch:        common.Big0,
 			DenebForkEpoch:          common.Big1,
 		},
-		Eth1Consensus: &el.ExecutionPostMergeGenesis{},
+		Eth1Consensus: &el.ExecutionCliqueConsensus{},
 	}
 
 	// This is the account that sends vault funding transactions.
@@ -112,11 +111,11 @@ func (ts BaseTestSpec) GetTestnetConfig(
 
 	nodeCount := ts.GetNodeCount()
 
-	maxValidatingNodeIndex := ts.GetValidatingNodeCount() - 1
+	maxValidatingNodeIndex := ts.GetValidatingNodeCount()
 	nodeDefinitions := make(clients.NodeDefinitions, 0)
 	for i := 0; i < nodeCount; i++ {
 		n := allNodeDefinitions[i%len(allNodeDefinitions)]
-		if i <= maxValidatingNodeIndex {
+		if i < maxValidatingNodeIndex {
 			n.ValidatorShares = 1
 		} else {
 			n.ValidatorShares = 0
@@ -125,15 +124,15 @@ func (ts BaseTestSpec) GetTestnetConfig(
 	}
 
 	// Fund execution layer account for transactions
-	config.GenesisExecutionAccounts = map[common.Address]core.GenesisAccount{
+	config.GenesisExecutionAccounts = map[common.Address]types.Account{
 		CodeContractAddress: {
 			Balance: common.Big0,
 			Code:    CodeContract,
 		},
 	}
 
-	for _, acc := range globals.TestAccounts {
-		config.GenesisExecutionAccounts[acc.GetAddress()] = core.GenesisAccount{
+	for _, acc := range utils.TestAccounts {
+		config.GenesisExecutionAccounts[acc.GetAddress()] = types.Account{
 			Balance: VaultStartAmount,
 		}
 	}

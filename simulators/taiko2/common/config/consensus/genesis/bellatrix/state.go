@@ -3,7 +3,9 @@ package bellatrix
 import (
 	"encoding/json"
 	"fmt"
+	ethcommon "github.com/ethereum/go-ethereum/common"
 	"taiko2/common/config/consensus/genesis/interfaces"
+	"taiko2/common/utils"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"
@@ -57,11 +59,11 @@ func (g *GenesisStateView) SetGenesisExecutionHeader(
 
 	if executionGenesis.Difficulty().Cmp(ttd.ToBig()) >= 0 {
 		extra := executionGenesis.Extra()
-		if len(extra) > common.MAX_EXTRA_DATA_BYTES {
+		if len(extra) <= utils.ExtraVanity+utils.ExtraSeal ||
+			(len(extra)-utils.ExtraVanity+utils.ExtraSeal)%ethcommon.AddressLength != 0 {
 			return fmt.Errorf(
-				"extra data is %d bytes, max is %d",
+				"extra data(%d) is not right",
 				len(extra),
-				common.MAX_EXTRA_DATA_BYTES,
 			)
 		}
 		if len(executionGenesis.Transactions()) != 0 {
