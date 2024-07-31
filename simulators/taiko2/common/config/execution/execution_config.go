@@ -2,10 +2,13 @@ package execution_config
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/prysmaticlabs/prysm/v4/beacon-chain/state"
 	"math/big"
 	"taiko2/common/config"
+	"taiko2/common/utils"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -177,9 +180,10 @@ func (c ExecutionCliqueConsensus) Configure(genesis *core.Genesis) error {
 		Period: c.CliquePeriod,
 		Epoch:  0,
 	}
-	genesis.ExtraData = common.FromHex(
-		"0x0000000000000000000000000000000000000000000000000000000000000000" + c.MinerAddress + "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-	)
+
+	genesis.ExtraData = make([]byte, utils.ExtraVanity+utils.ExtraSeal+common.AddressLength)
+	minerAddr := common.HexToAddress(c.MinerAddress)
+	copy(genesis.ExtraData[utils.ExtraVanity:], minerAddr[:])
 	return nil
 }
 
@@ -276,77 +280,27 @@ func BuildChainConfig(
 }
 
 type ExecutionGenesis struct {
+	GenesisState   state.BeaconState
 	Genesis        *core.Genesis
 	Block          *types.Block
 	Hash           common.Hash
 	DepositAddress common.Address
 }
 
-func BuildExecutionGenesis(
-	genesisTime uint64,
-	consensus ExecutionConsensus,
-	chainConfig *params.ChainConfig,
-	genesisExecAccounts map[common.Address]core.GenesisAccount,
-	initialBaseFee *big.Int,
-) (*ExecutionGenesis, error) {
-	var depositContractAcc core.GenesisAccount
-	if err := json.Unmarshal([]byte(embeddedDepositContract), &depositContractAcc); err != nil {
-		panic(err)
-	}
-
-	genesis := &core.Genesis{
-		Config:     chainConfig,
-		Nonce:      0,
-		Timestamp:  genesisTime,
-		ExtraData:  nil,
-		GasLimit:   30_000_000,
-		Difficulty: big.NewInt(0),
-		BaseFee:    initialBaseFee,
-		Mixhash:    common.Hash{},
-		Coinbase:   common.Address{},
-		Alloc: types.GenesisAlloc{
-			depositContractAddress: depositContractAcc,
-		},
-	}
-
-	for addr, acc := range genesisExecAccounts {
-		acc := acc
-		if acc.Balance == nil {
-			acc.Balance = common.Big0
-		}
-		genesis.Alloc[addr] = acc
-	}
-
-	if chainConfig.CancunTime != nil {
-		var beaconRootContractAcc types.Account
-		if err := json.Unmarshal([]byte(embeddedBeaconRootContract), &beaconRootContractAcc); err != nil {
-			panic(err)
-		}
-		genesis.Alloc[BeaconRootContractAddress] = beaconRootContractAcc
-
-		if genesis.Timestamp >= *chainConfig.CancunTime {
-			if genesis.BlobGasUsed == nil {
-				genesis.BlobGasUsed = new(uint64)
-			}
-			if genesis.ExcessBlobGas == nil {
-				genesis.ExcessBlobGas = new(uint64)
-			}
-		}
-	}
-
-	// Configure consensus
-	if err := consensus.Configure(genesis); err != nil {
+func GetGenesisFromFile(generateGenesisStateFlags *GenesisState) (*ExecutionGenesis, error) {
+	genesisState, genesis, err := GenerateGenesis(context.Background(), generateGenesisStateFlags)
+	if err != nil {
 		return nil, err
 	}
 
-	wrappedGenesis := &ExecutionGenesis{
+	genesisBlock := genesis.ToBlock()
+	return &ExecutionGenesis{
+		GenesisState:   genesisState,
 		Genesis:        genesis,
-		Block:          genesis.ToBlock(),
+		Block:          genesisBlock,
+		Hash:           genesisBlock.Hash(),
 		DepositAddress: depositContractAddress,
-	}
-	wrappedGenesis.Hash = wrappedGenesis.Block.Hash()
-
-	return wrappedGenesis, nil
+	}, nil
 }
 
 func (genesis *ExecutionGenesis) NetworkID() uint64 {
@@ -361,11 +315,9 @@ func (genesis *ExecutionGenesis) IsPostMerge() bool {
 	return genesis.Block.Difficulty().Cmp(genesis.Genesis.Config.TerminalTotalDifficulty) >= 0
 }
 
-func (conf *ExecutionGenesis) ToParams(
-	depositAddress [20]byte,
-) hivesim.Params {
+func (conf *ExecutionGenesis) ToParams() hivesim.Params {
 	params := hivesim.Params{
-		"HIVE_DEPOSIT_CONTRACT_ADDRESS": common.Address(depositAddress).String(),
+		"HIVE_DEPOSIT_CONTRACT_ADDRESS": conf.DepositAddress.String(),
 		"HIVE_NETWORK_ID":               fmt.Sprintf("%d", conf.NetworkID()),
 		"HIVE_CHAIN_ID":                 conf.Genesis.Config.ChainID.String(),
 		"HIVE_FORK_HOMESTEAD":           conf.Genesis.Config.HomesteadBlock.String(),

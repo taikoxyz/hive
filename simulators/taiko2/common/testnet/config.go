@@ -1,17 +1,11 @@
 package testnet
 
 import (
-	"fmt"
-	"github.com/ethereum/go-ethereum/core/types"
 	"math/big"
-
-	"github.com/ethereum/go-ethereum/common"
-	blobber_config "github.com/marioevz/blobber/config"
-	mock_builder "github.com/marioevz/mock-builder/mock"
-	"taiko2/common/clients"
-	"taiko2/common/config"
-	consensus_config "taiko2/common/config/consensus"
 	execution_config "taiko2/common/config/execution"
+
+	blobber_config "github.com/marioevz/blobber/config"
+	"taiko2/common/clients"
 )
 
 var (
@@ -32,28 +26,27 @@ var (
 )
 
 type Config struct {
-	*config.ForkConfig                `json:"fork_config,omitempty"`
-	*consensus_config.ConsensusConfig `json:"consensus_config,omitempty"`
-
 	// Node configurations to launch. Each node as a proportional share of
 	// validators.
 	NodeDefinitions clients.NodeDefinitions             `json:"node_definitions,omitempty"`
 	Eth1Consensus   execution_config.ExecutionConsensus `json:"eth1_consensus,omitempty"`
 
 	// Execution Layer specific config
-	InitialBaseFeePerGas     *big.Int                         `json:"initial_base_fee_per_gas,omitempty"`
-	GenesisExecutionAccounts map[common.Address]types.Account `json:"genesis_execution_accounts,omitempty"`
+	InitialBaseFeePerGas *big.Int `json:"initial_base_fee_per_gas,omitempty"`
 
 	// Consensus Layer specific config
 	DisablePeerScoring bool `json:"disable_peer_scoring,omitempty"`
 
 	// Builders
-	EnableBuilders bool                  `json:"enable_builders,omitempty"`
-	BuilderOptions []mock_builder.Option `json:"builder_options,omitempty"`
+	EnableBuilders bool `json:"enable_builders,omitempty"`
+	//BuilderOptions []mock_builder.Option `json:"builder_options,omitempty"`
 
 	// Blobber
 	EnableBlobber  bool                    `json:"enable_blobber,omitempty"`
 	BlobberOptions []blobber_config.Option `json:"blobber_options,omitempty"`
+
+	// Network
+	Network string
 }
 
 // Choose a configuration value. `b` takes precedence
@@ -70,11 +63,6 @@ func choose(a, b *big.Int) *big.Int {
 // Join two configurations. `b` takes precedence
 func (a *Config) Join(b *Config) *Config {
 	c := Config{}
-	// ForkConfig
-	c.ForkConfig = a.ForkConfig.Join(b.ForkConfig)
-
-	// ConsensusConfig
-	c.ConsensusConfig = a.ConsensusConfig.Join(b.ConsensusConfig)
 
 	// EL config
 	c.InitialBaseFeePerGas = choose(
@@ -94,36 +82,7 @@ func (a *Config) Join(b *Config) *Config {
 		c.Eth1Consensus = a.Eth1Consensus
 	}
 
-	if b.GenesisExecutionAccounts != nil {
-		c.GenesisExecutionAccounts = b.GenesisExecutionAccounts
-	} else {
-		c.GenesisExecutionAccounts = a.GenesisExecutionAccounts
-	}
-
 	c.EnableBuilders = b.EnableBuilders || a.EnableBuilders
 
 	return &c
-}
-
-// Check the configuration and its support by the multiple client definitions
-func (c *Config) FillDefaults() error {
-	if c.SlotsPerEpoch == nil {
-		c.SlotsPerEpoch = big.NewInt(32)
-	}
-	if c.SlotTime == nil {
-		allNodeDefinitions := c.NodeDefinitions
-		if len(
-			allNodeDefinitions.FilterByCL(MINIMAL_SLOT_TIME_CLIENTS),
-		) == len(
-			allNodeDefinitions,
-		) {
-			// If all clients support using minimal 6 second slot time, use it
-			c.SlotTime = big.NewInt(MINIMAL_SLOT_TIME)
-		} else {
-			// Otherwise, use the mainnet 12 second slot time
-			c.SlotTime = big.NewInt(MAINNET_SLOT_TIME)
-		}
-		fmt.Printf("INFO: using %d second slot time\n", c.SlotTime)
-	}
-	return nil
 }

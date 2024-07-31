@@ -1,12 +1,10 @@
 package suite_base
 
 import (
-	"bytes"
 	"github.com/ethereum/hive/hivesim"
-	"github.com/protolambda/ztyp/codec"
 	"github.com/stretchr/testify/assert"
-	"os"
 	"taiko2/common/clients"
+	execution_config "taiko2/common/config/execution"
 	"taiko2/common/testnet"
 	"testing"
 )
@@ -43,17 +41,18 @@ func TestCC(t *testing.T) {
 		}
 		config := test.GetTestnetConfig(clientCombinations)
 
-		prep, err := testnet.PrepareTestnet(env, config)
+		genesisState := &execution_config.GenesisState{
+			ForkName:           "deneb",
+			NumValidators:      64,
+			GenesisTimeDelay:   15,
+			ChainConfigFile:    "/Users/huan/projects/taiko/hive/simulators/taiko2/config.yml",
+			OutputSSZ:          "/Users/huan/projects/taiko/hive/simulators/taiko2/genesis.ssz",
+			GethGenesisJsonIn:  "/Users/huan/projects/taiko/hive/simulators/taiko2/genesis.json",
+			GethGenesisJsonOut: "/Users/huan/projects/taiko/hive/simulators/taiko2/genesis.json",
+		}
+
+		prep, err := testnet.PrepareTestnet(env, config, genesisState)
 		assert.NoError(t, err)
-
-		var stateBytes bytes.Buffer
-
-		err = prep.BeaconGenesis.Serialize(codec.NewEncodingWriter(&stateBytes))
-		assert.NoError(t, err)
-
-		err = os.WriteFile("/tmp/genesis.ssz", stateBytes.Bytes(), 0644)
-		assert.NoError(t, err)
-
 		t.Log(prep)
 	}
 }

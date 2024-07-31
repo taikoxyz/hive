@@ -65,9 +65,9 @@ func (g *GenesisStateView) SetGenesisExecutionHeader(
 
 	extra := executionGenesis.Extra()
 	if len(extra) <= utils.ExtraVanity+utils.ExtraSeal ||
-		(len(extra)-utils.ExtraVanity+utils.ExtraSeal)%ethcommon.AddressLength != 0 {
+		(len(extra)-utils.ExtraVanity-utils.ExtraSeal)%ethcommon.AddressLength != 0 {
 		return fmt.Errorf(
-			"extra data(%d) is not right",
+			"extra data length %d is not right",
 			len(extra),
 		)
 	}

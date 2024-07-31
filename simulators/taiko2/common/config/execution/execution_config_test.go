@@ -1,6 +1,9 @@
 package execution_config
 
 import (
+	"context"
+	"errors"
+	"github.com/stretchr/testify/assert"
 	"math/big"
 	"taiko2/common/config"
 	"testing"
@@ -65,4 +68,34 @@ func TestBuildChainConfig(t *testing.T) {
 	if err == nil {
 		t.Fatalf("Expected error producing chainConfig")
 	}
+}
+
+func TestGetGenesisFromFile(t *testing.T) {
+	genesisState := &GenesisState{
+		ForkName:           "deneb",
+		NumValidators:      64,
+		GenesisTimeDelay:   15,
+		ChainConfigFile:    "/Users/huan/projects/taiko/hive/simulators/taiko2/config.yml",
+		OutputSSZ:          "/Users/huan/projects/taiko/hive/simulators/taiko2/genesis.ssz",
+		GethGenesisJsonIn:  "/Users/huan/projects/taiko/hive/simulators/taiko2/genesis.json",
+		GethGenesisJsonOut: "/Users/huan/projects/taiko/hive/simulators/taiko2/genesis.json",
+	}
+	state, _, err := GenerateGenesis(context.Background(), genesisState)
+	if err != nil {
+		t.Fatalf("Error loading genesis: %v", err)
+	}
+
+	type MinimumSSZMarshal interface {
+		MarshalSSZ() ([]byte, error)
+	}
+	marshalFn := func(o interface{}) ([]byte, error) {
+		marshaler, ok := o.(MinimumSSZMarshal)
+		if !ok {
+			return nil, errors.New("not a marshaler")
+		}
+		return marshaler.MarshalSSZ()
+	}
+	encoded, err := marshalFn(state)
+	assert.NoError(t, err)
+	t.Log("encoded length: ", len(encoded))
 }

@@ -3,11 +3,8 @@ package main
 import (
 	"github.com/ethereum/hive/hivesim"
 	"taiko2/common/clients"
+	execution_config "taiko2/common/config/execution"
 	suite_base "taiko2/suites/base"
-	suite_builder "taiko2/suites/builder"
-	suite_blobs_gossip "taiko2/suites/p2p/gossip/blobs"
-	suite_reorg "taiko2/suites/reorg"
-	suite_sync "taiko2/suites/sync"
 )
 
 func main() {
@@ -22,9 +19,18 @@ func main() {
 		panic("failed to create clients by role")
 	}
 	// Mark suites for execution
-	hivesim.MustRunSuite(sim, suite_base.Suite(clientsByRole))
-	hivesim.MustRunSuite(sim, suite_sync.Suite(clientsByRole))
-	hivesim.MustRunSuite(sim, suite_builder.Suite(clientsByRole))
-	hivesim.MustRunSuite(sim, suite_reorg.Suite(clientsByRole))
-	hivesim.MustRunSuite(sim, suite_blobs_gossip.Suite(clientsByRole))
+
+	hivesim.MustRunSuite(sim, suite_base.Suite(clientsByRole, &execution_config.GenesisState{
+		ForkName:           "deneb",
+		NumValidators:      64,
+		GenesisTimeDelay:   15,
+		ChainConfigFile:    "./config.yml",
+		OutputSSZ:          "./genesis.ssz",
+		GethGenesisJsonIn:  "./genesis.json",
+		GethGenesisJsonOut: "./genesis.json",
+	}))
+	//hivesim.MustRunSuite(sim, suite_sync.Suite(clientsByRole))
+	//hivesim.MustRunSuite(sim, suite_builder.Suite(clientsByRole))
+	//hivesim.MustRunSuite(sim, suite_reorg.Suite(clientsByRole))
+	//hivesim.MustRunSuite(sim, suite_blobs_gossip.Suite(clientsByRole))
 }

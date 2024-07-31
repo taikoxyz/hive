@@ -3,6 +3,7 @@ package suite_base
 import (
 	"github.com/ethereum/hive/hivesim"
 	"taiko2/common/clients"
+	"taiko2/common/config/execution"
 	"taiko2/suites"
 )
 
@@ -40,7 +41,7 @@ func init() {
 	)
 }
 
-func Suite(c *clients.ClientDefinitionsByRole) hivesim.Suite {
-	suites.SuiteHydrate(&testSuite, c, Tests)
+func Suite(c *clients.ClientDefinitionsByRole, generateState *execution_config.GenesisState) hivesim.Suite {
+	suites.SuiteHydrate(&testSuite, c, Tests, generateState)
 	return testSuite
 }

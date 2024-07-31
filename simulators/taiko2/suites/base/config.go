@@ -2,16 +2,14 @@ package suite_base
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/core/types"
 	"math/big"
+	execution_config "taiko2/common/config/execution"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/params"
 	beacon "github.com/protolambda/zrnt/eth2/beacon/common"
 	"taiko2/common/clients"
-	"taiko2/common/config"
 	cl "taiko2/common/config/consensus"
-	el "taiko2/common/config/execution"
 	"taiko2/common/testnet"
 	"taiko2/common/utils"
 )
@@ -51,23 +49,6 @@ type BaseTestSpec struct {
 var (
 	DEFAULT_VALIDATOR_COUNT uint64 = 128
 
-	EPOCHS_TO_FINALITY beacon.Epoch = 4
-
-	// Default config used for all tests unless a client specific config exists
-	DEFAULT_CONFIG = &testnet.Config{
-		ConsensusConfig: &cl.ConsensusConfig{
-			ValidatorCount: big.NewInt(int64(DEFAULT_VALIDATOR_COUNT)),
-		},
-		ForkConfig: &config.ForkConfig{
-			TerminalTotalDifficulty: common.Big0,
-			AltairForkEpoch:         common.Big0,
-			BellatrixForkEpoch:      common.Big0,
-			CapellaForkEpoch:        common.Big0,
-			DenebForkEpoch:          common.Big1,
-		},
-		Eth1Consensus: &el.ExecutionCliqueConsensus{},
-	}
-
 	// This is the account that sends vault funding transactions.
 	VaultStartAmount, _ = new(big.Int).SetString("d3c21bcecceda1000000", 16)
 
@@ -103,17 +84,9 @@ func (ts BaseTestSpec) GetValidatingNodeCount() int {
 func (ts BaseTestSpec) GetTestnetConfig(
 	allNodeDefinitions clients.NodeDefinitions,
 ) *testnet.Config {
-	config := *DEFAULT_CONFIG
-
-	if ts.DenebGenesis {
-		config.DenebForkEpoch = common.Big0
-	}
-
-	nodeCount := ts.GetNodeCount()
-
 	maxValidatingNodeIndex := ts.GetValidatingNodeCount()
 	nodeDefinitions := make(clients.NodeDefinitions, 0)
-	for i := 0; i < nodeCount; i++ {
+	for i := 0; i < ts.GetNodeCount(); i++ {
 		n := allNodeDefinitions[i%len(allNodeDefinitions)]
 		if i < maxValidatingNodeIndex {
 			n.ValidatorShares = 1
@@ -123,20 +96,9 @@ func (ts BaseTestSpec) GetTestnetConfig(
 		nodeDefinitions = append(nodeDefinitions, n)
 	}
 
-	// Fund execution layer account for transactions
-	config.GenesisExecutionAccounts = map[common.Address]types.Account{
-		CodeContractAddress: {
-			Balance: common.Big0,
-			Code:    CodeContract,
-		},
+	config := &testnet.Config{
+		Eth1Consensus: execution_config.ExecutionCliqueConsensus{},
 	}
-
-	for _, acc := range utils.TestAccounts {
-		config.GenesisExecutionAccounts[acc.GetAddress()] = types.Account{
-			Balance: VaultStartAmount,
-		}
-	}
-
 	return config.Join(&testnet.Config{
 		NodeDefinitions: nodeDefinitions,
 	})

@@ -4,50 +4,36 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/big"
-	"net"
-	"os"
-	"strconv"
-	"strings"
-	"time"
-
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/hive/hivesim"
 	beacon_client "github.com/marioevz/eth-clients/clients/beacon"
 	exec_client "github.com/marioevz/eth-clients/clients/execution"
-	validator_client "github.com/marioevz/eth-clients/clients/validator"
-	mock_builder "github.com/marioevz/mock-builder/mock"
-	builder_types "github.com/marioevz/mock-builder/types"
-	"github.com/protolambda/zrnt/eth2/beacon"
 	"github.com/protolambda/zrnt/eth2/beacon/common"
+	"math/big"
+	"os"
+	"strconv"
+	"strings"
 	"taiko2/common/clients"
 	cl "taiko2/common/config/consensus"
-	cl_genesis "taiko2/common/config/consensus/genesis"
+	consensus_config "taiko2/common/config/consensus"
 	el "taiko2/common/config/execution"
 	"taiko2/common/utils"
 )
 
 var (
-	depositAddress                              common.Eth1Address
 	DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY = big.NewInt(128)
 	DEFAULT_MAX_CONSECUTIVE_ERRORS_ON_WAITS     = 3
 )
 
-func init() {
-	_ = depositAddress.UnmarshalText(
-		[]byte("0x4e59b44847b379578588920ca78fbf26c0b4956c"),
-	)
-}
-
 // PreparedTestnet has all the options for starting nodes, ready to build the network.
 type PreparedTestnet struct {
 	// Consensus chain configuration
-	Spec *common.Spec
+	Spec *consensus_config.Spec
 
 	// Execution chain configuration and genesis info
 	ExecutionGenesis *el.ExecutionGenesis
 	// Consensus genesis state
-	BeaconGenesis common.BeaconState
+	//BeaconGenesis common.BeaconState
 
 	ValidatorsSetupDetails cl.ValidatorsSetupDetails
 
@@ -79,58 +65,32 @@ func getLogLevelString() string {
 func PrepareTestnet(
 	env *Environment,
 	config *Config,
+	generateState *el.GenesisState,
 ) (*PreparedTestnet, error) {
-	genesisTime := common.Timestamp(time.Now().Unix()) + 30
-
-	// Sanitize configuration according to the clients used
-	if err := config.FillDefaults(); err != nil {
-		return nil, fmt.Errorf("FAIL: error filling defaults: %v", err)
-	}
-
+	// Show config file
 	if configJson, err := json.MarshalIndent(config, "", "  "); err != nil {
 		panic(err)
 	} else {
 		fmt.Printf("Testnet config: %s\n", configJson)
 	}
 
-	// Generate genesis for execution clients
-	chainConfig, err := el.BuildChainConfig(
-		config.TerminalTotalDifficulty,
-		uint64(genesisTime),
-		config.SlotsPerEpoch.Uint64(),
-		config.SlotTime.Uint64(),
-		config.ForkConfig,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error producing chainConfig: %v", err)
-	}
-
-	executionGenesis, err := el.BuildExecutionGenesis(
-		uint64(genesisTime),
-		config.Eth1Consensus,
-		chainConfig,
-		config.GenesisExecutionAccounts,
-		config.InitialBaseFeePerGas,
-	)
+	executionGenesis, err := el.GetGenesisFromFile(generateState)
 	if err != nil {
 		return nil, fmt.Errorf("error producing execution genesis: %v", err)
 	}
 
-	eth1ConfigOpt := executionGenesis.ToParams(depositAddress)
 	eth1Bundle, err := el.ExecutionBundle(executionGenesis.Genesis)
 	if err != nil {
 		return nil, fmt.Errorf("unable to bundle execution genesis: %v", err)
 	}
-	execNodeOpts := hivesim.Params{
-		"HIVE_LOGLEVEL": os.Getenv("HIVE_LOGLEVEL"),
-		"HIVE_NODETYPE": "full",
-	}
-	jwtSecret := hivesim.Params{"HIVE_JWTSECRET": "true"}
 	executionOpts := hivesim.Bundle(
-		eth1ConfigOpt,
+		executionGenesis.ToParams(),
 		eth1Bundle,
-		execNodeOpts,
-		jwtSecret,
+		hivesim.Params{
+			"HIVE_LOGLEVEL": os.Getenv("HIVE_LOGLEVEL"),
+			"HIVE_NODETYPE": "full",
+		},
+		hivesim.Params{"HIVE_JWTSECRET": "true"},
 	)
 
 	// Pre-generate PoW chains for clients that require it
@@ -150,95 +110,32 @@ func PrepareTestnet(
 		}
 	}
 
-	spec, err := cl.BuildSpec(
-		utils.Interop,
-		config.ForkConfig,
-		config.ConsensusConfig,
-		depositAddress,
-		executionGenesis,
-	)
+	spec, err := cl.BuildSpec(generateState.ChainConfigFile)
 	if err != nil {
 		return nil, fmt.Errorf("error producing spec: %v", err)
 	}
 
 	// Generate keys opts for validators
 	shares := config.NodeDefinitions.Shares()
-	// ExtraShares defines an extra set of keys that none of the nodes will have.
-	// E.g. to produce an environment where none of the nodes has 50%+ of the keys.
-	if config.ExtraShares != nil {
-		shares = append(shares, config.ExtraShares.Uint64())
-	}
 	keyTranches := env.Validators.KeyTranches(shares)
 
 	consensusConfigOpts, err := cl.ConsensusConfigsBundle(
 		spec,
 		executionGenesis.Hash,
-		config.ValidatorCount.Uint64(),
+		len(executionGenesis.GenesisState.Validators()),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error producing consensus config bundle: %v", err)
 	}
 
-	var optimisticSync hivesim.Params
-	if config.SafeSlotsToImportOptimistically == nil {
-		config.SafeSlotsToImportOptimistically = DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY
-	}
-	optimisticSync = optimisticSync.Set(
-		"HIVE_ETH2_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY",
-		fmt.Sprintf("%d", config.SafeSlotsToImportOptimistically),
-	)
-
-	// prepare genesis beacon state, with all the validators in it.
-	state, err := cl_genesis.BuildBeaconState(
-		spec,
-		executionGenesis.Block,
-		genesisTime,
-		env.Validators,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error producing beacon genesis state: %v", err)
-	}
-	genValRoot, err := state.GenesisValidatorsRoot()
+	genValRoot := executionGenesis.GenesisState.GenesisValidatorsRoot()
 	if err != nil {
 		return nil, fmt.Errorf("error producing genesis validators root: %v", err)
 	}
 	fmt.Printf("Genesis validators root: %s\n", genValRoot)
 
-	forkDecoder := beacon.NewForkDecoder(spec, genValRoot)
-	for _, currentConfig := range []struct {
-		ForkName      string
-		VersionConfig *common.ForkDigest
-	}{
-		{
-			ForkName:      "genesis",
-			VersionConfig: &forkDecoder.Genesis,
-		},
-		{
-			ForkName:      "altair",
-			VersionConfig: &forkDecoder.Altair,
-		},
-		{
-			ForkName:      "bellatrix",
-			VersionConfig: &forkDecoder.Bellatrix,
-		},
-		{
-			ForkName:      "capella",
-			VersionConfig: &forkDecoder.Capella,
-		},
-		{
-			ForkName:      "deneb",
-			VersionConfig: &forkDecoder.Deneb,
-		},
-	} {
-		fmt.Printf(
-			"Fork %s digest: %s\n",
-			currentConfig.ForkName,
-			currentConfig.VersionConfig.String(),
-		)
-	}
-
 	// Write info so that the genesis state can be generated by the client
-	stateOpt, err := cl.StateBundle(state)
+	stateOpt, err := cl.StateBundle(executionGenesis.GenesisState)
 	if err != nil {
 		return nil, fmt.Errorf("error producing state bundle: %v", err)
 	}
@@ -253,7 +150,7 @@ func PrepareTestnet(
 			"%d",
 			beacon_client.PortMetrics,
 		),
-		"HIVE_ETH2_CONFIG_DEPOSIT_CONTRACT_ADDRESS": depositAddress.String(),
+		"HIVE_ETH2_CONFIG_DEPOSIT_CONTRACT_ADDRESS": executionGenesis.DepositAddress.String(),
 		"HIVE_ETH2_DEPOSIT_DEPLOY_BLOCK_HASH": fmt.Sprintf(
 			"%s",
 			executionGenesis.Hash,
@@ -269,8 +166,7 @@ func PrepareTestnet(
 			"%d",
 			executionGenesis.Genesis.Timestamp,
 		),
-		"HIVE_ETH2_GENESIS_FORK": config.GenesisBeaconFork(),
-		"HIVE_CONFIG_NAME":       spec.PRESET_BASE,
+		"HIVE_CONFIG_NAME": spec.PresetBase,
 	}
 	if config.DisablePeerScoring {
 		beaconParams["HIVE_ETH2_DISABLE_PEER_SCORING"] = "1"
@@ -281,7 +177,6 @@ func PrepareTestnet(
 		beaconParams,
 		stateOpt,
 		consensusConfigOpts,
-		optimisticSync,
 	)
 
 	validatorOpts := hivesim.Bundle(
@@ -295,7 +190,6 @@ func PrepareTestnet(
 	return &PreparedTestnet{
 		Spec:                   spec,
 		ExecutionGenesis:       executionGenesis,
-		BeaconGenesis:          state,
 		ValidatorsSetupDetails: env.Validators,
 		executionOpts:          executionOpts,
 		beaconOpts:             beaconOpts,
@@ -305,21 +199,17 @@ func PrepareTestnet(
 }
 
 func (p *PreparedTestnet) createTestnet(t *hivesim.T) *Testnet {
-	genesisTime, _ := p.BeaconGenesis.GenesisTime()
-	genesisValidatorsRoot, _ := p.BeaconGenesis.GenesisValidatorsRoot()
-	validators, err := utils.NewValidators(p.Spec, p.BeaconGenesis, p.ValidatorsSetupDetails.KeysMap(0))
-	if err != nil {
-		panic(err)
-	}
+	genesisState := p.ExecutionGenesis.GenesisState
+	genesisTime := genesisState.GenesisTime()
+	genesisValidatorsRoot := genesisState.GenesisValidatorsRoot()
 	return &Testnet{
 		T:                     t,
-		genesisTime:           genesisTime,
-		genesisValidatorsRoot: genesisValidatorsRoot,
+		genesisTime:           common.Timestamp(genesisTime),
+		genesisValidatorsRoot: common.Root(genesisValidatorsRoot),
 		spec:                  p.Spec,
 		executionGenesis:      p.ExecutionGenesis,
-		eth2GenesisState:      p.BeaconGenesis,
 
-		Validators:      validators,
+		Validators:      genesisState.Validators(),
 		ValidatorGroups: make(map[string]*utils.Validators),
 
 		// Testing
@@ -335,8 +225,8 @@ func (p *PreparedTestnet) prepareExecutionNode(
 	eth1Def *hivesim.ClientDefinition,
 	consensus el.ExecutionConsensus,
 	chain []*types.Block,
-	config exec_client.ExecutionClientConfig,
-) *exec_client.ExecutionClient {
+	config clients.ExecutionClientConfig,
+) *clients.ExecutionClient {
 	testnet.Logf(
 		"Preparing execution node: %s (%s)",
 		eth1Def.Name,
@@ -410,7 +300,7 @@ func (p *PreparedTestnet) prepareExecutionNode(
 		return opts, nil
 	}
 
-	return &exec_client.ExecutionClient{
+	return &clients.ExecutionClient{
 		Client: cm,
 		Logger: testnet.T,
 		Config: config,
@@ -423,11 +313,9 @@ func (p *PreparedTestnet) prepareBeaconNode(
 	parentCtx context.Context,
 	testnet *Testnet,
 	beaconDef *hivesim.ClientDefinition,
-	enableBuilders bool,
-	builderOptions []mock_builder.Option,
-	config beacon_client.BeaconClientConfig,
-	eth1Endpoints ...*exec_client.ExecutionClient,
-) *beacon_client.BeaconClient {
+	config *clients.BeaconClientConfig,
+	eth1Endpoints ...*clients.ExecutionClient,
+) *clients.BeaconClient {
 	testnet.Logf(
 		"Preparing beacon node: %s (%s)",
 		beaconDef.Name,
@@ -444,46 +332,10 @@ func (p *PreparedTestnet) prepareBeaconNode(
 		Port:                 int64(config.BeaconAPIPort),
 	}
 
-	cl := &beacon_client.BeaconClient{
+	cl := &clients.BeaconClient{
 		Client: cm,
 		Logger: testnet.T,
 		Config: config,
-	}
-
-	if enableBuilders {
-		simIP, err := testnet.T.Sim.ContainerNetworkIP(
-			testnet.T.SuiteID,
-			"bridge",
-			"simulation",
-		)
-		if err != nil {
-			panic(err)
-		}
-
-		options := []mock_builder.Option{
-			mock_builder.WithExternalIP(net.ParseIP(simIP)),
-			mock_builder.WithPort(
-				mock_builder.DEFAULT_BUILDER_PORT + config.ClientIndex,
-			),
-			mock_builder.WithID(config.ClientIndex),
-			mock_builder.WithBeaconGenesisTime(testnet.genesisTime),
-			mock_builder.WithSpec(p.Spec),
-			mock_builder.WithLogLevel(getLogLevelString()),
-		}
-
-		if builderOptions != nil {
-			options = append(options, builderOptions...)
-		}
-
-		cl.Builder, err = mock_builder.NewMockBuilder(
-			parentCtx,
-			eth1Endpoints[0],
-			cl,
-			options...,
-		)
-		if err != nil {
-			panic(err)
-		}
 	}
 
 	// This method will return the options used to run the client.
@@ -565,21 +417,6 @@ func (p *PreparedTestnet) prepareBeaconNode(
 			},
 		)
 
-		if cl.Builder != nil {
-			if builder, ok := cl.Builder.(builder_types.Builder); ok {
-				opts = append(opts, hivesim.Params{
-					"HIVE_ETH2_BUILDER_ENDPOINT": builder.Address(),
-				})
-			} else {
-				panic(fmt.Errorf("builder is not a Builder"))
-			}
-		}
-
-		// TODO
-		//if p.configName != "mainnet" && hasBuildTarget(beaconDef, p.configName) {
-		//	opts = append(opts, hivesim.WithBuildTarget(p.configName))
-		//}
-
 		return opts, nil
 	}
 
@@ -592,9 +429,9 @@ func (p *PreparedTestnet) prepareValidatorClient(
 	parentCtx context.Context,
 	testnet *Testnet,
 	validatorDef *hivesim.ClientDefinition,
-	bn *beacon_client.BeaconClient,
+	bn *clients.BeaconClient,
 	keyIndex int,
-) *validator_client.ValidatorClient {
+) *clients.ValidatorClient {
 	testnet.Logf(
 		"Preparing validator client: %s (%s)",
 		validatorDef.Name,
@@ -630,44 +467,12 @@ func (p *PreparedTestnet) prepareValidatorClient(
 			"HIVE_ETH2_BN_API_PORT",
 			fmt.Sprintf("%d", bn.Config.BeaconAPIPort),
 		)
-		if testnet.blobber != nil {
-			simIP, err := testnet.T.Sim.ContainerNetworkIP(
-				testnet.T.SuiteID,
-				"bridge",
-				"simulation",
-			)
-			if err != nil {
-				panic(err)
-			}
-
-			p := testnet.blobber.AddBeaconClient(bn, true)
-			bnAPIOpt = bnAPIOpt.Set(
-				"HIVE_ETH2_BN_API_IP",
-				simIP,
-			)
-			bnAPIOpt = bnAPIOpt.Set(
-				"HIVE_ETH2_BN_API_PORT",
-				fmt.Sprintf("%d", p.Port()),
-			)
-		}
 		opts := []hivesim.StartOption{p.validatorOpts, keys.Bundle(), bnAPIOpt}
 
-		if bn.Builder != nil {
-			if builder, ok := bn.Builder.(builder_types.Builder); ok {
-				opts = append(opts, hivesim.Params{
-					"HIVE_ETH2_BUILDER_ENDPOINT": builder.Address(),
-				})
-			}
-		}
-
-		// TODO
-		//if p.configName != "mainnet" && hasBuildTarget(validatorDef, p.configName) {
-		//	opts = append(opts, hivesim.WithBuildTarget(p.configName))
-		//}
 		return opts, nil
 	}
 
-	return &validator_client.ValidatorClient{
+	return &clients.ValidatorClient{
 		Client:       cm,
 		Logger:       testnet.T,
 		ClientIndex:  keyIndex,

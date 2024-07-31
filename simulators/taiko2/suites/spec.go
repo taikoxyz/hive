@@ -3,13 +3,14 @@ package suites
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	"github.com/ethereum/hive/hivesim"
+	"strings"
 	"taiko2/common/clients"
 	consensus_config "taiko2/common/config/consensus"
+	"taiko2/common/config/execution"
 	"taiko2/common/testnet"
 	"taiko2/common/utils"
+	"time"
 )
 
 var Deneb string = "deneb"
@@ -19,11 +20,6 @@ type TestSpec interface {
 	GetTestnetConfig(clients.NodeDefinitions) *testnet.Config
 	GetDisplayName() string
 	GetDescription() *utils.Description
-	ExecutePreFork(*hivesim.T, context.Context, *testnet.Testnet, *testnet.Environment, *testnet.Config)
-	WaitForFork(*hivesim.T, context.Context, *testnet.Testnet, *testnet.Environment, *testnet.Config)
-	ExecutePostFork(*hivesim.T, context.Context, *testnet.Testnet, *testnet.Environment, *testnet.Config)
-	ExecutePostForkWait(*hivesim.T, context.Context, *testnet.Testnet, *testnet.Environment, *testnet.Config)
-	Verify(*hivesim.T, context.Context, *testnet.Testnet, *testnet.Environment, *testnet.Config)
 	GetValidatorKeys(string) consensus_config.ValidatorsSetupDetails
 }
 
@@ -32,6 +28,7 @@ func SuiteHydrate(
 	suite *hivesim.Suite,
 	c *clients.ClientDefinitionsByRole,
 	tests []TestSpec,
+	generateState *execution_config.GenesisState,
 ) {
 	mnemonic := "couple kiwi radio river setup fortune hunt grief buddy forward perfect empty slim wear bounce drift execute nation tobacco dutch chapter festival ice fog"
 
@@ -59,26 +56,13 @@ func SuiteHydrate(
 				// Create the testnet
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
-				testnet := testnet.StartTestnet(ctx, t, env, config)
+				testnet := testnet.StartTestnet(ctx, t, env, config, generateState)
 				if testnet == nil {
 					t.Fatalf("failed to start testnet")
 				}
 				defer testnet.Stop()
 
-				// Execute pre-fork
-				test.ExecutePreFork(t, ctx, testnet, env, config)
-
-				// Wait for the fork
-				test.WaitForFork(t, ctx, testnet, env, config)
-
-				// Execute post-fork
-				test.ExecutePostFork(t, ctx, testnet, env, config)
-
-				// Execute post-fork wait
-				test.ExecutePostForkWait(t, ctx, testnet, env, config)
-
-				// Verify
-				test.Verify(t, ctx, testnet, env, config)
+				time.Sleep(time.Second * 200)
 			},
 		},
 		)

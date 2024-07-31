@@ -22,6 +22,10 @@ type HiveManagedClient struct {
 	extraStartOptions []hivesim.StartOption
 }
 
+func (h *HiveManagedClient) HiveClient() *hivesim.Client {
+	return h.hiveClient
+}
+
 func (h *HiveManagedClient) IsRunning() bool {
 	return h.hiveClient != nil
 }

@@ -4,15 +4,15 @@ RUN apk --no-cache add gcc musl-dev linux-headers cmake make clang build-base cl
 
 WORKDIR /source
 ADD . /source
-RUN go mod download && go build -o /usr/local/bin/sim
 
+RUN go build -v
 
 # Build within simulator folder
 WORKDIR /source
 RUN go build -o ./ .
 
 # Build the runner container.
-FROM alpine:latest
-COPY --from=builder /usr/local/bin/sim /usr/local/bin/sim
+#FROM golang:1.22-alpine
+#COPY --from=builder /source/taiko2 /usr/local/bin/taiko2
 
-ENTRYPOINT ["sim"]
+ENTRYPOINT ["/source/taiko2"]
