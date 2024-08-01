@@ -22,8 +22,8 @@ import (
 const (
 	PortBeaconTCP    = 9000
 	PortBeaconUDP    = 9000
-	PortBeaconAPI    = 4000
-	PortBeaconGRPC   = 4001
+	PortBeaconAPI    = 3500
+	PortBeaconGRPC   = 4000
 	PortMetrics      = 8080
 	PortValidatorAPI = 5000
 )

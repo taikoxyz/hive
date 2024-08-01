@@ -47,6 +47,9 @@ type Config struct {
 
 	// Network
 	Network string
+
+	JWTSecret  string
+	FeeReceipt string
 }
 
 // Choose a configuration value. `b` takes precedence

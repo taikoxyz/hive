@@ -171,22 +171,17 @@ type ValidatorsKeys map[common.ValidatorIndex]*validator.ValidatorKeys
 func (keys ValidatorsKeys) Bundle() hivesim.StartOption {
 	opts := make([]hivesim.StartOption, 0, len(keys)*2)
 	for _, k := range keys {
-		p := fmt.Sprintf(
-			"/hive/input/keystores/0x%x/keystore.json",
-			k.ValidatorPubkey[:],
-		)
 		opts = append(
 			opts,
 			hivesim.WithDynamicFile(
-				p,
+				fmt.Sprintf("/hive/input/keystores/0x%x/keystore.json", k.ValidatorPubkey[:]),
 				config.BytesSource(k.ValidatorKeystoreJSON),
 			),
 		)
-		p = fmt.Sprintf("/hive/input/secrets/0x%x", k.ValidatorPubkey[:])
 		opts = append(
 			opts,
 			hivesim.WithDynamicFile(
-				p,
+				fmt.Sprintf("/hive/input/secrets/0x%x", k.ValidatorPubkey[:]),
 				config.BytesSource([]byte(k.ValidatorKeystorePass)),
 			),
 		)

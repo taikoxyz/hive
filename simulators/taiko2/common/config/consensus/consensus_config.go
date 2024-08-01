@@ -2,12 +2,11 @@ package consensus_config
 
 import (
 	"errors"
-	el_common "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/hive/hivesim"
 	"github.com/prysmaticlabs/prysm/v4/beacon-chain/state"
 	"github.com/prysmaticlabs/prysm/v4/config/params"
-	"gopkg.in/yaml.v3"
 	"math/big"
+	"os"
 	"taiko2/common/config"
 )
 
@@ -90,58 +89,15 @@ func BuildSpec(
 	}, nil
 }
 
-func ConsensusConfigsBundle(spec *Spec, executionGenesisHash el_common.Hash, valCount int) (hivesim.StartOption, error) {
-	specConfig, err := yaml.Marshal(spec.BeaconChainConfig)
-	if err != nil {
-		return nil, err
-	}
-	phase0Preset, err := yaml.Marshal(spec.Phase0Preset)
-	if err != nil {
-		return nil, err
-	}
-	altairPreset, err := yaml.Marshal(spec.AltairPreset)
-	if err != nil {
-		return nil, err
-	}
-	bellatrixPreset, err := yaml.Marshal(spec.BellatrixPreset)
-	if err != nil {
-		return nil, err
-	}
-	capellaPreset, err := yaml.Marshal(spec.CapellaPreset)
-	if err != nil {
-		return nil, err
-	}
-	denebPreset, err := yaml.Marshal(spec.DenebPreset)
+func ConfigBundle(configFile string) (hivesim.StartOption, error) {
+	data, err := os.ReadFile(configFile)
 	if err != nil {
 		return nil, err
 	}
 	return hivesim.Bundle(
 		hivesim.WithDynamicFile(
 			"/hive/input/config.yaml",
-			config.BytesSource(specConfig),
+			config.BytesSource(data),
 		),
-		hivesim.WithDynamicFile(
-			"/hive/input/preset_phase0.yaml",
-			config.BytesSource(phase0Preset),
-		),
-		hivesim.WithDynamicFile(
-			"/hive/input/preset_altair.yaml",
-			config.BytesSource(altairPreset),
-		),
-		hivesim.WithDynamicFile(
-			"/hive/input/preset_bellatrix.yaml",
-			config.BytesSource(bellatrixPreset),
-		),
-		hivesim.WithDynamicFile(
-			"/hive/input/preset_capella.yaml",
-			config.BytesSource(capellaPreset),
-		),
-		hivesim.WithDynamicFile(
-			"/hive/input/preset_deneb.yaml",
-			config.BytesSource(denebPreset),
-		),
-		hivesim.Params{
-			"HIVE_ETH2_ETH1_GENESIS_HASH": executionGenesisHash.String(),
-		},
 	), nil
 }

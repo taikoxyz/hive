@@ -96,12 +96,16 @@ func (ts BaseTestSpec) GetTestnetConfig(
 		nodeDefinitions = append(nodeDefinitions, n)
 	}
 
-	config := &testnet.Config{
-		Eth1Consensus: execution_config.ExecutionCliqueConsensus{},
-	}
-	return config.Join(&testnet.Config{
+	return &testnet.Config{
+		Eth1Consensus: execution_config.ExecutionCliqueConsensus{
+			CliquePrivateKey: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+			CliqueAddress:    "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+		},
 		NodeDefinitions: nodeDefinitions,
-	})
+		Network:         "taiko2_base_test",
+		JWTSecret:       "0x7365637265747365637265747365637265747365637265747365637265747365",
+		FeeReceipt:      "0x123463a4b065722e99115d6c222f267d9cabb524",
+	}
 }
 
 func (ts BaseTestSpec) CanRun(clients.NodeDefinitions) bool {

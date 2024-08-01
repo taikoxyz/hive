@@ -37,6 +37,7 @@ func init() {
 			GenesisExecutionWithdrawalCredentialsShares: 1,
 			WaitForFinality:     true,
 			ExitValidatorsShare: 10,
+			NodeCount:           1,
 		},
 	)
 }

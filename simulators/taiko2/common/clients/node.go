@@ -67,10 +67,37 @@ func (n *Node) Start() error {
 	return nil
 }
 
-func (n *Node) CreateOrConnectNetwork(network string) error {
+var networkCreated = make(map[hivesim.SuiteID]bool)
+
+func (n *Node) CreateOrConnectNetwork(t *hivesim.T, network string) error {
 	n.Logf("Creating or connecting to network %s", network)
+	if !networkCreated[t.SuiteID] {
+		if err := t.Sim.CreateNetwork(t.SuiteID, network); err != nil {
+			t.Fatal("can't create network:", err)
+		}
+		if err := t.Sim.ConnectContainer(t.SuiteID, network, "simulation"); err != nil {
+			t.Fatal("can't connect simulation to network:", err)
+		}
+		networkCreated[t.SuiteID] = true
+
+	}
 	if n.ExecutionClient != nil {
-		container := n.ExecutionClient.HiveClient().Container
+		client := n.ExecutionClient.HiveClient()
+		if err := t.Sim.ConnectContainer(t.SuiteID, network, client.Container); err != nil {
+			t.Fatalf("can't connect %s container to network, err = %v", client.Type, err)
+		}
+	}
+	if n.BeaconClient != nil {
+		client := n.BeaconClient.HiveClient()
+		if err := t.Sim.ConnectContainer(t.SuiteID, network, client.Container); err != nil {
+			t.Fatalf("can't connect %s container to network, err = %v", client.Type, err)
+		}
+	}
+	if n.ValidatorClient != nil {
+		client := n.ValidatorClient.HiveClient()
+		if err := t.Sim.ConnectContainer(t.SuiteID, network, client.Container); err != nil {
+			t.Fatalf("can't connect %s container to network, err = %v", client.Type, err)
+		}
 	}
 	return nil
 }
@@ -100,7 +127,7 @@ func (n *Node) ClientNames() string {
 }
 
 func (n *Node) IsRunning() bool {
-	return n.ExecutionClient.IsRunning() && n.BeaconClient.IsRunning()
+	return n.ExecutionClient.IsRunning() && n.BeaconClient.IsRunning() && n.ValidatorClient.IsRunning()
 }
 
 // Node cluster operations

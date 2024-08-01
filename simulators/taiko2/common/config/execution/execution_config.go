@@ -82,7 +82,6 @@ var (
 )
 
 type ExecutionConsensus interface {
-	Configure(*core.Genesis) error
 	HiveParams(int) hivesim.Params
 	DifficultyPerBlock() *big.Int
 	SecondsPerBlock() uint64
@@ -164,17 +163,17 @@ func (c ExecutionPostMergeGenesis) SecondsPerBlock() uint64 {
 }
 
 type ExecutionCliqueConsensus struct {
-	CliquePeriod uint64
-	PrivateKey   string
-	MinerAddress string
+	CliquePeriod     uint64
+	CliquePrivateKey string
+	CliqueAddress    string
 }
 
 func (c ExecutionCliqueConsensus) Configure(genesis *core.Genesis) error {
 	if c.CliquePeriod == 0 {
 		c.CliquePeriod = CLIQUE_PERIOD_DEFAULT
 	}
-	if c.MinerAddress == "" {
-		c.MinerAddress = DEFAULT_CLIQUE_MINER_ADDRESS
+	if c.CliqueAddress == "" {
+		c.CliqueAddress = DEFAULT_CLIQUE_MINER_ADDRESS
 	}
 	genesis.Config.Clique = &params.CliqueConfig{
 		Period: c.CliquePeriod,
@@ -182,7 +181,7 @@ func (c ExecutionCliqueConsensus) Configure(genesis *core.Genesis) error {
 	}
 
 	genesis.ExtraData = make([]byte, utils.ExtraVanity+utils.ExtraSeal+common.AddressLength)
-	minerAddr := common.HexToAddress(c.MinerAddress)
+	minerAddr := common.HexToAddress(c.CliqueAddress)
 	copy(genesis.ExtraData[utils.ExtraVanity:], minerAddr[:])
 	return nil
 }
@@ -191,15 +190,13 @@ func (c ExecutionCliqueConsensus) HiveParams(node int) hivesim.Params {
 	if node > 0 {
 		return hivesim.Params{}
 	}
-	if c.PrivateKey == "" {
-		c.PrivateKey = DEFAULT_CLIQUE_PRIVATE_KEY
-	}
-	if c.MinerAddress == "" {
-		c.MinerAddress = DEFAULT_CLIQUE_MINER_ADDRESS
+	if c.CliquePrivateKey == "" || c.CliqueAddress == "" {
+		c.CliquePrivateKey = DEFAULT_CLIQUE_PRIVATE_KEY
+		c.CliqueAddress = DEFAULT_CLIQUE_MINER_ADDRESS
 	}
 	return hivesim.Params{
-		"HIVE_CLIQUE_PRIVATEKEY": c.PrivateKey,
-		"HIVE_MINER":             c.MinerAddress,
+		"HIVE_TAIKO2_CLIQUE_PRIVATEKEY": c.CliquePrivateKey,
+		"HIVE_TAIKO2_CLIQUE_ADDRESS":    c.CliqueAddress,
 	}
 }
 
@@ -287,7 +284,7 @@ type ExecutionGenesis struct {
 	DepositAddress common.Address
 }
 
-func GetGenesisFromFile(generateGenesisStateFlags *GenesisState) (*ExecutionGenesis, error) {
+func BuildExecutionGenesis(generateGenesisStateFlags *GenesisState) (*ExecutionGenesis, error) {
 	genesisState, genesis, err := GenerateGenesis(context.Background(), generateGenesisStateFlags)
 	if err != nil {
 		return nil, err
@@ -353,7 +350,7 @@ func ExecutionBundle(genesis *core.Genesis) (hivesim.StartOption, error) {
 		return nil, fmt.Errorf("failed to serialize genesis state: %v", err)
 	}
 	return hivesim.WithDynamicFile(
-		"genesis.json",
+		"/hive/input/genesis.json",
 		config.BytesSource(out),
 	), nil
 }

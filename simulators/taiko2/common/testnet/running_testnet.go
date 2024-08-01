@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/prysmaticlabs/prysm/v4/beacon-chain/state"
 	"github.com/prysmaticlabs/prysm/v4/consensus-types/primitives"
 	ethpb "github.com/prysmaticlabs/prysm/v4/proto/prysm/v1alpha1"
@@ -12,28 +13,16 @@ import (
 	consensus_config "taiko2/common/config/consensus"
 	"time"
 
-	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
-	"github.com/protolambda/zrnt/eth2/beacon/common"
-	"github.com/protolambda/ztyp/tree"
-
 	"github.com/ethereum/hive/hivesim"
-	beacon_client "github.com/marioevz/eth-clients/clients/beacon"
 	exec_client "github.com/marioevz/eth-clients/clients/execution"
+	"github.com/protolambda/zrnt/eth2/beacon/common"
 	execution_config "taiko2/common/config/execution"
 	"taiko2/common/utils"
 )
 
-const (
-	MAX_PARTICIPATION_SCORE = 7
-)
-
 var (
-	EMPTY_EXEC_HASH = ethcommon.Hash{}
-	EMPTY_TREE_ROOT = tree.Root{}
-	JWT_SECRET, _   = hex.DecodeString(
-		"7365637265747365637265747365637265747365637265747365637265747365",
-	)
+	JWT_SECRET, _ = hex.DecodeString("7365637265747365637265747365637265747365637265747365637265747365")
 )
 
 type Testnet struct {
@@ -229,7 +218,7 @@ func StartTestnet(
 				ClientIndex:             nodeIndex,
 				TerminalTotalDifficulty: executionTTD,
 				Subnet:                  node.GetExecutionSubnet(),
-				JWTSecret:               JWT_SECRET,
+				JWTSecret:               ethcommon.FromHex(config.JWTSecret),
 				ProxyConfig: &clients.ExecutionProxyConfig{
 					Host:                   simulatorIP,
 					Port:                   exec_client.PortEngineRPC + nodeIndex,
@@ -246,7 +235,7 @@ func StartTestnet(
 				beaconDef,
 				&clients.BeaconClientConfig{
 					ClientIndex:             nodeIndex,
-					BeaconAPIPort:           beacon_client.PortBeaconAPI,
+					BeaconAPIPort:           clients.PortBeaconAPI,
 					TerminalTotalDifficulty: beaconTTD,
 					Spec:                    testnet.spec,
 					GenesisValidatorsRoot:   &testnet.genesisValidatorsRoot,
@@ -276,10 +265,8 @@ func StartTestnet(
 				t.Fatalf("FAIL: Unable to start node %d: %v", nodeIndex, err)
 			}
 			// Connect to the network if specified
-			if config.Network != "" {
-				if err := nodeClient.CreateOrConnectNetwork(config.Network); err != nil {
-					t.Fatalf("FAIL: Unable to connect to network: %v", err)
-				}
+			if err := nodeClient.CreateOrConnectNetwork(t, fmt.Sprintf("%s_%d", config.Network, nodeIndex)); err != nil {
+				t.Fatalf("FAIL: Unable to connect to network: %v", err)
 			}
 		} else {
 			t.Logf("Node %d startup disabled, skipping", nodeIndex)
