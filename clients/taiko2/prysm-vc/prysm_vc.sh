@@ -12,20 +12,6 @@ check_env "HIVE_TAIKO2_FEE_RECEIPT"
 check_env "HIVE_TAIKO2_BN_API_IP"
 
 mkdir -p $EXECUTION_DIR/data/vc
-mkdir -p $EXECUTION_DIR/data/validators
-
-#echo walletpassword >$EXECUTION_DIR/wallet.pass
-#for keystore_path in /hive/input/keystores/*; do
-#  pubkey=$(basename "$keystore_path")
-#
-#  validator accounts import \
-#    --accept-terms-of-use=true \
-#    --wallet-dir="$EXECUTION_DIR/data/validators" \
-#    --keys-dir="/hive/input/keystores/$pubkey" \
-#    --account-password-file="/hive/input/secrets/$pubkey" \
-#    --wallet-password-file="$EXECUTION_DIR/wallet.pass"
-#done
-#ls $EXECUTION_DIR/data/validators
 
 echo config.yaml:
 cat /hive/input/config.yaml

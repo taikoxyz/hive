@@ -60,7 +60,7 @@ echo Starting Prysm Beacon Node
 
 beacon-chain \
   --verbosity="$LOG" \
-  --chain-id="${HIVE_TAIKO2_CHAIN_ID:-32382}" \
+  --chain-id="${HIVE_TAIKO2_CHAIN_ID:-7}" \
   --datadir=/data/beacon \
   --chain-config-file=/hive/input/config.yaml \
   --genesis-state=/hive/input/genesis.ssz \
