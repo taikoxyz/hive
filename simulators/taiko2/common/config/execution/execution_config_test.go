@@ -81,12 +81,7 @@ func TestGetGenesisFromFile(t *testing.T) {
 		GethGenesisJsonOut: "/Users/huan/projects/taiko/hive/simulators/taiko2/genesis.json",
 	}
 
-	v, gen, err := GenerateGenesis(genesisState)
-	if err != nil {
-		t.Fatalf("Error loading genesis: %v", err)
-	}
-
-	state, err := generateBeaconState(context.Background(), genesisState, v, gen)
+	state, _, err := generateBeaconState(context.Background(), genesisState)
 	if err != nil {
 		t.Fatalf("Error loading genesis: %v", err)
 	}

@@ -5,7 +5,6 @@ go 1.21
 toolchain go1.22.0
 
 require (
-	github.com/deepmap/oapi-codegen v1.12.4
 	github.com/ethereum/go-ethereum v1.14.5
 	github.com/ethereum/hive v0.0.0-20240729083334-8fd042df2589
 	github.com/ethereum/hive/simulators/ethereum/engine v0.0.0-20240729083334-8fd042df2589

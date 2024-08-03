@@ -286,30 +286,18 @@ type ExecutionGenesis struct {
 	DepositAddress common.Address
 }
 
-func BuildExecutionGenesis(generateGenesisStateFlags *GenesisState, keys consensus_config.ValidatorsSetupDetails) (*ExecutionGenesis, *consensus_config.Spec, error) {
+func BuildExecutionGenesis(generateGenesisStateFlags *GenesisState) (*ExecutionGenesis, *consensus_config.Spec, error) {
 	spec, err := cl.BuildSpec(generateGenesisStateFlags.ChainConfigFile)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error producing spec: %v", err)
 	}
 
-	//validators := keys.CreateKickstartValidatorData(spec)
-
-	v, genesis, err := GenerateGenesis(generateGenesisStateFlags)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	genesisState, err := generateBeaconState(context.Background(), generateGenesisStateFlags, v, genesis)
+	genesisState, genesis, err := generateBeaconState(context.Background(), generateGenesisStateFlags)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	fmt.Println("validator length: ", len(genesisState.Validators()))
-
-	//err = genesisState.SetValidators(validators)
-	//if err != nil {
-	//	return nil, nil, err
-	//}
 
 	genesisBlock := genesis.ToBlock()
 	return &ExecutionGenesis{

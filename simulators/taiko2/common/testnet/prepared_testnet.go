@@ -74,7 +74,7 @@ func PrepareTestnet(
 		fmt.Printf("Testnet config: %s\n", configJson)
 	}
 
-	executionGenesis, spec, err := el.BuildExecutionGenesis(generateState, env.Validators)
+	executionGenesis, spec, err := el.BuildExecutionGenesis(generateState)
 	if err != nil {
 		return nil, fmt.Errorf("error producing execution genesis: %v", err)
 	}

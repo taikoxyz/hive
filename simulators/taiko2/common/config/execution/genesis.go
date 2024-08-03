@@ -65,12 +65,7 @@ func CliActionGenerateGenesisState(cliCtx context.Context, generateGenesisStateF
 		return fmt.Errorf("no outputJson, outputYaml, outputSSZ flag(s) specified. At least one is required")
 	}
 
-	v, gen, err := GenerateGenesis(generateGenesisStateFlags)
-	if err != nil {
-		return err
-	}
-
-	st, err := generateBeaconState(cliCtx, generateGenesisStateFlags, v, gen)
+	st, _, err := generateBeaconState(cliCtx, generateGenesisStateFlags)
 	if err != nil {
 		return fmt.Errorf("could not generate genesis state: %v", err)
 	}
@@ -157,8 +152,13 @@ func GenerateGenesis(generateGenesisStateFlags *GenesisState) (int, *core.Genesi
 	return v, gen, nil
 }
 
-func generateBeaconState(ctx context.Context, generateGenesisStateFlags *GenesisState, version int, gen *core.Genesis) (state.BeaconState, error) {
+func generateBeaconState(ctx context.Context, generateGenesisStateFlags *GenesisState) (state.BeaconState, *core.Genesis, error) {
 	f := generateGenesisStateFlags
+	v, gen, err := GenerateGenesis(f)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	if f.GenesisTime == 0 {
 		f.GenesisTime = uint64(time.Now().Unix())
 		log.Info("No genesis time specified, defaulting to now()")
@@ -172,63 +172,61 @@ func generateBeaconState(ctx context.Context, generateGenesisStateFlags *Genesis
 	if f.DepositJsonFile != "" {
 		expanded, err := file.ExpandPath(f.DepositJsonFile)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		log.Printf("reading deposits from JSON at %s", expanded)
 		b, err := os.ReadFile(expanded) // #nosec G304
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		roots, dds, err := depositEntriesFromJSON(b)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		opts = append(opts, interop.WithDepositData(dds, roots))
 	} else if nv == 0 {
-		return nil, fmt.Errorf(
-			"expected --num-validators > 0 or --deposit-json-file to have been provided",
-		)
+		return nil, nil, fmt.Errorf("expected --num-validators > 0 or --deposit-json-file to have been provided")
 	}
 
 	if f.GethGenesisJsonOut != "" {
 		gbytes, err := json.MarshalIndent(gen, "", "\t")
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		if err := os.WriteFile(f.GethGenesisJsonOut, gbytes, os.ModePerm); err != nil {
-			return nil, errors.Wrapf(err, "failed to write %s", f.GethGenesisJsonOut)
+		if err = os.WriteFile(f.GethGenesisJsonOut, gbytes, os.ModePerm); err != nil {
+			return nil, nil, errors.Wrapf(err, "failed to write %s", f.GethGenesisJsonOut)
 		}
 	}
 
 	gb := gen.ToBlock()
 
 	// TODO: expose the PregenesisCreds option with a cli flag - for now defaulting to no withdrawal credentials at genesis
-	genesisState, err := interop.NewPreminedGenesis(ctx, f.GenesisTime, nv, 0, version, gb, opts...)
+	genesisState, err := interop.NewPreminedGenesis(ctx, f.GenesisTime, nv, 0, v, gb, opts...)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if f.OverrideEth1Data {
 		log.Print("Overriding Eth1Data with data from execution client")
-		conn, err := rpc.Dial(generateGenesisStateFlags.ExecutionEndpoint)
+		conn, err := rpc.Dial(f.ExecutionEndpoint)
 		if err != nil {
-			return nil, errors.Wrapf(
+			return nil, nil, errors.Wrapf(
 				err,
 				"could not dial %s please make sure you are running your execution client",
-				generateGenesisStateFlags.ExecutionEndpoint)
+				f.ExecutionEndpoint)
 		}
 		client := ethclient.NewClient(conn)
 		header, err := client.HeaderByNumber(ctx, big.NewInt(0))
 		if err != nil {
-			return nil, errors.Wrap(err, "could not get header by number")
+			return nil, nil, errors.Wrap(err, "could not get header by number")
 		}
 		t, err := trie.NewTrie(params.BeaconConfig().DepositContractTreeDepth)
 		if err != nil {
-			return nil, errors.Wrap(err, "could not create deposit tree")
+			return nil, nil, errors.Wrap(err, "could not create deposit tree")
 		}
 		depositRoot, err := t.HashTreeRoot()
 		if err != nil {
-			return nil, errors.Wrap(err, "could not get hash tree root")
+			return nil, nil, errors.Wrap(err, "could not get hash tree root")
 		}
 		e1d := &ethpb.Eth1Data{
 			DepositRoot:  depositRoot[:],
@@ -236,14 +234,14 @@ func generateBeaconState(ctx context.Context, generateGenesisStateFlags *Genesis
 			BlockHash:    header.Hash().Bytes(),
 		}
 		if err := genesisState.SetEth1Data(e1d); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		if err := genesisState.SetEth1DepositIndex(0); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
-	return genesisState, err
+	return genesisState, gen, err
 }
 
 func depositEntriesFromJSON(enc []byte) ([][]byte, []*ethpb.Deposit_Data, error) {
