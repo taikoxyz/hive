@@ -9,10 +9,13 @@ COPY --from=upstream /app/cmd/beacon-chain/beacon-chain /usr/local/bin/beacon-ch
 WORKDIR /prysm
 
 COPY prysm_bn.sh .
+COPY common.sh .
 
 RUN beacon-chain --version > /version.txt
 
-# Export the usual networking ports to allow outside access to the node
-EXPOSE 4000
+RUN chmod +x /prysm/prysm_bn.sh
 
-ENTRYPOINT ["bash", "/prysm/prysm_bn.sh"]
+# Export the usual networking ports to allow outside access to the node
+EXPOSE 4000 3500 12000/udp 13000
+
+ENTRYPOINT ["/prysm/prysm_bn.sh"]

@@ -1,9 +1,18 @@
 #!/bin/bash
 
+# load tool commands.
+source /prysm/common.sh
+
 # Immediately abort the script on any error encountered
 set -e
 
 EXECUTION_DIR=/prysm
+
+check_env "HIVE_TAIKO2_JWT_SECRET"
+check_env "HIVE_TAIKO2_FEE_RECEIPT"
+check_env "HIVE_TAIKO2_DEPOSIT_CONTRACT_ADDRESS"
+check_env "HIVE_TAIKO2_CHAIN_ID"
+check_env "HIVE_TAIKO2_ETH1_RPC_ADDRS"
 
 if [ ! -f "/hive/input/genesis.ssz" ]; then
   echo "genesis.ssz file is missing, exiting..."
@@ -31,7 +40,7 @@ cat /hive/input/config.yaml
 CONTAINER_IP=$(hostname -i | awk '{print $1;}')
 metrics_option=$([[ "$HIVE_TAIKO2_METRICS_PORT" == "" ]] && echo "--disable-monitoring=true" || echo "--disable-monitoring=false --monitoring-host=0.0.0.0 --monitoring-port=$HIVE_TAIKO2_METRICS_PORT")
 
-if [ -z "$HIVE_TAIKO2_JWT_SECRET" ]; then
+if [ "$HIVE_TAIKO2_JWT_SECRET" != "" ]; then
   echo "$HIVE_TAIKO2_JWT_SECRET" >$EXECUTION_DIR/jwtsecret
 fi
 
@@ -49,29 +58,27 @@ echo BUILDER=$builder_option
 
 echo Starting Prysm Beacon Node
 
-/beacon-chain \
+beacon-chain \
   --verbosity="$LOG" \
-  --accept-terms-of-use=true \
+  --chain-id="${HIVE_TAIKO2_CHAIN_ID:-32382}" \
   --datadir=/data/beacon \
   --chain-config-file=/hive/input/config.yaml \
   --genesis-state=/hive/input/genesis.ssz \
+  --interop-eth1data-votes=true \
+  --accept-terms-of-use=true \
   $bootnode_option \
-  --p2p-tcp-port="${HIVE_TAIKO2_P2P_TCP_PORT:-13000}" \
-  --p2p-udp-port="${HIVE_TAIKO2_P2P_UDP_PORT:-12000}" \
   --p2p-host-ip="${CONTAINER_IP}" \
   --p2p-local-ip="${CONTAINER_IP}" \
   --execution-endpoint="$HIVE_TAIKO2_ETH1_RPC_ADDRS" \
   --jwt-secret=$EXECUTION_DIR/jwtsecret \
-  --min-sync-peers=1 \
+  --min-sync-peers="${HIVE_TAIKO2_MIN_SYNC_PEERS:-1}" \
   --subscribe-all-subnets=true \
   $metrics_option \
   $builder_option \
   --deposit-contract="${HIVE_TAIKO2_DEPOSIT_CONTRACT_ADDRESS:-0x1111111111111111111111111111111111111111}" \
   --contract-deployment-block="${HIVE_TAIKO2_DEPOSIT_DEPLOY_BLOCK_NUMBER:-0}" \
+  --rpc-host="${CONTAINER_IP}" \
   --grpc-gateway-host=0.0.0.0 \
-  --rpc-host=0.0.0.0 \
-  --rpc-port="${HIVE_TAIKO2_BN_GRPC_PORT:-4000}" \
-  --grpc-gateway-host=0.0.0.0 --grpc-gateway-port="${HIVE_TAIKO2_BN_API_PORT:-3500}" --grpc-gateway-corsdomain="*" \
   --suggested-fee-recipient="${HIVE_TAIKO2_FEE_RECEIPT}" \
   --force-clear-db
 # NOTE: gRPC/RPC ports are inverted to allow the simulator to access the REST API

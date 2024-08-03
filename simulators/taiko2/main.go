@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/ethereum/hive/hivesim"
 	"taiko2/common/clients"
 	execution_config "taiko2/common/config/execution"
@@ -14,11 +16,18 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	data, _ := json.Marshal(clientTypes)
+	fmt.Println("Client types available: ", string(data))
+
 	clientsByRole := clients.ClientsByRole(clientTypes)
 	if clientsByRole == nil {
 		panic("failed to create clients by role")
 	}
 	// Mark suites for execution
+
+	data, _ = json.Marshal(clientsByRole)
+	fmt.Println("clients by role: ", string(data))
 
 	hivesim.MustRunSuite(sim, suite_base.Suite(clientsByRole, &execution_config.GenesisState{
 		ForkName:           "deneb",

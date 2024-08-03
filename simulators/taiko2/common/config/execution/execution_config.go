@@ -8,6 +8,7 @@ import (
 	"github.com/prysmaticlabs/prysm/v4/beacon-chain/state"
 	"math/big"
 	"taiko2/common/config"
+	consensus_config "taiko2/common/config/consensus"
 	"taiko2/common/utils"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -15,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/hive/hivesim"
+	cl "taiko2/common/config/consensus"
 )
 
 // The runtime deposit contract code, along with the storage that would otherwise have been initialized
@@ -187,9 +189,9 @@ func (c ExecutionCliqueConsensus) Configure(genesis *core.Genesis) error {
 }
 
 func (c ExecutionCliqueConsensus) HiveParams(node int) hivesim.Params {
-	if node > 0 {
-		return hivesim.Params{}
-	}
+	//if node > 0 {
+	//	return hivesim.Params{}
+	//}
 	if c.CliquePrivateKey == "" || c.CliqueAddress == "" {
 		c.CliquePrivateKey = DEFAULT_CLIQUE_PRIVATE_KEY
 		c.CliqueAddress = DEFAULT_CLIQUE_MINER_ADDRESS
@@ -284,11 +286,30 @@ type ExecutionGenesis struct {
 	DepositAddress common.Address
 }
 
-func BuildExecutionGenesis(generateGenesisStateFlags *GenesisState) (*ExecutionGenesis, error) {
-	genesisState, genesis, err := GenerateGenesis(context.Background(), generateGenesisStateFlags)
+func BuildExecutionGenesis(generateGenesisStateFlags *GenesisState, keys consensus_config.ValidatorsSetupDetails) (*ExecutionGenesis, *consensus_config.Spec, error) {
+	spec, err := cl.BuildSpec(generateGenesisStateFlags.ChainConfigFile)
 	if err != nil {
-		return nil, err
+		return nil, nil, fmt.Errorf("error producing spec: %v", err)
 	}
+
+	//validators := keys.CreateKickstartValidatorData(spec)
+
+	v, genesis, err := GenerateGenesis(generateGenesisStateFlags)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	genesisState, err := generateBeaconState(context.Background(), generateGenesisStateFlags, v, genesis)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	fmt.Println("validator length: ", len(genesisState.Validators()))
+
+	//err = genesisState.SetValidators(validators)
+	//if err != nil {
+	//	return nil, nil, err
+	//}
 
 	genesisBlock := genesis.ToBlock()
 	return &ExecutionGenesis{
@@ -297,7 +318,7 @@ func BuildExecutionGenesis(generateGenesisStateFlags *GenesisState) (*ExecutionG
 		Block:          genesisBlock,
 		Hash:           genesisBlock.Hash(),
 		DepositAddress: depositContractAddress,
-	}, nil
+	}, spec, nil
 }
 
 func (genesis *ExecutionGenesis) NetworkID() uint64 {

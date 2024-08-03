@@ -64,7 +64,13 @@ func CliActionGenerateGenesisState(cliCtx context.Context, generateGenesisStateF
 	if noOutputFlag {
 		return fmt.Errorf("no outputJson, outputYaml, outputSSZ flag(s) specified. At least one is required")
 	}
-	st, _, err := GenerateGenesis(cliCtx, generateGenesisStateFlags)
+
+	v, gen, err := GenerateGenesis(generateGenesisStateFlags)
+	if err != nil {
+		return err
+	}
+
+	st, err := generateBeaconState(cliCtx, generateGenesisStateFlags, v, gen)
 	if err != nil {
 		return fmt.Errorf("could not generate genesis state: %v", err)
 	}
@@ -111,60 +117,30 @@ func setGlobalParams(generateGenesisStateFlags *GenesisState) error {
 	return params.SetActive(cfg.Copy())
 }
 
-func GenerateGenesis(ctx context.Context, generateGenesisStateFlags *GenesisState) (state.BeaconState, *core.Genesis, error) {
+func GenerateGenesis(generateGenesisStateFlags *GenesisState) (int, *core.Genesis, error) {
 	if err := setGlobalParams(generateGenesisStateFlags); err != nil {
-		return nil, nil, fmt.Errorf("could not set config params: %v", err)
+		return 0, nil, fmt.Errorf("could not set config params: %v", err)
 	}
-	f := generateGenesisStateFlags
-	if f.GenesisTime == 0 {
-		f.GenesisTime = uint64(time.Now().Unix())
-		log.Info("No genesis time specified, defaulting to now()")
-	}
-	log.Infof("Delaying genesis %v by %v seconds", f.GenesisTime, f.GenesisTimeDelay)
-	f.GenesisTime += f.GenesisTimeDelay
-	log.Infof("Genesis is now %v", f.GenesisTime)
 
+	f := generateGenesisStateFlags
 	v, err := version.FromString(f.ForkName)
 	if err != nil {
-		return nil, nil, err
+		return 0, nil, err
 	}
-	opts := make([]interop.PremineGenesisOpt, 0)
-	nv := f.NumValidators
-	if f.DepositJsonFile != "" {
-		expanded, err := file.ExpandPath(f.DepositJsonFile)
-		if err != nil {
-			return nil, nil, err
-		}
-		log.Printf("reading deposits from JSON at %s", expanded)
-		b, err := os.ReadFile(expanded) // #nosec G304
-		if err != nil {
-			return nil, nil, err
-		}
-		roots, dds, err := depositEntriesFromJSON(b)
-		if err != nil {
-			return nil, nil, err
-		}
-		opts = append(opts, interop.WithDepositData(dds, roots))
-	} else if nv == 0 {
-		return nil, nil, fmt.Errorf(
-			"expected --num-validators > 0 or --deposit-json-file to have been provided",
-		)
-	}
-
 	gen := &core.Genesis{}
-	if f.GethGenesisJsonIn != "" {
-		gbytes, err := os.ReadFile(f.GethGenesisJsonIn) // #nosec G304
+	if generateGenesisStateFlags.GethGenesisJsonIn != "" {
+		gbytes, err := os.ReadFile(generateGenesisStateFlags.GethGenesisJsonIn) // #nosec G304
 		if err != nil {
-			return nil, nil, errors.Wrapf(err, "failed to read %s", f.GethGenesisJsonIn)
+			return 0, nil, errors.Wrapf(err, "failed to read %s", generateGenesisStateFlags.GethGenesisJsonIn)
 		}
 		if err := json.Unmarshal(gbytes, gen); err != nil {
-			return nil, nil, err
+			return 0, nil, err
 		}
 		// set timestamps for genesis and shanghai fork
-		gen.Timestamp = f.GenesisTime
-		gen.Config.ShanghaiTime = interop.GethShanghaiTime(f.GenesisTime, params.BeaconConfig())
+		gen.Timestamp = generateGenesisStateFlags.GenesisTime
+		gen.Config.ShanghaiTime = interop.GethShanghaiTime(generateGenesisStateFlags.GenesisTime, params.BeaconConfig())
 		//gen.Config.CancunTime = interop.GethCancunTime(f.GenesisTime, params.BeaconConfig())
-		gen.Config.CancunTime = interop.GethCancunTime(f.GenesisTime, params.BeaconConfig())
+		gen.Config.CancunTime = interop.GethCancunTime(generateGenesisStateFlags.GenesisTime, params.BeaconConfig())
 		log.
 			WithField("shanghai", fmt.Sprintf("%d", *gen.Config.ShanghaiTime)).
 			WithField("cancun", fmt.Sprintf("%d", *gen.Config.CancunTime)).
@@ -175,32 +151,68 @@ func GenerateGenesis(ctx context.Context, generateGenesisStateFlags *GenesisStat
 			gen.Config.TerminalTotalDifficultyPassed = true
 		}
 	} else {
-		gen = interop.GethTestnetGenesis(f.GenesisTime, params.BeaconConfig())
+		gen = interop.GethTestnetGenesis(generateGenesisStateFlags.GenesisTime, params.BeaconConfig())
+	}
+
+	return v, gen, nil
+}
+
+func generateBeaconState(ctx context.Context, generateGenesisStateFlags *GenesisState, version int, gen *core.Genesis) (state.BeaconState, error) {
+	f := generateGenesisStateFlags
+	if f.GenesisTime == 0 {
+		f.GenesisTime = uint64(time.Now().Unix())
+		log.Info("No genesis time specified, defaulting to now()")
+	}
+	log.Infof("Delaying genesis %v by %v seconds", f.GenesisTime, f.GenesisTimeDelay)
+	f.GenesisTime += f.GenesisTimeDelay
+	log.Infof("Genesis is now %v", f.GenesisTime)
+
+	opts := make([]interop.PremineGenesisOpt, 0)
+	nv := f.NumValidators
+	if f.DepositJsonFile != "" {
+		expanded, err := file.ExpandPath(f.DepositJsonFile)
+		if err != nil {
+			return nil, err
+		}
+		log.Printf("reading deposits from JSON at %s", expanded)
+		b, err := os.ReadFile(expanded) // #nosec G304
+		if err != nil {
+			return nil, err
+		}
+		roots, dds, err := depositEntriesFromJSON(b)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, interop.WithDepositData(dds, roots))
+	} else if nv == 0 {
+		return nil, fmt.Errorf(
+			"expected --num-validators > 0 or --deposit-json-file to have been provided",
+		)
 	}
 
 	if f.GethGenesisJsonOut != "" {
 		gbytes, err := json.MarshalIndent(gen, "", "\t")
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		if err := os.WriteFile(f.GethGenesisJsonOut, gbytes, os.ModePerm); err != nil {
-			return nil, nil, errors.Wrapf(err, "failed to write %s", f.GethGenesisJsonOut)
+			return nil, errors.Wrapf(err, "failed to write %s", f.GethGenesisJsonOut)
 		}
 	}
 
 	gb := gen.ToBlock()
 
 	// TODO: expose the PregenesisCreds option with a cli flag - for now defaulting to no withdrawal credentials at genesis
-	genesisState, err := interop.NewPreminedGenesis(ctx, f.GenesisTime, nv, 0, v, gb, opts...)
+	genesisState, err := interop.NewPreminedGenesis(ctx, f.GenesisTime, nv, 0, version, gb, opts...)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	if f.OverrideEth1Data {
 		log.Print("Overriding Eth1Data with data from execution client")
 		conn, err := rpc.Dial(generateGenesisStateFlags.ExecutionEndpoint)
 		if err != nil {
-			return nil, nil, errors.Wrapf(
+			return nil, errors.Wrapf(
 				err,
 				"could not dial %s please make sure you are running your execution client",
 				generateGenesisStateFlags.ExecutionEndpoint)
@@ -208,15 +220,15 @@ func GenerateGenesis(ctx context.Context, generateGenesisStateFlags *GenesisStat
 		client := ethclient.NewClient(conn)
 		header, err := client.HeaderByNumber(ctx, big.NewInt(0))
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "could not get header by number")
+			return nil, errors.Wrap(err, "could not get header by number")
 		}
 		t, err := trie.NewTrie(params.BeaconConfig().DepositContractTreeDepth)
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "could not create deposit tree")
+			return nil, errors.Wrap(err, "could not create deposit tree")
 		}
 		depositRoot, err := t.HashTreeRoot()
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "could not get hash tree root")
+			return nil, errors.Wrap(err, "could not get hash tree root")
 		}
 		e1d := &ethpb.Eth1Data{
 			DepositRoot:  depositRoot[:],
@@ -224,14 +236,14 @@ func GenerateGenesis(ctx context.Context, generateGenesisStateFlags *GenesisStat
 			BlockHash:    header.Hash().Bytes(),
 		}
 		if err := genesisState.SetEth1Data(e1d); err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		if err := genesisState.SetEth1DepositIndex(0); err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 	}
 
-	return genesisState, gen, err
+	return genesisState, err
 }
 
 func depositEntriesFromJSON(enc []byte) ([][]byte, []*ethpb.Deposit_Data, error) {

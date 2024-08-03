@@ -38,6 +38,7 @@ func init() {
 			WaitForFinality:     true,
 			ExitValidatorsShare: 10,
 			NodeCount:           1,
+			ValidatorCount:      5,
 		},
 	)
 }

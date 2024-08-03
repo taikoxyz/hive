@@ -5,9 +5,11 @@ go 1.21
 toolchain go1.22.0
 
 require (
+	github.com/deepmap/oapi-codegen v1.12.4
 	github.com/ethereum/go-ethereum v1.14.5
 	github.com/ethereum/hive v0.0.0-20240729083334-8fd042df2589
 	github.com/ethereum/hive/simulators/ethereum/engine v0.0.0-20240729083334-8fd042df2589
+	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/uuid v1.6.0
 	github.com/herumi/bls-eth-go-binary v1.28.1
 	github.com/lithammer/dedent v1.1.0
@@ -86,7 +88,6 @@ require (
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect

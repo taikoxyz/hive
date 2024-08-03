@@ -51,6 +51,8 @@ func SuiteHydrate(
 					Clients:    c,
 					Validators: keys,
 				}
+
+				t.Logf("Starting testnet with %d nodes", len(clientCombinations))
 				config := test.GetTestnetConfig(clientCombinations)
 
 				// Create the testnet
@@ -62,7 +64,7 @@ func SuiteHydrate(
 				}
 				defer testnet.Stop()
 
-				time.Sleep(time.Second * 200)
+				time.Sleep(time.Second * 100)
 			},
 		},
 		)

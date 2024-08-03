@@ -74,7 +74,7 @@ func PrepareTestnet(
 		fmt.Printf("Testnet config: %s\n", configJson)
 	}
 
-	executionGenesis, err := el.BuildExecutionGenesis(generateState)
+	executionGenesis, spec, err := el.BuildExecutionGenesis(generateState, env.Validators)
 	if err != nil {
 		return nil, fmt.Errorf("error producing execution genesis: %v", err)
 	}
@@ -98,9 +98,12 @@ func PrepareTestnet(
 	executionOpts := hivesim.Bundle(
 		genesisJsonBundle,
 		hivesim.Params{
-			"HIVE_LOGLEVEL":           os.Getenv("HIVE_LOGLEVEL"),
-			"HIVE_TAIKO2_JWT_SECRET":  config.JWTSecret,
-			"HIVE_TAIKO2_FEE_RECEIPT": config.FeeReceipt,
+			"HIVE_LOGLEVEL":                 os.Getenv("HIVE_LOGLEVEL"),
+			"HIVE_TAIKO2_JWT_SECRET":        config.JWTSecret,
+			"HIVE_TAIKO2_FEE_RECEIPT":       config.FeeReceipt,
+			"HIVE_TAIKO2_CLIQUE_PRIVATEKEY": "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+			"HIVE_TAIKO2_CLIQUE_ADDRESS":    "f39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+			"HIVE_TAIKO2_CHAIN_ID":          fmt.Sprintf("%d", executionGenesis.ChainID()),
 		},
 	)
 
@@ -121,11 +124,6 @@ func PrepareTestnet(
 		}
 	}
 
-	spec, err := cl.BuildSpec(generateState.ChainConfigFile)
-	if err != nil {
-		return nil, fmt.Errorf("error producing spec: %v", err)
-	}
-
 	// Generate keys opts for validators
 	shares := config.NodeDefinitions.Shares()
 	keyTranches := env.Validators.KeyTranches(shares)
@@ -133,20 +131,16 @@ func PrepareTestnet(
 	// Define additional start options for beacon chain
 	commonParams := hivesim.Params{
 		"HIVE_TAIKO2_BUILDER_ENDPOINT": "",
-		"HIVE_TAIKO2_BN_API_PORT":      fmt.Sprintf("%d", clients.PortBeaconAPI),
 		"HIVE_TAIKO2_FEE_RECEIPT":      config.FeeReceipt,
 	}
 	beaconParams := hivesim.Params{
 		"HIVE_TAIKO2_JWT_SECRET":                  config.JWTSecret,
-		"HIVE_TAIKO2_BN_GRPC_PORT":                fmt.Sprintf("%d", clients.PortBeaconGRPC),
 		"HIVE_TAIKO2_METRICS_PORT":                fmt.Sprintf("%d", beacon_client.PortMetrics),
 		"HIVE_TAIKO2_DEPOSIT_CONTRACT_ADDRESS":    executionGenesis.DepositAddress.String(),
 		"HIVE_TAIKO2_DEPOSIT_DEPLOY_BLOCK_NUMBER": fmt.Sprintf("%d", executionGenesis.Block.NumberU64()),
 		"HIVE_TAIKO2_ETH1_GENESIS_TIME":           fmt.Sprintf("%d", executionGenesis.Genesis.Timestamp),
-	}
-
-	if config.DisablePeerScoring {
-		beaconParams["HIVE_TAIKO2_DISABLE_PEER_SCORING"] = "1"
+		"HIVE_TAIKO2_CHAIN_ID":                    fmt.Sprintf("%d", executionGenesis.ChainID()),
+		"HIVE_TAIKO2_MIN_SYNC_PEERS":              "0",
 	}
 
 	beaconOpts := hivesim.Bundle(
@@ -156,9 +150,14 @@ func PrepareTestnet(
 		beaconParams,
 	)
 
+	validatorParams := hivesim.Params{
+		"HIVE_TAIKO2_NUM_VALIDATORS": fmt.Sprintf("%d", executionGenesis.GenesisState.NumValidators()),
+	}
+
 	validatorOpts := hivesim.Bundle(
 		configBundle,
 		commonParams,
+		validatorParams,
 	)
 
 	return &PreparedTestnet{

@@ -6,11 +6,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	blsu "github.com/protolambda/bls12-381-util"
+	ethpb "github.com/prysmaticlabs/prysm/v4/proto/prysm/v1alpha1"
 	"strings"
 	"taiko2/common/config"
-	"taiko2/common/config/consensus/genesis/interfaces"
-
-	blsu "github.com/protolambda/bls12-381-util"
 
 	"github.com/ethereum/hive/hivesim"
 	"github.com/google/uuid"
@@ -19,7 +18,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/protolambda/go-keystorev4"
 	"github.com/protolambda/zrnt/eth2/beacon/common"
-	"github.com/protolambda/zrnt/eth2/beacon/phase0"
 	"github.com/tyler-smith/go-bip39"
 	util "github.com/wealdtech/go-eth2-util"
 )
@@ -48,14 +46,16 @@ type ValidatorSetupDetails struct {
 	Slashed bool
 }
 
-func (kd *ValidatorSetupDetails) KickstartValidatorData(spec *common.Spec) (out phase0.KickstartValidatorData) {
-	out.Pubkey = kd.ValidatorPubkey
-	out.WithdrawalCredentials = kd.WithdrawalCredentials()
-	out.Balance = spec.MAX_EFFECTIVE_BALANCE + kd.ExtraInitialBalance
-	return
+func (kd *ValidatorSetupDetails) KickstartValidatorData(spec *Spec) *ethpb.Validator {
+	return &ethpb.Validator{
+		PublicKey:             kd.ValidatorPubkey[:],
+		WithdrawalCredentials: kd.WithdrawalCredentials(),
+		EffectiveBalance:      spec.MaxEffectiveBalance + uint64(kd.ExtraInitialBalance),
+	}
 }
 
-func (kd *ValidatorSetupDetails) WithdrawalCredentials() (out common.Root) {
+func (kd *ValidatorSetupDetails) WithdrawalCredentials() []byte {
+	var out common.Root
 	if kd.WithdrawalCredentialType == common.BLS_WITHDRAWAL_PREFIX {
 		hasher := sha256.New()
 		hasher.Write(kd.WithdrawalPubkey[:])
@@ -66,7 +66,7 @@ func (kd *ValidatorSetupDetails) WithdrawalCredentials() (out common.Root) {
 		copy(out[12:], kd.WithdrawalExecAddress[:])
 		out[0] = common.ETH1_ADDRESS_WITHDRAWAL_PREFIX
 	}
-	return
+	return out[:]
 }
 
 type ValidatorsSetupDetails []*ValidatorSetupDetails
@@ -97,73 +97,12 @@ func (keys ValidatorsSetupDetails) KeyTranches(shares Shares) []ValidatorsKeys {
 	return tranches
 }
 
-func (keys ValidatorsSetupDetails) CreateKickstartValidatorData(spec *common.Spec) []phase0.KickstartValidatorData {
-	validators := make([]phase0.KickstartValidatorData, 0, len(keys))
+func (keys ValidatorsSetupDetails) CreateKickstartValidatorData(spec *Spec) []*ethpb.Validator {
+	validators := make([]*ethpb.Validator, 0, len(keys))
 	for _, key := range keys {
 		validators = append(validators, key.KickstartValidatorData(spec))
 	}
 	return validators
-}
-
-func (keys ValidatorsSetupDetails) AddToGenesisState(spec *common.Spec, state interfaces.StateViewGenesis) error {
-	validators := keys.CreateKickstartValidatorData(spec)
-
-	for _, v := range validators {
-		if err := state.AddValidator(spec, v.Pubkey, v.WithdrawalCredentials, v.Balance); err != nil {
-			return err
-		}
-	}
-	vals, err := state.Validators()
-	if err != nil {
-		return err
-	}
-	// Process activations and exits
-	for i := 0; i < len(validators); i++ {
-		val, err := vals.Validator(common.ValidatorIndex(i))
-		if err != nil {
-			return err
-		}
-		vEff, err := val.EffectiveBalance()
-		if err != nil {
-			return err
-		}
-		if vEff == spec.MAX_EFFECTIVE_BALANCE {
-			if err := val.SetActivationEligibilityEpoch(common.GENESIS_EPOCH); err != nil {
-				return err
-			}
-			if err := val.SetActivationEpoch(common.GENESIS_EPOCH); err != nil {
-				return err
-			}
-		}
-		// Process exits/slashings
-		slashings, err := state.Slashings()
-		if err != nil {
-			return err
-		}
-		if keys[i].Exited || keys[i].Slashed {
-			exit_epoch := common.GENESIS_EPOCH
-			val.SetExitEpoch(exit_epoch)
-			val.SetWithdrawableEpoch(
-				exit_epoch + spec.MIN_VALIDATOR_WITHDRAWABILITY_DELAY,
-			)
-			if keys[i].Slashed {
-				if err := val.MakeSlashed(); err != nil {
-					return err
-				}
-
-				bal, err := val.EffectiveBalance()
-				if err != nil {
-					return err
-				}
-
-				if err := slashings.AddSlashing(exit_epoch, bal); err != nil {
-					return err
-				}
-			}
-		}
-	}
-
-	return nil
 }
 
 type ValidatorsKeys map[common.ValidatorIndex]*validator.ValidatorKeys
