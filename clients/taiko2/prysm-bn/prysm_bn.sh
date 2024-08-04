@@ -71,7 +71,8 @@ beacon-chain \
   --p2p-local-ip="${CONTAINER_IP}" \
   --execution-endpoint="$HIVE_TAIKO2_ETH1_RPC_ADDRS" \
   --jwt-secret=$EXECUTION_DIR/jwtsecret \
-  --min-sync-peers="${HIVE_TAIKO2_MIN_SYNC_PEERS:-1}" \
+  --no-discovery=true \
+  --min-sync-peers=0 \
   --subscribe-all-subnets=true \
   $metrics_option \
   $builder_option \
