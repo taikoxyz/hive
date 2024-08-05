@@ -5,11 +5,9 @@ import (
 	"bytes"
 	_ "embed"
 	"encoding/json"
-	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/hive/hivesim"
 	"github.com/joho/godotenv"
-	"github.com/prysmaticlabs/prysm/v4/config/params"
 )
 
 //go:embed .env
@@ -22,13 +20,11 @@ var txsContent []byte
 var ConfigContent []byte
 
 //go:embed genesis.json
-var genesisContent []byte
+var GenesisContent []byte
 
 var (
-	EnvParams    = hivesim.Params{}
-	ContractTxs  = make([]*types.Transaction, 0)
-	BeaconConfig = &params.BeaconChainConfig{}
-	Genesis      = &core.Genesis{}
+	EnvParams   = hivesim.Params{}
+	ContractTxs = make([]*types.Transaction, 0)
 )
 
 func init() {
@@ -50,16 +46,5 @@ func init() {
 			panic(err)
 		}
 		ContractTxs = append(ContractTxs, &tx)
-	}
-
-	// Load params.yml
-	BeaconConfig, err = params.UnmarshalConfig(ConfigContent, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	// Load genesis.json
-	if err = json.Unmarshal(genesisContent, Genesis); err != nil {
-		panic(err)
 	}
 }
