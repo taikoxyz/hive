@@ -42,13 +42,9 @@ func TestCC(t *testing.T) {
 		config := test.GetTestnetConfig(clientCombinations)
 
 		genesisState := &execution_config.GenesisState{
-			ForkName:           "deneb",
-			NumValidators:      64,
-			GenesisTimeDelay:   15,
-			ChainConfigFile:    "/Users/huan/projects/taiko/hive/simulators/taiko2/config.yml",
-			OutputSSZ:          "/Users/huan/projects/taiko/hive/simulators/taiko2/genesis.ssz",
-			GethGenesisJsonIn:  "/Users/huan/projects/taiko/hive/simulators/taiko2/genesis.json",
-			GethGenesisJsonOut: "/Users/huan/projects/taiko/hive/simulators/taiko2/genesis.json",
+			ForkName:         "deneb",
+			NumValidators:    64,
+			GenesisTimeDelay: 15,
 		}
 
 		prep, err := testnet.PrepareTestnet(env, config, genesisState)

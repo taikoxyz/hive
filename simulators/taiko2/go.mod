@@ -46,7 +46,7 @@ require (
 	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 require (
@@ -104,6 +104,7 @@ require (
 	github.com/ipfs/go-log/v2 v2.5.1 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jbenet/go-temp-err-catcher v0.1.0 // indirect
+	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/julienschmidt/httprouter v1.3.0 // indirect
 	github.com/kilic/bls12-381 v0.1.0 // indirect
@@ -213,3 +214,5 @@ replace github.com/protolambda/eth2api => github.com/marioevz/eth2api v0.0.0-202
 replace github.com/protolambda/zrnt => github.com/marioevz/zrnt v0.26.2-0.20231109183115-d2098ec1f42c
 
 replace github.com/protolambda/ztyp => github.com/marioevz/ztyp v0.0.0-20231106221254-dd6f24f13fd9
+
+replace github.com/ethereum/hive v0.0.0-20240729083334-8fd042df2589 => github.com/taikoxyz/hive v0.0.0-20240805030948-1b0e70fc62e4

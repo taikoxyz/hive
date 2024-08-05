@@ -2,11 +2,8 @@ package suite_base
 
 import (
 	"fmt"
-	"math/big"
 	execution_config "taiko2/common/config/execution"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/params"
 	beacon "github.com/protolambda/zrnt/eth2/beacon/common"
 	"taiko2/common/clients"
 	cl "taiko2/common/config/consensus"
@@ -47,24 +44,7 @@ type BaseTestSpec struct {
 }
 
 var (
-	DEFAULT_VALIDATOR_COUNT uint64 = 128
-
-	// This is the account that sends vault funding transactions.
-	VaultStartAmount, _ = new(big.Int).SetString("d3c21bcecceda1000000", 16)
-
-	CodeContractAddress = common.HexToAddress(
-		"0xcccccccccccccccccccccccccccccccccccccccc",
-	)
-	CodeContract = common.Hex2Bytes("0x328043558043600080a250")
-
-	BeaconRootContractAddress = common.HexToAddress(
-		"0xbEAC020008aFF7331c0A389CB2AAb67597567d7a",
-	)
-
-	GasPrice    = big.NewInt(30 * params.GWei)
-	GasTipPrice = big.NewInt(1 * params.GWei)
-
-	ChainID = big.NewInt(7)
+	DEFAULT_VALIDATOR_COUNT uint64 = 64
 )
 
 func (ts BaseTestSpec) GetNodeCount() int {

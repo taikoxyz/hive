@@ -6,7 +6,6 @@ import (
 	"github.com/prysmaticlabs/prysm/v4/beacon-chain/state"
 	"github.com/prysmaticlabs/prysm/v4/config/params"
 	"math/big"
-	"os"
 	"taiko2/common/config"
 )
 
@@ -89,15 +88,11 @@ func BuildSpec(
 	}, nil
 }
 
-func ConfigBundle(configFile string) (hivesim.StartOption, error) {
-	data, err := os.ReadFile(configFile)
-	if err != nil {
-		return nil, err
-	}
+func ConfigBundle(content []byte) (hivesim.StartOption, error) {
 	return hivesim.Bundle(
 		hivesim.WithDynamicFile(
 			"/hive/input/config.yaml",
-			config.BytesSource(data),
+			config.BytesSource(content),
 		),
 	), nil
 }

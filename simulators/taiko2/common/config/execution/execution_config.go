@@ -287,11 +287,6 @@ type ExecutionGenesis struct {
 }
 
 func BuildExecutionGenesis(generateGenesisStateFlags *GenesisState) (*ExecutionGenesis, *consensus_config.Spec, error) {
-	spec, err := cl.BuildSpec(generateGenesisStateFlags.ChainConfigFile)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error producing spec: %v", err)
-	}
-
 	genesisState, genesis, err := generateBeaconState(context.Background(), generateGenesisStateFlags)
 	if err != nil {
 		return nil, nil, err
@@ -301,12 +296,14 @@ func BuildExecutionGenesis(generateGenesisStateFlags *GenesisState) (*ExecutionG
 
 	genesisBlock := genesis.ToBlock()
 	return &ExecutionGenesis{
-		GenesisState:   genesisState,
-		Genesis:        genesis,
-		Block:          genesisBlock,
-		Hash:           genesisBlock.Hash(),
-		DepositAddress: depositContractAddress,
-	}, spec, nil
+			GenesisState:   genesisState,
+			Genesis:        genesis,
+			Block:          genesisBlock,
+			Hash:           genesisBlock.Hash(),
+			DepositAddress: depositContractAddress,
+		}, &cl.Spec{
+			BeaconChainConfig: *generateGenesisStateFlags.BeaconConfig,
+		}, nil
 }
 
 func (genesis *ExecutionGenesis) NetworkID() uint64 {

@@ -6,7 +6,7 @@ import (
 	"taiko2/common/utils"
 )
 
-var Deneb string = "deneb"
+var Deneb = "deneb"
 
 var (
 	blobTxAccounts   = utils.TestAccounts[:len(utils.TestAccounts)/2]

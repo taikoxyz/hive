@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/ethereum/hive/hivesim"
-	"strings"
 	"taiko2/common/clients"
 	consensus_config "taiko2/common/config/consensus"
 	"taiko2/common/config/execution"
@@ -37,9 +36,10 @@ func SuiteHydrate(
 		test := test
 		suite.Add(hivesim.TestSpec{
 			Name: fmt.Sprintf(
-				"%s-%s",
+				"%s/%s",
+				suite.Name,
 				test.GetName(),
-				strings.Join(clientCombinations.ClientTypes(), "-"),
+				//strings.Join(clientCombinations.ClientTypes(), "-"),
 			),
 			DisplayName: test.GetDisplayName(),
 			Description: test.GetDescription().Format(),
@@ -64,7 +64,7 @@ func SuiteHydrate(
 				}
 				defer testnet.Stop()
 
-				time.Sleep(time.Second * 100)
+				time.Sleep(time.Second * 50)
 			},
 		},
 		)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/hive/hivesim"
+	"github.com/ethereum/hive/taiko/params"
 	beacon_client "github.com/marioevz/eth-clients/clients/beacon"
 	exec_client "github.com/marioevz/eth-clients/clients/execution"
 	"github.com/protolambda/zrnt/eth2/beacon/common"
@@ -64,11 +65,11 @@ func getLogLevelString() string {
 // Build all artifacts require to start a testnet.
 func PrepareTestnet(
 	env *Environment,
-	config *Config,
+	cfg *Config,
 	generateState *el.GenesisState,
 ) (*PreparedTestnet, error) {
-	// Show config file
-	if configJson, err := json.MarshalIndent(config, "", "  "); err != nil {
+	// Show cfg file
+	if configJson, err := json.MarshalIndent(cfg, "", "  "); err != nil {
 		panic(err)
 	} else {
 		fmt.Printf("Testnet config: %s\n", configJson)
@@ -90,17 +91,17 @@ func PrepareTestnet(
 		return nil, fmt.Errorf("error producing state bundle: %v", err)
 	}
 
-	configBundle, err := cl.ConfigBundle(generateState.ChainConfigFile)
+	configBundle, err := cl.ConfigBundle(params.ConfigContent)
 	if err != nil {
-		return nil, fmt.Errorf("error producing consensus config bundle: %v", err)
+		return nil, fmt.Errorf("error producing consensus cfg bundle: %v", err)
 	}
 
 	executionOpts := hivesim.Bundle(
 		genesisJsonBundle,
 		hivesim.Params{
 			"HIVE_LOGLEVEL":                 os.Getenv("HIVE_LOGLEVEL"),
-			"HIVE_TAIKO2_JWT_SECRET":        config.JWTSecret,
-			"HIVE_TAIKO2_FEE_RECEIPT":       config.FeeReceipt,
+			"HIVE_TAIKO2_JWT_SECRET":        cfg.JWTSecret,
+			"HIVE_TAIKO2_FEE_RECEIPT":       cfg.FeeReceipt,
 			"HIVE_TAIKO2_CLIQUE_PRIVATEKEY": "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
 			"HIVE_TAIKO2_CLIQUE_ADDRESS":    "f39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
 			"HIVE_TAIKO2_CHAIN_ID":          fmt.Sprintf("%d", executionGenesis.ChainID()),
@@ -108,16 +109,16 @@ func PrepareTestnet(
 	)
 
 	// Pre-generate PoW chains for clients that require it
-	for i := 0; i < len(config.NodeDefinitions); i++ {
-		if config.NodeDefinitions[i].ChainGenerator != nil {
-			config.NodeDefinitions[i].Chain, err = config.NodeDefinitions[i].ChainGenerator.Generate(
+	for i := 0; i < len(cfg.NodeDefinitions); i++ {
+		if cfg.NodeDefinitions[i].ChainGenerator != nil {
+			cfg.NodeDefinitions[i].Chain, err = cfg.NodeDefinitions[i].ChainGenerator.Generate(
 				executionGenesis,
 			)
 			if err != nil {
 				return nil, fmt.Errorf("unable to generate PoW chains for node %d: %v", i, err)
 			}
 			fmt.Printf("Generated chain for node %d:\n", i+1)
-			for j, b := range config.NodeDefinitions[i].Chain {
+			for j, b := range cfg.NodeDefinitions[i].Chain {
 				js, _ := json.MarshalIndent(b.Header(), "", "  ")
 				fmt.Printf("Block %d: %s\n", j, js)
 			}
@@ -125,16 +126,16 @@ func PrepareTestnet(
 	}
 
 	// Generate keys opts for validators
-	shares := config.NodeDefinitions.Shares()
+	shares := cfg.NodeDefinitions.Shares()
 	keyTranches := env.Validators.KeyTranches(shares)
 
 	// Define additional start options for beacon chain
 	commonParams := hivesim.Params{
 		"HIVE_TAIKO2_BUILDER_ENDPOINT": "",
-		"HIVE_TAIKO2_FEE_RECEIPT":      config.FeeReceipt,
+		"HIVE_TAIKO2_FEE_RECEIPT":      cfg.FeeReceipt,
 	}
 	beaconParams := hivesim.Params{
-		"HIVE_TAIKO2_JWT_SECRET":                  config.JWTSecret,
+		"HIVE_TAIKO2_JWT_SECRET":                  cfg.JWTSecret,
 		"HIVE_TAIKO2_METRICS_PORT":                fmt.Sprintf("%d", beacon_client.PortMetrics),
 		"HIVE_TAIKO2_DEPOSIT_CONTRACT_ADDRESS":    executionGenesis.DepositAddress.String(),
 		"HIVE_TAIKO2_DEPOSIT_DEPLOY_BLOCK_NUMBER": fmt.Sprintf("%d", executionGenesis.Block.NumberU64()),

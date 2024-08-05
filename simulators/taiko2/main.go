@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/ethereum/hive/hivesim"
 	"taiko2/common/clients"
-	execution_config "taiko2/common/config/execution"
 	suite_base "taiko2/suites/base"
 )
 
@@ -29,15 +28,7 @@ func main() {
 	data, _ = json.Marshal(clientsByRole)
 	fmt.Println("clients by role: ", string(data))
 
-	hivesim.MustRunSuite(sim, suite_base.Suite(clientsByRole, &execution_config.GenesisState{
-		ForkName:           "deneb",
-		NumValidators:      64,
-		GenesisTimeDelay:   15,
-		ChainConfigFile:    "./config.yml",
-		OutputSSZ:          "./genesis.ssz",
-		GethGenesisJsonIn:  "./genesis.json",
-		GethGenesisJsonOut: "./genesis.json",
-	}))
+	hivesim.MustRunSuite(sim, suite_base.Suite(clientsByRole))
 	//hivesim.MustRunSuite(sim, suite_sync.Suite(clientsByRole))
 	//hivesim.MustRunSuite(sim, suite_builder.Suite(clientsByRole))
 	//hivesim.MustRunSuite(sim, suite_reorg.Suite(clientsByRole))

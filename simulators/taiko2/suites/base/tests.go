@@ -1,7 +1,11 @@
 package suite_base
 
 import (
+	"encoding/json"
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/hive/hivesim"
+	taparams "github.com/ethereum/hive/taiko/params"
+	"github.com/prysmaticlabs/prysm/v4/config/params"
 	"taiko2/common/clients"
 	"taiko2/common/config/execution"
 	"taiko2/suites"
@@ -43,7 +47,25 @@ func init() {
 	)
 }
 
-func Suite(c *clients.ClientDefinitionsByRole, generateState *execution_config.GenesisState) hivesim.Suite {
-	suites.SuiteHydrate(&testSuite, c, Tests, generateState)
+func Suite(c *clients.ClientDefinitionsByRole) hivesim.Suite {
+	// Load params.yml
+	beaconConfig, err := params.UnmarshalConfig(taparams.ConfigContent, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	var genesis core.Genesis
+	// Load genesis.json
+	if err = json.Unmarshal(taparams.GenesisContent, &genesis); err != nil {
+		panic(err)
+	}
+
+	suites.SuiteHydrate(&testSuite, c, Tests, &execution_config.GenesisState{
+		ForkName:         Deneb,
+		BeaconConfig:     beaconConfig,
+		NumValidators:    64,
+		GenesisTimeDelay: 15,
+		Genesis:          &genesis,
+	})
 	return testSuite
 }
