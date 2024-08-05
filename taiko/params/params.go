@@ -19,7 +19,7 @@ var envContent []byte
 var txsContent []byte
 
 //go:embed config.yml
-var configContent []byte
+var ConfigContent []byte
 
 //go:embed genesis.json
 var genesisContent []byte
@@ -53,7 +53,7 @@ func init() {
 	}
 
 	// Load params.yml
-	BeaconConfig, err = params.UnmarshalConfig(configContent, nil)
+	BeaconConfig, err = params.UnmarshalConfig(ConfigContent, nil)
 	if err != nil {
 		panic(err)
 	}
