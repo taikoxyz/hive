@@ -5,7 +5,6 @@ import (
 	"github.com/ethereum/hive/hivesim"
 	"github.com/marioevz/eth-clients/clients"
 	"github.com/marioevz/eth-clients/clients/execution"
-	"github.com/protolambda/zrnt/eth2/beacon/common"
 	"strings"
 	"taiko2/common/utils"
 )
@@ -26,12 +25,16 @@ type Node struct {
 	Logging utils.Logging
 	// Index of the node in the network/testnet
 	Index int
-	// Clients that comprise the node
-	ExecutionClient *ExecutionClient
+	// L1 chain clients that comprise the node
+	L1EthClient     *ExecutionClient
 	BeaconClient    *BeaconClient
 	ValidatorClient *ValidatorClient
-	// Whether this node can be used to query test verification information
-	Verification bool
+
+	// L2 chain clients that comprise the node
+	L2EthClient    *TaikoGethClient
+	DriverClient   *DriverClient
+	ProposerClient *ProposerClient
+	ProverClient   *ProverClient
 }
 
 func (n *Node) Logf(format string, values ...interface{}) {
@@ -43,8 +46,8 @@ func (n *Node) Logf(format string, values ...interface{}) {
 // Starts all clients included in the bundle
 func (n *Node) Start() error {
 	n.Logf("Starting validator client bundle %d", n.Index)
-	if n.ExecutionClient != nil {
-		if err := n.ExecutionClient.Start(); err != nil {
+	if n.L1EthClient != nil {
+		if err := n.L1EthClient.Start(); err != nil {
 			return err
 		}
 	} else {
@@ -64,6 +67,34 @@ func (n *Node) Start() error {
 	} else {
 		n.Logf("No validator client started")
 	}
+	if n.L2EthClient != nil {
+		if err := n.L2EthClient.Start(); err != nil {
+			return err
+		}
+	} else {
+		n.Logf("No taiko geth client started")
+	}
+	if n.DriverClient != nil {
+		if err := n.DriverClient.Start(); err != nil {
+			return err
+		}
+	} else {
+		n.Logf("No driver client started")
+	}
+	if n.ProposerClient != nil {
+		if err := n.ProposerClient.Start(); err != nil {
+			return err
+		}
+	} else {
+		n.Logf("No proposer client started")
+	}
+	if n.ProverClient != nil {
+		if err := n.ProverClient.Start(); err != nil {
+			return err
+		}
+	} else {
+		n.Logf("No prover client started")
+	}
 	return nil
 }
 
@@ -81,8 +112,8 @@ func (n *Node) CreateOrConnectNetwork(t *hivesim.T, network string) error {
 		networkCreated[t.SuiteID] = true
 
 	}
-	if n.ExecutionClient != nil {
-		client := n.ExecutionClient.HiveClient()
+	if n.L1EthClient != nil {
+		client := n.L1EthClient.HiveClient()
 		if err := t.Sim.ConnectContainer(t.SuiteID, network, client.Container); err != nil {
 			t.Fatalf("can't connect %s container to network, err = %v", client.Type, err)
 		}
@@ -99,26 +130,76 @@ func (n *Node) CreateOrConnectNetwork(t *hivesim.T, network string) error {
 			t.Fatalf("can't connect %s container to network, err = %v", client.Type, err)
 		}
 	}
+	if n.L2EthClient != nil {
+		client := n.L2EthClient.HiveClient()
+		if err := t.Sim.ConnectContainer(t.SuiteID, network, client.Container); err != nil {
+			t.Fatalf("can't connect %s container to network, err = %v", client.Type, err)
+		}
+	}
+	if n.DriverClient != nil {
+		client := n.DriverClient.HiveClient()
+		if err := t.Sim.ConnectContainer(t.SuiteID, network, client.Container); err != nil {
+			t.Fatalf("can't connect %s container to network, err = %v", client.Type, err)
+		}
+	}
+	if n.ProposerClient != nil {
+		client := n.ProposerClient.HiveClient()
+		if err := t.Sim.ConnectContainer(t.SuiteID, network, client.Container); err != nil {
+			t.Fatalf("can't connect %s container to network, err = %v", client.Type, err)
+		}
+	}
+	if n.ProverClient != nil {
+		client := n.ProverClient.HiveClient()
+		if err := t.Sim.ConnectContainer(t.SuiteID, network, client.Container); err != nil {
+			t.Fatalf("can't connect %s container to network, err = %v", client.Type, err)
+		}
+	}
 	return nil
 }
 
 func (n *Node) Shutdown() error {
-	if err := n.ExecutionClient.Shutdown(); err != nil {
-		return err
+	if n.L1EthClient != nil {
+		if err := n.L1EthClient.Shutdown(); err != nil {
+			return err
+		}
 	}
-	if err := n.BeaconClient.Shutdown(); err != nil {
-		return err
+	if n.BeaconClient != nil {
+		if err := n.BeaconClient.Shutdown(); err != nil {
+			return err
+		}
 	}
-	if err := n.ValidatorClient.Shutdown(); err != nil {
-		return err
+	if n.ValidatorClient != nil {
+		if err := n.ValidatorClient.Shutdown(); err != nil {
+			return err
+		}
+	}
+	if n.L2EthClient != nil {
+		if err := n.L2EthClient.Shutdown(); err != nil {
+			return err
+		}
+	}
+	if n.DriverClient != nil {
+		if err := n.DriverClient.Shutdown(); err != nil {
+			return err
+		}
+	}
+	if n.ProposerClient != nil {
+		if err := n.ProposerClient.Shutdown(); err != nil {
+			return err
+		}
+	}
+	if n.ProverClient != nil {
+		if err := n.ProverClient.Shutdown(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func (n *Node) ClientNames() string {
 	var name string
-	if n.ExecutionClient != nil {
-		name = n.ExecutionClient.ClientType()
+	if n.L1EthClient != nil {
+		name = n.L1EthClient.ClientType()
 	}
 	if n.BeaconClient != nil {
 		name = fmt.Sprintf("%s/%s", name, n.BeaconClient.ClientName())
@@ -127,7 +208,7 @@ func (n *Node) ClientNames() string {
 }
 
 func (n *Node) IsRunning() bool {
-	return n.ExecutionClient.IsRunning() && n.BeaconClient.IsRunning() && n.ValidatorClient.IsRunning()
+	return n.L1EthClient.IsRunning() && n.BeaconClient.IsRunning() && n.ValidatorClient.IsRunning()
 }
 
 // Node cluster operations
@@ -137,8 +218,8 @@ type Nodes []*Node
 func (all Nodes) ExecutionClients() ExecutionClients {
 	en := make(ExecutionClients, 0)
 	for _, n := range all {
-		if n.ExecutionClient != nil {
-			en = append(en, n.ExecutionClient)
+		if n.L1EthClient != nil {
+			en = append(en, n.L1EthClient)
 		}
 	}
 	return en
@@ -148,8 +229,8 @@ func (all Nodes) ExecutionClients() ExecutionClients {
 func (all Nodes) Proxies() execution.Proxies {
 	ps := make(execution.Proxies, 0)
 	for _, n := range all {
-		if n.ExecutionClient != nil {
-			ps = append(ps, n.ExecutionClient)
+		if n.L1EthClient != nil {
+			ps = append(ps, n.L1EthClient)
 		}
 	}
 	return ps
@@ -175,29 +256,6 @@ func (all Nodes) ValidatorClients() ValidatorClients {
 		}
 	}
 	return vc
-}
-
-// Return subset of nodes which are marked as verification nodes
-func (all Nodes) VerificationNodes() Nodes {
-	// If none is set as verification, then all are verification nodes
-	var any bool
-	for _, n := range all {
-		if n.Verification {
-			any = true
-			break
-		}
-	}
-	if !any {
-		return all
-	}
-
-	res := make(Nodes, 0)
-	for _, n := range all {
-		if n.Verification {
-			res = append(res, n)
-		}
-	}
-	return res
 }
 
 // Return subset of nodes that are currently running
@@ -228,42 +286,11 @@ func (all Nodes) FilterByEL(filters []string) Nodes {
 	ret := make(Nodes, 0)
 	for _, n := range all {
 		for _, filter := range filters {
-			if strings.Contains(n.ExecutionClient.ClientType(), filter) {
+			if strings.Contains(n.L1EthClient.ClientType(), filter) {
 				ret = append(ret, n)
 				break
 			}
 		}
 	}
 	return ret
-}
-
-func (all Nodes) RemoveNodeAsVerifier(id int) error {
-	if id >= len(all) {
-		return fmt.Errorf("node %d does not exist", id)
-	}
-	var any bool
-	for _, n := range all {
-		if n.Verification {
-			any = true
-			break
-		}
-	}
-	if any {
-		all[id].Verification = false
-	} else {
-		// If no node is set as verifier, we will set all other nodes as verifiers then
-		for i := range all {
-			all[i].Verification = (i != id)
-		}
-	}
-	return nil
-}
-
-func (all Nodes) ByValidatorIndex(validatorIndex common.ValidatorIndex) *Node {
-	for _, n := range all {
-		if n.ValidatorClient.ContainsValidatorIndex(validatorIndex) {
-			return n
-		}
-	}
-	return nil
 }

@@ -11,8 +11,6 @@ import (
 	exec_client "github.com/marioevz/eth-clients/clients/execution"
 	"github.com/protolambda/zrnt/eth2/beacon/common"
 	"math/big"
-	"os"
-	"strconv"
 	"strings"
 	"taiko2/common/clients"
 	cl "taiko2/common/config/consensus"
@@ -33,23 +31,25 @@ type PreparedTestnet struct {
 
 	// Execution chain configuration and genesis info
 	ExecutionGenesis *el.ExecutionGenesis
-	// Consensus genesis state
-	//BeaconGenesis common.BeaconState
 
-	ValidatorsSetupDetails cl.ValidatorsSetupDetails
-
-	// Configuration to apply to every node of the given type
+	// L1chain configuration to apply to every node of the given type
 	executionOpts hivesim.StartOption
 	validatorOpts hivesim.StartOption
 	beaconOpts    hivesim.StartOption
 
-	// A tranche is a group of validator keys to run on 1 node
-	keyTranches []cl.ValidatorsKeys
+	// L2chain configuration to apply to every node of the given type
+	taikoGethOpts hivesim.StartOption
+	driverOpts    hivesim.StartOption
+	proposerOpts  hivesim.StartOption
+	proverOpts    hivesim.StartOption
 }
 
-func getLogLevelString() string {
-	logLevelInt, _ := strconv.Atoi(os.Getenv("HIVE_LOGLEVEL"))
-	switch logLevelInt {
+func getLogLevelString(logLevel int) string {
+	switch logLevel {
+	case 0:
+		return "silent"
+	case 1:
+		return "error"
 	case 2:
 		return "warn"
 	case 3:
@@ -57,14 +57,13 @@ func getLogLevelString() string {
 	case 4:
 		return "debug"
 	case 5:
-		return "trace"
+		return "detail"
 	}
-	return "error"
+	return "info"
 }
 
 // Build all artifacts require to start a testnet.
 func PrepareTestnet(
-	env *Environment,
 	cfg *Config,
 	generateState *el.GenesisState,
 ) (*PreparedTestnet, error) {
@@ -96,16 +95,19 @@ func PrepareTestnet(
 		return nil, fmt.Errorf("error producing consensus cfg bundle: %v", err)
 	}
 
+	commonParams := hivesim.Params{
+		"HIVE_LOGLEVEL":           getLogLevelString(cfg.LogLevel),
+		"HIVE_TAIKO2_JWT_SECRET":  cfg.JWTSecret,
+		"HIVE_TAIKO2_FEE_RECEIPT": cfg.FeeReceipt,
+	}
+
 	executionOpts := hivesim.Bundle(
 		genesisJsonBundle,
 		hivesim.Params{
-			"HIVE_LOGLEVEL":                 os.Getenv("HIVE_LOGLEVEL"),
-			"HIVE_TAIKO2_JWT_SECRET":        cfg.JWTSecret,
-			"HIVE_TAIKO2_FEE_RECEIPT":       cfg.FeeReceipt,
-			"HIVE_TAIKO2_CLIQUE_PRIVATEKEY": "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
-			"HIVE_TAIKO2_CLIQUE_ADDRESS":    "f39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-			"HIVE_TAIKO2_CHAIN_ID":          fmt.Sprintf("%d", executionGenesis.ChainID()),
+			"HIVE_TAIKO2_FEE_RECEIPT": cfg.FeeReceipt,
+			"HIVE_TAIKO2_CHAIN_ID":    fmt.Sprintf("%d", executionGenesis.ChainID()),
 		},
+		commonParams,
 	)
 
 	// Pre-generate PoW chains for clients that require it
@@ -125,19 +127,9 @@ func PrepareTestnet(
 		}
 	}
 
-	// Generate keys opts for validators
-	shares := cfg.NodeDefinitions.Shares()
-	keyTranches := env.Validators.KeyTranches(shares)
-
-	// Define additional start options for beacon chain
-	commonParams := hivesim.Params{
-		"HIVE_TAIKO2_BUILDER_ENDPOINT": "",
-		"HIVE_TAIKO2_FEE_RECEIPT":      cfg.FeeReceipt,
-	}
 	beaconParams := hivesim.Params{
-		"HIVE_TAIKO2_JWT_SECRET":                  cfg.JWTSecret,
 		"HIVE_TAIKO2_METRICS_PORT":                fmt.Sprintf("%d", beacon_client.PortMetrics),
-		"HIVE_TAIKO2_DEPOSIT_CONTRACT_ADDRESS":    executionGenesis.DepositAddress.String(),
+		"HIVE_TAIKO2_DEPOSIT_CONTRACT_ADDRESS":    executionGenesis.DepositAddress,
 		"HIVE_TAIKO2_DEPOSIT_DEPLOY_BLOCK_NUMBER": fmt.Sprintf("%d", executionGenesis.Block.NumberU64()),
 		"HIVE_TAIKO2_ETH1_GENESIS_TIME":           fmt.Sprintf("%d", executionGenesis.Genesis.Timestamp),
 		"HIVE_TAIKO2_CHAIN_ID":                    fmt.Sprintf("%d", executionGenesis.ChainID()),
@@ -161,14 +153,23 @@ func PrepareTestnet(
 		validatorParams,
 	)
 
+	taikoGethOpts := hivesim.Bundle(hivesim.Params{
+		"HIVE_TAIKO2_JWT_SECRET":  cfg.JWTSecret,
+		"HIVE_TAIKO2_FEE_RECEIPT": cfg.FeeReceipt,
+		"HIVE_LOGLEVEL":           fmt.Sprintf("%d", cfg.LogLevel),
+	})
+
 	return &PreparedTestnet{
-		Spec:                   spec,
-		ExecutionGenesis:       executionGenesis,
-		ValidatorsSetupDetails: env.Validators,
-		executionOpts:          executionOpts,
-		beaconOpts:             beaconOpts,
-		validatorOpts:          validatorOpts,
-		keyTranches:            keyTranches,
+		Spec:             spec,
+		ExecutionGenesis: executionGenesis,
+		executionOpts:    executionOpts,
+		beaconOpts:       beaconOpts,
+		validatorOpts:    validatorOpts,
+
+		taikoGethOpts: taikoGethOpts,
+		driverOpts:    hivesim.Bundle(commonParams),
+		proposerOpts:  hivesim.Bundle(commonParams),
+		proverOpts:    hivesim.Bundle(commonParams),
 	}, nil
 }
 
@@ -197,12 +198,12 @@ func (p *PreparedTestnet) prepareExecutionNode(
 	consensus el.ExecutionConsensus,
 	chain []*types.Block,
 	config clients.ExecutionClientConfig,
+	deploy bool,
 ) *clients.ExecutionClient {
-	testnet.Logf(
-		"Preparing execution node: %s (%s)",
-		eth1Def.Name,
-		eth1Def.Version,
-	)
+	if eth1Def == nil {
+		return nil
+	}
+	testnet.Logf("Preparing execution node: %s (%s)", eth1Def.Name, eth1Def.Version)
 
 	cm := &clients.HiveManagedClient{
 		T:                    testnet.T,
@@ -232,10 +233,7 @@ func (p *PreparedTestnet) prepareExecutionNode(
 		opts = append(
 			opts,
 			hivesim.Params{
-				"HIVE_TERMINAL_TOTAL_DIFFICULTY": fmt.Sprintf(
-					"%d",
-					config.TerminalTotalDifficulty,
-				),
+				"HIVE_TERMINAL_TOTAL_DIFFICULTY": fmt.Sprintf("%d", config.TerminalTotalDifficulty),
 			},
 		)
 		genesis := testnet.ExecutionGenesis().ToBlock()
@@ -243,19 +241,8 @@ func (p *PreparedTestnet) prepareExecutionNode(
 			opts = append(
 				opts,
 				hivesim.Params{
-					"HIVE_TERMINAL_BLOCK_HASH": fmt.Sprintf(
-						"%s",
-						genesis.Hash(),
-					),
-				},
-			)
-			opts = append(
-				opts,
-				hivesim.Params{
-					"HIVE_TERMINAL_BLOCK_NUMBER": fmt.Sprintf(
-						"%d",
-						genesis.NumberU64(),
-					),
+					"HIVE_TERMINAL_BLOCK_HASH":   fmt.Sprintf("%s", genesis.Hash()),
+					"HIVE_TERMINAL_BLOCK_NUMBER": fmt.Sprintf("%d", genesis.NumberU64()),
 				},
 			)
 		}
@@ -275,6 +262,7 @@ func (p *PreparedTestnet) prepareExecutionNode(
 		Client: cm,
 		Logger: testnet.T,
 		Config: config,
+		Deploy: deploy,
 	}
 }
 
@@ -287,6 +275,10 @@ func (p *PreparedTestnet) prepareBeaconNode(
 	config *clients.BeaconClientConfig,
 	eth1Endpoints ...*clients.ExecutionClient,
 ) *clients.BeaconClient {
+	if beaconDef == nil {
+		return nil
+	}
+
 	testnet.Logf("Preparing beacon node: %s (%s)", beaconDef.Name, beaconDef.Version)
 
 	if len(eth1Endpoints) == 0 {
@@ -384,19 +376,14 @@ func (p *PreparedTestnet) prepareValidatorClient(
 	bn *clients.BeaconClient,
 	keyIndex int,
 ) *clients.ValidatorClient {
+	if validatorDef == nil {
+		return nil
+	}
 	testnet.Logf(
 		"Preparing validator client: %s (%s)",
 		validatorDef.Name,
 		validatorDef.Version,
 	)
-	if keyIndex >= len(p.keyTranches) {
-		testnet.Fatalf(
-			"only have %d key tranches, cannot find index %d for VC",
-			len(p.keyTranches),
-			keyIndex,
-		)
-	}
-	keys := p.keyTranches[keyIndex]
 
 	cm := &clients.HiveManagedClient{
 		T:                    testnet.T,
@@ -414,7 +401,7 @@ func (p *PreparedTestnet) prepareValidatorClient(
 			"HIVE_TAIKO2_BN_API_IP":   bn.GetHost(),
 			"HIVE_TAIKO2_BN_API_PORT": fmt.Sprintf("%d", bn.Config.BeaconAPIPort),
 		}
-		opts := []hivesim.StartOption{p.validatorOpts, keys.Bundle(), bnAPIOpt}
+		opts := []hivesim.StartOption{p.validatorOpts, bnAPIOpt}
 
 		return opts, nil
 	}
@@ -423,7 +410,149 @@ func (p *PreparedTestnet) prepareValidatorClient(
 		Client:       cm,
 		Logger:       testnet.T,
 		ClientIndex:  keyIndex,
-		Keys:         keys,
 		BeaconClient: bn,
+	}
+}
+
+func (p *PreparedTestnet) prepareTaikoGethClient(
+	ctx context.Context,
+	testnet *Testnet,
+	eth2Def *hivesim.ClientDefinition,
+) *clients.TaikoGethClient {
+	if eth2Def == nil {
+		return nil
+	}
+	testnet.Logf("Preparing TaikoGeth client: %s (%s)", eth2Def.Name, eth2Def.Version)
+
+	cm := &clients.HiveManagedClient{
+		T:                    testnet.T,
+		HiveClientDefinition: eth2Def,
+		Port:                 exec_client.PortEngineRPC,
+	}
+	cm.OptionsGenerator = func() ([]hivesim.StartOption, error) {
+		opts := []hivesim.StartOption{p.taikoGethOpts}
+		return opts, nil
+	}
+
+	return &clients.TaikoGethClient{
+		Client: cm,
+		Logger: testnet.T,
+	}
+}
+
+func (p *PreparedTestnet) prepareDriverClient(
+	ctx context.Context,
+	testnet *Testnet,
+	l1Client *clients.ExecutionClient,
+	beaconClient *clients.BeaconClient,
+	l2Client *clients.TaikoGethClient,
+	driverDef *hivesim.ClientDefinition,
+) *clients.DriverClient {
+	if driverDef == nil || l1Client == nil || beaconClient == nil || l2Client == nil {
+		return nil
+	}
+	testnet.Logf("Preparing driver client: %s (%s)", driverDef.Name, driverDef.Version)
+	cm := &clients.HiveManagedClient{
+		T:                    testnet.T,
+		HiveClientDefinition: driverDef,
+	}
+
+	getEnvs := func() hivesim.Params {
+		envs := params.EnvParams.Copy()
+		envs["L1_HTTP"] = fmt.Sprintf("http://%v:8545", l1Client.GetHost())
+		envs["L1_WS"] = fmt.Sprintf("ws://%v:8546", l1Client.GetHost())
+		envs["L1_BEACON"] = fmt.Sprintf("http://%v:3500", beaconClient.GetHost())
+		envs["L2_AUTH"] = fmt.Sprintf("http://%v:8551", l2Client.GetHost())
+		envs["L2_HTTP"] = fmt.Sprintf("http://%v:8545", l2Client.GetHost())
+		envs["L2_WS"] = fmt.Sprintf("ws://%v:8546", l2Client.GetHost())
+		return envs
+	}
+
+	cm.OptionsGenerator = func() ([]hivesim.StartOption, error) {
+		opts := []hivesim.StartOption{p.driverOpts, getEnvs()}
+		return opts, nil
+	}
+
+	return &clients.DriverClient{
+		Client: cm,
+		Logger: testnet.T,
+	}
+}
+
+func (p *PreparedTestnet) prepareProposerClient(
+	ctx context.Context,
+	testnet *Testnet,
+	l1Client *clients.ExecutionClient,
+	beaconClient *clients.BeaconClient,
+	l2Client *clients.TaikoGethClient,
+	proposerDef *hivesim.ClientDefinition,
+) *clients.ProposerClient {
+	if proposerDef == nil || l1Client == nil || beaconClient == nil || l2Client == nil {
+		return nil
+	}
+	testnet.Logf("Preparing proposer client: %s (%s)", proposerDef.Name, proposerDef.Version)
+
+	getEnvs := func() hivesim.Params {
+		envs := params.EnvParams.Copy()
+		envs["L1_HTTP"] = fmt.Sprintf("http://%v:8545", l1Client.GetHost())
+		envs["L1_WS"] = fmt.Sprintf("ws://%v:8546", l1Client.GetHost())
+		envs["L1_BEACON"] = fmt.Sprintf("http://%v:3500", beaconClient.GetHost())
+		envs["L2_AUTH"] = fmt.Sprintf("http://%v:8551", l2Client.GetHost())
+		envs["L2_HTTP"] = fmt.Sprintf("http://%v:8545", l2Client.GetHost())
+		envs["L2_WS"] = fmt.Sprintf("ws://%v:8546", l2Client.GetHost())
+		return envs
+	}
+
+	cm := &clients.HiveManagedClient{
+		T:                    testnet.T,
+		HiveClientDefinition: proposerDef,
+		OptionsGenerator: func() ([]hivesim.StartOption, error) {
+			opts := []hivesim.StartOption{p.proposerOpts, getEnvs()}
+			return opts, nil
+		},
+	}
+
+	return &clients.ProposerClient{
+		Client: cm,
+		Logger: testnet.T,
+	}
+}
+
+func (p *PreparedTestnet) prepareProverClient(
+	ctx context.Context,
+	testnet *Testnet,
+	l1Client *clients.ExecutionClient,
+	beaconClient *clients.BeaconClient,
+	l2Client *clients.TaikoGethClient,
+	proverDef *hivesim.ClientDefinition,
+) *clients.ProverClient {
+	if proverDef == nil || l1Client == nil || beaconClient == nil || l2Client == nil {
+		return nil
+	}
+	testnet.Logf("Preparing prover client: %s (%s)", proverDef.Name, proverDef.Version)
+
+	getEnvs := func() hivesim.Params {
+		envs := params.EnvParams.Copy()
+		envs["L1_HTTP"] = fmt.Sprintf("http://%v:8545", l1Client.GetHost())
+		envs["L1_WS"] = fmt.Sprintf("ws://%v:8546", l1Client.GetHost())
+		envs["L1_BEACON"] = fmt.Sprintf("http://%v:3500", beaconClient.GetHost())
+		envs["L2_AUTH"] = fmt.Sprintf("http://%v:8551", l2Client.GetHost())
+		envs["L2_HTTP"] = fmt.Sprintf("http://%v:8545", l2Client.GetHost())
+		envs["L2_WS"] = fmt.Sprintf("ws://%v:8546", l2Client.GetHost())
+		return envs
+	}
+
+	cm := &clients.HiveManagedClient{
+		T:                    testnet.T,
+		HiveClientDefinition: proverDef,
+		OptionsGenerator: func() ([]hivesim.StartOption, error) {
+			opts := []hivesim.StartOption{p.proverOpts, getEnvs()}
+			return opts, nil
+		},
+	}
+
+	return &clients.ProverClient{
+		Client: cm,
+		Logger: testnet.T,
 	}
 }

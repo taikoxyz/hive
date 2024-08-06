@@ -241,7 +241,7 @@ func (bn *BeaconClient) BlockIsOptimistic(
 	exists, err = eth2api.SimpleRequest(
 		ctx,
 		bn.api,
-		eth2api.FmtGET("/eth/v2/beacon/blocks/%s", blockId.BlockId()),
+		eth2api.FmtGET("/httpClient/v2/beacon/blocks/%s", blockId.BlockId()),
 		blockOptResp,
 	)
 	if !exists {

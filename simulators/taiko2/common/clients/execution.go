@@ -4,19 +4,22 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	api "github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/ethereum/hive/taiko"
+	"github.com/ethereum/hive/taiko/params"
 	"github.com/marioevz/eth-clients/clients"
 	"github.com/marioevz/eth-clients/clients/execution"
 	spoof "github.com/rauljordan/engine-proxy/proxy"
 	"math/big"
 	"net"
-	"net/http"
 	"strings"
 	"sync"
 	"taiko2/common/utils"
@@ -24,7 +27,8 @@ import (
 )
 
 const (
-	PortUserRPC   = 8545
+	PortHttpRPC   = 8545
+	PortWSRPC     = 8546
 	PortEngineRPC = 8551
 )
 
@@ -74,10 +78,8 @@ type ExecutionClientConfig struct {
 	ClientIndex             int
 	ProxyConfig             *ExecutionProxyConfig
 	TerminalTotalDifficulty int64
-	EngineAPIPort           int
-	RPCPort                 int
 	Subnet                  string
-	JWTSecret               []byte
+	JWTSecret               [32]byte
 }
 
 type ExecutionClient struct {
@@ -88,48 +90,34 @@ type ExecutionClient struct {
 	proxy     *execution.Proxy
 	latestfcu *api.ForkchoiceStateV1
 
-	engineRpcClient *rpc.Client
-	ethRpcClient    *rpc.Client
-	eth             *ethclient.Client
+	engineClient *rpc.Client
+	httpClient   *ethclient.Client
 
 	startupComplete bool
+
+	Deploy bool
 }
 
-func (en *ExecutionClient) Logf(format string, values ...interface{}) {
-	if l := en.Logger; l != nil {
+func (ec *ExecutionClient) Logf(format string, values ...interface{}) {
+	if l := ec.Logger; l != nil {
 		l.Logf(format, values...)
 	}
 }
 
-func (en *ExecutionClient) UserRPCAddress() (string, error) {
-	if !en.Client.IsRunning() {
-		return "", fmt.Errorf("execution client not yet launched")
-	}
-	var port = PortUserRPC
-	if en.Config.RPCPort != 0 {
-		port = en.Config.RPCPort
-	}
-	return fmt.Sprintf(
-		"http://%v:%d",
-		en.Client.GetHost(),
-		port,
-	), nil
+func (ec *ExecutionClient) HttpURL() string {
+	return fmt.Sprintf("http://%v:%d", ec.GetHost(), PortHttpRPC)
 }
 
-func (en *ExecutionClient) EngineRPCAddress() (string, error) {
-	var port = PortEngineRPC
-	if en.Config.EngineAPIPort != 0 {
-		port = en.Config.EngineAPIPort
-	}
-	return fmt.Sprintf(
-		"http://%v:%d",
-		en.Client.GetHost(),
-		port,
-	), nil
+func (ec *ExecutionClient) WSURL() string {
+	return fmt.Sprintf("ws://%v:%d", ec.GetHost(), PortWSRPC)
 }
 
-func (en *ExecutionClient) MustGetEnode() string {
-	if enodeClient, ok := en.Client.(EnodeClient); ok {
+func (ec *ExecutionClient) EngineURL() string {
+	return fmt.Sprintf("http://%v:%d", ec.GetHost(), PortEngineRPC)
+}
+
+func (ec *ExecutionClient) MustGetEnode() string {
+	if enodeClient, ok := ec.Client.(EnodeClient); ok {
 		addr, err := enodeClient.GetEnodeURL()
 		if err == nil {
 			return addr
@@ -139,13 +127,13 @@ func (en *ExecutionClient) MustGetEnode() string {
 	panic(fmt.Errorf("invalid client type"))
 }
 
-func (en *ExecutionClient) ConfiguredTTD() *big.Int {
-	return big.NewInt(en.Config.TerminalTotalDifficulty)
+func (ec *ExecutionClient) ConfiguredTTD() *big.Int {
+	return big.NewInt(ec.Config.TerminalTotalDifficulty)
 }
 
-func (en *ExecutionClient) Start() error {
-	if !en.Client.IsRunning() {
-		if managedClient, ok := en.Client.(clients.ManagedClient); !ok {
+func (ec *ExecutionClient) Start() error {
+	if !ec.Client.IsRunning() {
+		if managedClient, ok := ec.Client.(clients.ManagedClient); !ok {
 			return fmt.Errorf("attempted to start an unmanaged client")
 		} else {
 			if err := managedClient.Start(); err != nil {
@@ -154,58 +142,41 @@ func (en *ExecutionClient) Start() error {
 		}
 	}
 
-	return en.Init(context.Background())
+	return ec.Init(context.Background())
 }
 
-func (en *ExecutionClient) Init(ctx context.Context) error {
-	if !en.startupComplete {
+func (ec *ExecutionClient) Init(ctx context.Context) (err error) {
+	if !ec.Client.IsRunning() {
+		return fmt.Errorf("execution client not yet launched")
+	}
+	if !ec.startupComplete {
 		defer func() {
-			en.startupComplete = true
+			ec.startupComplete = true
 		}()
 
-		// Prepare Eth/Engine RPCs
-		engineRPCAddress, err := en.EngineRPCAddress()
-		if err != nil {
-			return err
-		}
-		client := &http.Client{}
 		// Prepare HTTP Client
-		en.engineRpcClient, err = rpc.DialHTTPWithClient(
-			engineRPCAddress,
-			client,
-		)
+		ec.engineClient, err = rpc.DialOptions(context.Background(), ec.EngineURL(), rpc.WithHTTPAuth(node.NewJWTAuth(ec.Config.JWTSecret)))
 		if err != nil {
 			return err
 		}
 
-		// Prepare ETH Client
-		client = &http.Client{}
-
-		userRPCAddress, err := en.UserRPCAddress()
+		ec.httpClient, err = ethclient.DialContext(ctx, ec.HttpURL())
 		if err != nil {
 			return err
 		}
-		en.ethRpcClient, err = rpc.DialHTTPWithClient(userRPCAddress, client)
-		if err != nil {
-			return err
-		}
-		en.eth = ethclient.NewClient(en.ethRpcClient)
 
 		// Prepare proxy
-		dest, err := en.EngineRPCAddress()
-		if err != nil {
-			return err
-		}
+		dest := ec.EngineURL()
 
-		if en.Config.ProxyConfig != nil {
+		if ec.Config.ProxyConfig != nil {
 			p := execution.NewProxy(
-				en.Config.ProxyConfig.Host,
-				en.Config.ProxyConfig.Port,
+				ec.Config.ProxyConfig.Host,
+				ec.Config.ProxyConfig.Port,
 				dest,
-				en.Config.JWTSecret,
+				ec.Config.JWTSecret[:],
 			)
 
-			if en.Config.ProxyConfig.TrackForkchoiceUpdated {
+			if ec.Config.ProxyConfig.TrackForkchoiceUpdated {
 				logCallback := func(req []byte) *spoof.Spoof {
 					var (
 						fcState api.ForkchoiceStateV1
@@ -218,29 +189,29 @@ func (en *ExecutionClient) Init(ctx context.Context) error {
 						&pAttr,
 					)
 					if err == nil {
-						en.latestfcu = &fcState
+						ec.latestfcu = &fcState
 					} else {
-						en.Logf(
+						ec.Logf(
 							"Error trying to unmarshal forkchoice state: %v. Latest FCU will be nil",
 							err,
 						)
-						en.latestfcu = nil
+						ec.latestfcu = nil
 					}
 					return nil
 				}
 				p.AddRequestCallbacks(logCallback, AllForkchoiceUpdatedCalls...)
 			}
 
-			if en.Config.ProxyConfig.LogEngineCalls {
+			if ec.Config.ProxyConfig.LogEngineCalls {
 				logCallback := func(res []byte, req []byte) *spoof.Spoof {
-					en.Logf(
+					ec.Logf(
 						"DEBUG: execution client %d, request: %s",
-						en.Config.ClientIndex,
+						ec.Config.ClientIndex,
 						req,
 					)
-					en.Logf(
+					ec.Logf(
 						"DEBUG: execution client %d, response: %s",
-						en.Config.ClientIndex,
+						ec.Config.ClientIndex,
 						res,
 					)
 					return nil
@@ -248,33 +219,105 @@ func (en *ExecutionClient) Init(ctx context.Context) error {
 				p.AddResponseCallbacks(logCallback, AllEngineCalls...)
 			}
 
-			en.proxy = p
+			ec.proxy = p
 		}
 	}
+
+	var (
+		client  *ethclient.Client
+		chainID *big.Int
+	)
+	tick := time.NewTicker(time.Second)
+	defer tick.Stop()
+	for chainID == nil {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(time.Second * 10):
+			chainID = big.NewInt(0)
+			break
+		case <-tick.C:
+			ec.Logger.Logf("Waiting for chainID")
+			client, err = ethclient.DialContext(ctx, ec.HttpURL())
+			if err != nil {
+				continue
+			}
+			chainID, _ = client.ChainID(ctx)
+		}
+	}
+
+	if ec.Deploy {
+		return ec.DeployContracts(ctx, chainID, client)
+	}
+
 	return nil
 }
 
-func (en *ExecutionClient) Shutdown() error {
-	if managedClient, ok := en.Client.(clients.ManagedClient); !ok {
+func (ec *ExecutionClient) DeployContracts(ctx context.Context, chainID *big.Int, client *ethclient.Client) error {
+	sk, err := crypto.HexToECDSA("ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
+	if err != nil {
+		return err
+	}
+	auth, err := bind.NewKeyedTransactorWithChainID(sk, chainID)
+	if err != nil {
+		return err
+	}
+
+	for _, tx := range params.ContractTxs {
+		data, _ := json.Marshal(tx)
+		ec.Logf("Deploying contract: %v", string(data))
+		signedTx, err := auth.Signer(auth.From, tx)
+		if err != nil {
+			return err
+		}
+
+		if err := client.SendTransaction(ctx, signedTx); err != nil {
+			return err
+		}
+	}
+
+	// check results.
+	for _, tx := range params.ContractTxs {
+		if tx.To() == nil {
+			_, err := bind.WaitDeployed(context.Background(), client, tx)
+			if err != nil {
+				return fmt.Errorf("failed to wait deployed: %v", err)
+			}
+		} else {
+			receipt, err := bind.WaitMined(context.Background(), client, tx)
+			if err != nil {
+				return fmt.Errorf("failed to wait mined, hash: %s, err: %v", tx.Hash().String(), err)
+			}
+			if receipt.Status != types.ReceiptStatusSuccessful {
+				return fmt.Errorf("failed to call contract, hash: %s", tx.Hash().String())
+			}
+		}
+	}
+
+	envs := params.EnvParams.Copy()
+	envs["L1_HTTP"] = ec.HttpURL()
+
+	// init contracts.
+	return taiko.InitTaikoContract(envs)
+}
+
+func (ec *ExecutionClient) Shutdown() error {
+	if managedClient, ok := ec.Client.(clients.ManagedClient); !ok {
 		return fmt.Errorf("attempted to shutdown an unmanaged client")
 	} else {
 		return managedClient.Shutdown()
 	}
 }
 
-func (en *ExecutionClient) IsRunning() bool {
-	return en.Client.IsRunning()
+func (ec *ExecutionClient) Proxy() *execution.Proxy {
+	return ec.proxy
 }
 
-func (en *ExecutionClient) Proxy() *execution.Proxy {
-	return en.proxy
-}
-
-func (en *ExecutionClient) GetLatestForkchoiceUpdated(
+func (ec *ExecutionClient) GetLatestForkchoiceUpdated(
 	ctx context.Context,
 ) (*api.ForkchoiceStateV1, error) {
-	if en.latestfcu != nil {
-		return en.latestfcu, nil
+	if ec.latestfcu != nil {
+		return ec.latestfcu, nil
 	}
 	// Try to reconstruct by querying it from the client
 	forkchoiceState := &api.ForkchoiceStateV1{}
@@ -304,11 +347,11 @@ func (en *ExecutionClient) GetLatestForkchoiceUpdated(
 		t := t
 		go func(t *labelBlockHashTask) {
 			defer wg.Done()
-			if res, err := en.HeaderByLabel(
+			if res, err := ec.HeaderByLabel(
 				ctx,
 				t.label,
 			); err != nil {
-				en.Logf(
+				ec.Logf(
 					"Error trying to fetch label %s from client: %v",
 					t.label,
 					err,
@@ -329,54 +372,17 @@ func (en *ExecutionClient) GetLatestForkchoiceUpdated(
 	return forkchoiceState, nil
 }
 
-// Engine API
-
-// JWT Tokens
-func GetNewToken(jwtSecretBytes []byte, iat time.Time) (string, error) {
-	newToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"iat": iat.Unix(),
-	})
-	tokenString, err := newToken.SignedString(jwtSecretBytes)
-	if err != nil {
-		return "", err
-	}
-	return tokenString, nil
-}
-
-func (en *ExecutionClient) PrepareAuthCallToken(
-	jwtSecretBytes []byte,
-	iat time.Time,
-) error {
-	newTokenString, err := GetNewToken(jwtSecretBytes, iat)
-	if err != nil {
-		return err
-	}
-	en.engineRpcClient.SetHeader(
-		"Authorization",
-		fmt.Sprintf("Bearer %s", newTokenString),
-	)
-	return nil
-}
-
-func (en *ExecutionClient) PrepareDefaultAuthCallToken() error {
-	en.PrepareAuthCallToken(en.Config.JWTSecret, time.Now())
-	return nil
-}
-
-func (en *ExecutionClient) EngineForkchoiceUpdated(
+func (ec *ExecutionClient) EngineForkchoiceUpdated(
 	parentCtx context.Context,
 	fcState *api.ForkchoiceStateV1,
 	pAttributes *api.PayloadAttributes,
 	version int,
 ) (*api.ForkChoiceResponse, error) {
 	var result api.ForkChoiceResponse
-	if err := en.PrepareDefaultAuthCallToken(); err != nil {
-		return nil, err
-	}
 	request := fmt.Sprintf("engine_forkchoiceUpdatedV%d", version)
 	ctx, cancel := context.WithTimeout(parentCtx, time.Second*10)
 	defer cancel()
-	err := en.engineRpcClient.CallContext(
+	err := ec.engineClient.CallContext(
 		ctx,
 		&result,
 		request,
@@ -386,7 +392,7 @@ func (en *ExecutionClient) EngineForkchoiceUpdated(
 	return &result, err
 }
 
-func (en *ExecutionClient) EngineGetPayload(
+func (ec *ExecutionClient) EngineGetPayload(
 	parentCtx context.Context,
 	payloadID *api.PayloadID,
 	version int,
@@ -394,16 +400,11 @@ func (en *ExecutionClient) EngineGetPayload(
 	var (
 		rpcString = fmt.Sprintf("engine_getPayloadV%d", version)
 	)
-
-	if err := en.PrepareDefaultAuthCallToken(); err != nil {
-		return nil, nil, nil, nil, err
-	}
-
 	ctx, cancel := context.WithTimeout(parentCtx, time.Second*10)
 	defer cancel()
 	if version >= 2 {
 		var response api.ExecutionPayloadEnvelope
-		err := en.engineRpcClient.CallContext(
+		err := ec.engineClient.CallContext(
 			ctx,
 			&response,
 			rpcString,
@@ -412,24 +413,21 @@ func (en *ExecutionClient) EngineGetPayload(
 		return response.ExecutionPayload, response.BlockValue, response.BlobsBundle, &response.Override, err
 	} else {
 		var executableData api.ExecutableData
-		err := en.engineRpcClient.CallContext(ctx, &executableData, rpcString, payloadID)
+		err := ec.engineClient.CallContext(ctx, &executableData, rpcString, payloadID)
 		return &executableData, common.Big0, nil, nil, err
 	}
 }
 
-func (en *ExecutionClient) EngineNewPayload(
+func (ec *ExecutionClient) EngineNewPayload(
 	parentCtx context.Context,
 	payload *api.ExecutableData,
 	version int,
 ) (*api.PayloadStatusV1, error) {
 	var result api.PayloadStatusV1
-	if err := en.PrepareDefaultAuthCallToken(); err != nil {
-		return nil, err
-	}
 	request := fmt.Sprintf("engine_newPayloadV%d", version)
 	ctx, cancel := context.WithTimeout(parentCtx, time.Second*10)
 	defer cancel()
-	err := en.engineRpcClient.CallContext(ctx, &result, request, payload)
+	err := ec.engineClient.CallContext(ctx, &result, request, payload)
 	return &result, err
 }
 
@@ -453,77 +451,13 @@ func (tdh *TotalDifficultyHeader) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (en *ExecutionClient) TotalDifficultyByNumber(
-	parentCtx context.Context,
-	blockNumber *big.Int,
-) (*big.Int, error) {
-	var td *TotalDifficultyHeader
-	ctx, cancel := utils.ContextTimeoutRPC(parentCtx)
-	defer cancel()
-	var blockId string
-	if blockNumber == nil {
-		blockId = "latest"
-	} else {
-		blockId = fmt.Sprintf("%d", blockNumber)
-	}
-	if err := en.ethRpcClient.CallContext(ctx, &td, "eth_getBlockByNumber", blockId, false); err == nil {
-		return td.TotalDifficulty.ToInt(), nil
-	} else {
-		return nil, err
-	}
-}
-
-func (en *ExecutionClient) TotalDifficultyByHash(
-	parentCtx context.Context,
-	blockHash common.Hash,
-) (*big.Int, error) {
-	var td *TotalDifficultyHeader
-	ctx, cancel := utils.ContextTimeoutRPC(parentCtx)
-	defer cancel()
-	if err := en.ethRpcClient.CallContext(ctx, &td, "eth_getBlockByHash", fmt.Sprintf("%s", blockHash), false); err == nil {
-		return td.TotalDifficulty.ToInt(), nil
-	} else {
-		return nil, err
-	}
-}
-
-func (ec *ExecutionClient) CheckTTD(parentCtx context.Context) (bool, error) {
-	td, err := ec.TotalDifficultyByNumber(parentCtx, nil)
-	if err != nil {
-		return false, err
-	}
-	if td.Cmp(big.NewInt(ec.Config.TerminalTotalDifficulty)) >= 0 {
-		return true, nil
-	}
-	return false, nil
-}
-
-func (ec *ExecutionClient) WaitForTerminalTotalDifficulty(
-	parentCtx context.Context,
-) error {
-	for {
-		select {
-		case <-time.After(time.Second):
-			reached, err := ec.CheckTTD(parentCtx)
-			if err != nil {
-				return err
-			}
-			if reached {
-				return nil
-			}
-		case <-parentCtx.Done():
-			return parentCtx.Err()
-		}
-	}
-}
-
 func (ec *ExecutionClient) HeaderByHash(
 	parentCtx context.Context,
 	h common.Hash,
 ) (*types.Header, error) {
 	ctx, cancel := utils.ContextTimeoutRPC(parentCtx)
 	defer cancel()
-	return ec.eth.HeaderByHash(ctx, h)
+	return ec.httpClient.HeaderByHash(ctx, h)
 }
 
 func (ec *ExecutionClient) HeaderByNumber(
@@ -532,7 +466,7 @@ func (ec *ExecutionClient) HeaderByNumber(
 ) (*types.Header, error) {
 	ctx, cancel := utils.ContextTimeoutRPC(parentCtx)
 	defer cancel()
-	return ec.eth.HeaderByNumber(ctx, n)
+	return ec.httpClient.HeaderByNumber(ctx, n)
 }
 
 func (ec *ExecutionClient) HeaderByLabel(
@@ -542,7 +476,8 @@ func (ec *ExecutionClient) HeaderByLabel(
 	ctx, cancel := utils.ContextTimeoutRPC(parentCtx)
 	defer cancel()
 	h := new(types.Header)
-	err := ec.ethRpcClient.CallContext(
+	client := ec.httpClient.Client()
+	err := client.CallContext(
 		ctx,
 		h,
 		"eth_getBlockByNumber",
@@ -558,7 +493,7 @@ func (ec *ExecutionClient) BlockByHash(
 ) (*types.Block, error) {
 	ctx, cancel := utils.ContextTimeoutRPC(parentCtx)
 	defer cancel()
-	return ec.eth.BlockByHash(ctx, h)
+	return ec.httpClient.BlockByHash(ctx, h)
 }
 
 func (ec *ExecutionClient) BlockByNumber(
@@ -567,17 +502,7 @@ func (ec *ExecutionClient) BlockByNumber(
 ) (*types.Block, error) {
 	ctx, cancel := utils.ContextTimeoutRPC(parentCtx)
 	defer cancel()
-	return ec.eth.BlockByNumber(ctx, n)
-}
-
-func (ec *ExecutionClient) BalanceAt(
-	parentCtx context.Context,
-	account common.Address,
-	n *big.Int,
-) (*big.Int, error) {
-	ctx, cancel := utils.ContextTimeoutRPC(parentCtx)
-	defer cancel()
-	return ec.eth.BalanceAt(ctx, account, n)
+	return ec.httpClient.BlockByNumber(ctx, n)
 }
 
 type BinaryMarshable interface {
@@ -595,7 +520,8 @@ func (ec *ExecutionClient) SendTransaction(
 	ctx, cancel := utils.ContextTimeoutRPC(parentCtx)
 	defer cancel()
 
-	return ec.ethRpcClient.CallContext(ctx, nil, "eth_sendRawTransaction", hexutil.Encode(data))
+	client := ec.httpClient.Client()
+	return client.CallContext(ctx, nil, "eth_sendRawTransaction", hexutil.Encode(data))
 }
 
 type ExecutionClients []*ExecutionClient

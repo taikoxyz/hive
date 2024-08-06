@@ -3,7 +3,6 @@ package testnet
 import (
 	"context"
 	"encoding/hex"
-	"fmt"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/prysmaticlabs/prysm/v4/beacon-chain/state"
 	"github.com/prysmaticlabs/prysm/v4/consensus-types/primitives"
@@ -135,7 +134,7 @@ func StartTestnet(
 	config *Config,
 	generateState *execution_config.GenesisState,
 ) *Testnet {
-	prep, err := PrepareTestnet(env, config, generateState)
+	prep, err := PrepareTestnet(config, generateState)
 	if err != nil {
 		t.Fatalf("FAIL: Unable to prepare testnet: %v", err)
 	}
@@ -176,25 +175,17 @@ func StartTestnet(
 		var (
 			nodeClient = testnet.Nodes[nodeIndex]
 
-			executionDef = env.Clients.ClientByNameAndRole(
-				node.ExecutionClientName(),
-				"eth1",
-			)
-			beaconDef = env.Clients.ClientByNameAndRole(
-				node.ConsensusClientName(),
-				"beacon",
-			)
-			validatorDef = env.Clients.ClientByNameAndRole(
-				node.ValidatorClientName(),
-				"validator",
-			)
+			executionDef = env.Clients.ClientByNameAndRole(node.L1EthClient, "eth1")
+			beaconDef    = env.Clients.ClientByNameAndRole(node.ConsensusClient, "beacon")
+			validatorDef = env.Clients.ClientByNameAndRole(node.ValidatorClientName(), "validator")
+			taikoGethDef = env.Clients.ClientByNameAndRole(node.L2EthClient, "taiko-geth")
+			driverDef    = env.Clients.ClientByNameAndRole(node.DriverClient, "driver")
+			proposerDef  = env.Clients.ClientByNameAndRole(node.ProposerClient, "proposer")
+			proverDef    = env.Clients.ClientByNameAndRole(node.ProverClient, "prover")
 			executionTTD = int64(0)
 			beaconTTD    = int64(0)
 		)
 
-		if executionDef == nil || beaconDef == nil || validatorDef == nil {
-			t.Fatalf("FAIL: Unable to get client")
-		}
 		if node.ExecutionClientTTD != nil {
 			executionTTD = node.ExecutionClientTTD.Int64()
 		} else if testnet.executionGenesis.Genesis.Config.TerminalTotalDifficulty != nil {
@@ -208,7 +199,7 @@ func StartTestnet(
 
 		// Prepare the client objects with all the information necessary to
 		// eventually start
-		nodeClient.ExecutionClient = prep.prepareExecutionNode(
+		nodeClient.L1EthClient = prep.prepareExecutionNode(
 			parentCtx,
 			testnet,
 			executionDef,
@@ -218,7 +209,7 @@ func StartTestnet(
 				ClientIndex:             nodeIndex,
 				TerminalTotalDifficulty: executionTTD,
 				Subnet:                  node.GetExecutionSubnet(),
-				JWTSecret:               ethcommon.FromHex(config.JWTSecret),
+				JWTSecret:               ethcommon.HexToHash(config.JWTSecret),
 				ProxyConfig: &clients.ExecutionProxyConfig{
 					Host:                   simulatorIP,
 					Port:                   exec_client.PortEngineRPC + nodeIndex,
@@ -226,46 +217,73 @@ func StartTestnet(
 					LogEngineCalls:         env.LogEngineCalls,
 				},
 			},
+			driverDef != nil || proverDef != nil || proposerDef != nil,
+		)
+		nodeClient.BeaconClient = prep.prepareBeaconNode(
+			parentCtx,
+			testnet,
+			beaconDef,
+			&clients.BeaconClientConfig{
+				ClientIndex:             nodeIndex,
+				BeaconAPIPort:           clients.PortBeaconAPI,
+				TerminalTotalDifficulty: beaconTTD,
+				Spec:                    testnet.spec,
+				GenesisValidatorsRoot:   &testnet.genesisValidatorsRoot,
+				GenesisTime:             &testnet.genesisTime,
+				Subnet:                  node.GetConsensusSubnet(),
+			},
+			nodeClient.L1EthClient,
 		)
 
-		if node.ConsensusClient != "" {
-			nodeClient.BeaconClient = prep.prepareBeaconNode(
-				parentCtx,
-				testnet,
-				beaconDef,
-				&clients.BeaconClientConfig{
-					ClientIndex:             nodeIndex,
-					BeaconAPIPort:           clients.PortBeaconAPI,
-					TerminalTotalDifficulty: beaconTTD,
-					Spec:                    testnet.spec,
-					GenesisValidatorsRoot:   &testnet.genesisValidatorsRoot,
-					GenesisTime:             &testnet.genesisTime,
-					Subnet:                  node.GetConsensusSubnet(),
-				},
-				nodeClient.ExecutionClient,
-			)
+		nodeClient.ValidatorClient = prep.prepareValidatorClient(
+			parentCtx,
+			testnet,
+			validatorDef,
+			nodeClient.BeaconClient,
+			nodeIndex,
+		)
 
-			nodeClient.ValidatorClient = prep.prepareValidatorClient(
-				parentCtx,
-				testnet,
-				validatorDef,
-				nodeClient.BeaconClient,
-				nodeIndex,
-			)
-		}
+		nodeClient.L2EthClient = prep.prepareTaikoGethClient(
+			parentCtx,
+			testnet,
+			taikoGethDef,
+		)
+		nodeClient.DriverClient = prep.prepareDriverClient(
+			parentCtx,
+			testnet,
+			nodeClient.L1EthClient,
+			nodeClient.BeaconClient,
+			nodeClient.L2EthClient,
+			driverDef,
+		)
+		nodeClient.ProverClient = prep.prepareProverClient(
+			parentCtx,
+			testnet,
+			nodeClient.L1EthClient,
+			nodeClient.BeaconClient,
+			nodeClient.L2EthClient,
+			proverDef,
+		)
+		nodeClient.ProposerClient = prep.prepareProposerClient(
+			parentCtx,
+			testnet,
+			nodeClient.L1EthClient,
+			nodeClient.BeaconClient,
+			nodeClient.L2EthClient,
+			proposerDef,
+		)
 
 		// Add rest of properties
 		nodeClient.Logging = t
 		nodeClient.Index = nodeIndex
-		nodeClient.Verification = node.TestVerificationNode
 		// Start the node clients if specified so
 		if !node.DisableStartup {
 			t.Logf("Starting node %d", nodeIndex)
-			if err := nodeClient.Start(); err != nil {
+			if err = nodeClient.Start(); err != nil {
 				t.Fatalf("FAIL: Unable to start node %d: %v", nodeIndex, err)
 			}
 			// Connect to the network if specified
-			if err := nodeClient.CreateOrConnectNetwork(t, fmt.Sprintf("%s_%d", config.Network, nodeIndex)); err != nil {
+			if err = nodeClient.CreateOrConnectNetwork(t, config.Network); err != nil {
 				t.Fatalf("FAIL: Unable to connect to network: %v", err)
 			}
 		} else {
@@ -277,16 +295,10 @@ func StartTestnet(
 }
 
 func (t *Testnet) Stop() {
+	for _, node := range t.Nodes {
+		node.Shutdown()
+	}
 	for _, p := range t.Proxies().Running() {
 		p.Cancel()
 	}
-}
-
-func (t *Testnet) ValidatorClientIndex(pk [48]byte) (int, error) {
-	for i, v := range t.ValidatorClients() {
-		if v.ContainsKey(pk) {
-			return i, nil
-		}
-	}
-	return 0, fmt.Errorf("key not found in any validator client")
 }

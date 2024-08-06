@@ -6,7 +6,6 @@ import (
 
 	beacon "github.com/protolambda/zrnt/eth2/beacon/common"
 	"taiko2/common/clients"
-	cl "taiko2/common/config/consensus"
 	"taiko2/common/testnet"
 	"taiko2/common/utils"
 )
@@ -51,7 +50,7 @@ func (ts BaseTestSpec) GetNodeCount() int {
 	if ts.NodeCount > 0 {
 		return ts.NodeCount
 	}
-	return 2
+	return 1
 }
 
 func (ts BaseTestSpec) GetValidatingNodeCount() int {
@@ -78,13 +77,14 @@ func (ts BaseTestSpec) GetTestnetConfig(
 
 	return &testnet.Config{
 		Eth1Consensus: execution_config.ExecutionCliqueConsensus{
-			CliquePrivateKey: "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
-			CliqueAddress:    "f39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+			CliquePrivateKey: "2e0834786285daccd064ca17f1654f67b4aef298acbb82cef9ec422fb4975622",
+			CliqueAddress:    "123463a4B065722E99115D6c222f267d9cABb524",
 		},
 		NodeDefinitions: nodeDefinitions,
 		Network:         "taiko2_base_test",
+		LogLevel:        4,
 		JWTSecret:       "7365637265747365637265747365637265747365637265747365637265747365",
-		FeeReceipt:      "123463a4b065722e99115d6c222f267d9cabb524",
+		FeeReceipt:      "a0Ee7A142d267C1f36714E4a8F75612F20a79720",
 	}
 }
 
@@ -155,47 +155,4 @@ func (ts BaseTestSpec) GetExecutionWithdrawalCredentialCount() uint64 {
 		return ts.GetValidatorCount() / uint64(ts.GenesisExecutionWithdrawalCredentialsShares)
 	}
 	return 0
-}
-
-func (ts BaseTestSpec) GetValidatorKeys(
-	mnemonic string,
-) cl.ValidatorsSetupDetails {
-	keySrc := &cl.MnemonicsKeySource{
-		From:     0,
-		To:       ts.GetValidatorCount(),
-		Mnemonic: mnemonic,
-	}
-	keys, err := keySrc.Keys()
-	if err != nil {
-		panic(err)
-	}
-
-	for index, key := range keys {
-		// All validators have idiosyncratic balance amounts to identify them.
-		// Also include a high amount in order to guarantee withdrawals.
-		key.ExtraInitialBalance = beacon.Gwei((index+1)*1000000) + ts.ExtraGwei
-
-		if ts.GenesisExecutionWithdrawalCredentialsShares > 0 &&
-			(index%ts.GenesisExecutionWithdrawalCredentialsShares) == 0 {
-			key.WithdrawalCredentialType = beacon.ETH1_ADDRESS_WITHDRAWAL_PREFIX
-			key.WithdrawalExecAddress = beacon.Eth1Address{byte(index + 0x100)}
-		}
-		if ts.GenesisExitedShares > 1 && (index%ts.GenesisExitedShares) == 1 {
-			key.Exited = true
-		}
-		if ts.GenesisSlashedShares > 2 &&
-			(index%ts.GenesisSlashedShares) == 2 {
-			key.Slashed = true
-		}
-		fmt.Printf(
-			"INFO: Validator %d, extra_gwei=%d, exited=%v, slashed=%v, key_type=%d\n",
-			index,
-			key.ExtraInitialBalance,
-			key.Exited,
-			key.Slashed,
-			key.WithdrawalCredentialType,
-		)
-	}
-
-	return keys
 }

@@ -14,7 +14,7 @@ import (
 var testSuite = hivesim.Suite{
 	Name:        "eth2-deneb-testnet",
 	DisplayName: "Deneb Testnet",
-	Description: `Collection of test vectors that use a ExecutionClient+BeaconNode+ValidatorClient testnet for Cancun+Deneb.`,
+	Description: `Collection of test vectors that use a L1EthClient+BeaconNode+ValidatorClient testnet for Cancun+Deneb.`,
 	Location:    "suites/base",
 }
 
@@ -22,15 +22,6 @@ var Tests = make([]suites.TestSpec, 0)
 
 func init() {
 	Tests = append(Tests,
-		BaseTestSpec{
-			Name:         "test-deneb-fork",
-			DisplayName:  "Deneb Fork",
-			Description:  `Sanity test to check the fork transition to deneb.`,
-			DenebGenesis: false,
-			GenesisExecutionWithdrawalCredentialsShares: 1,
-			EpochsAfterFork:     1,
-			ExitValidatorsShare: 10,
-		},
 		BaseTestSpec{
 			Name:        "test-deneb-genesis",
 			DisplayName: "Deneb Genesis",
@@ -47,7 +38,7 @@ func init() {
 	)
 }
 
-func Suite(c *clients.ClientDefinitionsByRole) hivesim.Suite {
+func Suite(clients *clients.ClientDefinitionsByRole) hivesim.Suite {
 	// Load params.yml
 	beaconConfig, err := params.UnmarshalConfig(taparams.ConfigContent, nil)
 	if err != nil {
@@ -60,7 +51,7 @@ func Suite(c *clients.ClientDefinitionsByRole) hivesim.Suite {
 		panic(err)
 	}
 
-	suites.SuiteHydrate(&testSuite, c, Tests, &execution_config.GenesisState{
+	suites.SuiteHydrate(&testSuite, clients, Tests, &execution_config.GenesisState{
 		ForkName:         Deneb,
 		BeaconConfig:     beaconConfig,
 		NumValidators:    64,

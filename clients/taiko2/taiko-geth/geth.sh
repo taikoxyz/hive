@@ -11,7 +11,7 @@ if [ "$HIVE_TAIKO2_JWT_SECRET" != "" ]; then
   echo "$HIVE_TAIKO2_JWT_SECRET" >/geth/jwt.hex
 fi
 
-FLAGS="--taiko --taiko --datadir /geth/data --state.scheme path"
+FLAGS="--taiko --datadir /geth/data --state.scheme path"
 # Configure http.
 FLAGS="$FLAGS --http --http.addr 0.0.0.0 --http.api admin,debug,eth,miner,net,personal,txpool,web3,taiko"
 # Configure ws.

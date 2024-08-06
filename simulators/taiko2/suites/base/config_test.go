@@ -1,7 +1,11 @@
 package suite_base
 
 import (
+	"encoding/json"
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/hive/hivesim"
+	taparams "github.com/ethereum/hive/taiko/params"
+	"github.com/prysmaticlabs/prysm/v4/config/params"
 	"github.com/stretchr/testify/assert"
 	"taiko2/common/clients"
 	execution_config "taiko2/common/config/execution"
@@ -25,29 +29,73 @@ func TestCC(t *testing.T) {
 			Version: "client-3-version",
 			Meta:    hivesim.ClientMetadata{Roles: []string{"validator"}},
 		},
+		{
+			Name:    "taiko-geth",
+			Version: "taiko-geth-4-version",
+			Meta:    hivesim.ClientMetadata{Roles: []string{"taiko-geth"}},
+		},
+		{
+			Name:    "proposer",
+			Version: "proposer-5-version",
+			Meta:    hivesim.ClientMetadata{Roles: []string{"proposer"}},
+		},
+		{
+			Name:    "driver",
+			Version: "driver-6-version",
+			Meta:    hivesim.ClientMetadata{Roles: []string{"driver"}},
+		},
+		{
+			Name:    "prover",
+			Version: "prover-7-version",
+			Meta:    hivesim.ClientMetadata{Roles: []string{"prover"}},
+		},
 	}
 
 	clientsByRole := clients.ClientsByRole(clientTypes)
 
 	clientCombinations := clientsByRole.Combinations()
 
-	mnemonic := "couple kiwi radio river setup fortune hunt grief buddy forward perfect empty slim wear bounce drift execute nation tobacco dutch chapter festival ice fog"
+	// Load params.yml
+	beaconConfig, err := params.UnmarshalConfig(taparams.ConfigContent, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	var genesis core.Genesis
+	// Load genesis.json
+	if err = json.Unmarshal(taparams.GenesisContent, &genesis); err != nil {
+		panic(err)
+	}
+
+	env := &testnet.Environment{
+		Clients: clientsByRole,
+	}
 
 	for _, test := range Tests {
-		keys := test.GetValidatorKeys(mnemonic)
-		env := &testnet.Environment{
-			Clients:    clientsByRole,
-			Validators: keys,
-		}
 		config := test.GetTestnetConfig(clientCombinations)
+
+		for _, node := range config.NodeDefinitions {
+			var (
+				executionDef = env.Clients.ClientByNameAndRole(node.L1EthClient, "eth1")
+				beaconDef    = env.Clients.ClientByNameAndRole(node.ConsensusClient, "beacon")
+				validatorDef = env.Clients.ClientByNameAndRole(node.ValidatorClientName(), "validator")
+				taikoGethDef = env.Clients.ClientByNameAndRole(node.L2EthClient, "taiko-geth")
+				driverDef    = env.Clients.ClientByNameAndRole(node.DriverClient, "driver")
+				proposerDef  = env.Clients.ClientByNameAndRole(node.ProposerClient, "proposer")
+				proverDef    = env.Clients.ClientByNameAndRole(node.ProverClient, "prover")
+			)
+			t.Log(executionDef, beaconDef, validatorDef, taikoGethDef, driverDef, proposerDef, proverDef)
+		}
 
 		genesisState := &execution_config.GenesisState{
 			ForkName:         "deneb",
+			BeaconConfig:     beaconConfig,
 			NumValidators:    64,
 			GenesisTimeDelay: 15,
+			Genesis:          &genesis,
 		}
 
-		prep, err := testnet.PrepareTestnet(env, config, genesisState)
+		prep, err := testnet.PrepareTestnet(config, genesisState)
 		assert.NoError(t, err)
 		t.Log(prep)
 	}

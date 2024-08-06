@@ -16,10 +16,16 @@ import (
 // - Beacon Client
 // - Validator Client
 type NodeDefinition struct {
-	// Client Types
-	ExecutionClient string `json:"execution_client"`
+	// L1chain Client Types
+	L1EthClient     string `json:"execution_client"`
 	ConsensusClient string `json:"consensus_client"`
 	ValidatorClient string `json:"validator_client"`
+
+	// L2chain client Types
+	L2EthClient    string `json:"taiko_geth_client"`
+	ProposerClient string `json:"proposer_client"`
+	ProverClient   string `json:"prover_client"`
+	DriverClient   string `json:"driver_client"`
 
 	// Execution Config
 	ExecutionClientTTD *big.Int          `json:"execution_client_ttd,omitempty"`
@@ -33,8 +39,7 @@ type NodeDefinition struct {
 	ValidatorShares uint64 `json:"validator_shares"`
 
 	// Node Config
-	TestVerificationNode bool `json:"test_verification_node"`
-	DisableStartup       bool `json:"disable_startup"`
+	DisableStartup bool `json:"disable_startup"`
 
 	// Subnet Configuration
 	ExecutionSubnet string `json:"execution_subnet"`
@@ -43,11 +48,11 @@ type NodeDefinition struct {
 }
 
 func (n *NodeDefinition) String() string {
-	return fmt.Sprintf("%s-%s", n.ConsensusClient, n.ExecutionClient)
+	return fmt.Sprintf("%s-%s", n.ConsensusClient, n.L1EthClient)
 }
 
 func (n *NodeDefinition) ExecutionClientName() string {
-	return n.ExecutionClient
+	return n.L1EthClient
 }
 
 func (n *NodeDefinition) ConsensusClientName() string {
@@ -96,8 +101,8 @@ type NodeDefinitions []NodeDefinition
 func (nodes NodeDefinitions) ClientTypes() []string {
 	types := make([]string, 0)
 	for _, n := range nodes {
-		if !slices.Contains(types, n.ExecutionClient) {
-			types = append(types, n.ExecutionClient)
+		if !slices.Contains(types, n.L1EthClient) {
+			types = append(types, n.L1EthClient)
 		}
 		if !slices.Contains(types, n.ConsensusClient) {
 			types = append(types, n.ConsensusClient)
@@ -131,7 +136,7 @@ func (all NodeDefinitions) FilterByEL(filters []string) NodeDefinitions {
 	ret := make(NodeDefinitions, 0)
 	for _, n := range all {
 		for _, filter := range filters {
-			if strings.Contains(n.ExecutionClient, filter) {
+			if strings.Contains(n.L1EthClient, filter) {
 				ret = append(ret, n)
 				break
 			}

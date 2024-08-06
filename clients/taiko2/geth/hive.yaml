@@ -1,4 +1,2 @@
 roles:
   - "eth1"
-  - "eth1_les_client"
-  - "eth1_les_server"
