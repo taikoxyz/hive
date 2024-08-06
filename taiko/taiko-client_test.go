@@ -65,8 +65,10 @@ func TestSetupTest(t *testing.T) {
 	t.Log(os.Getenv("L1_PROPOSER_PRIV_KEY"))
 	t.Log(os.Getenv("L1_HTTP"))
 
-	err := initTaikoContract(".env")
+	params, err := godotenv.Read(".env")
 	assert.NoError(t, err)
+
+	assert.NoError(t, InitTaikoContract(params))
 }
 
 func TestL2Reorg(t *testing.T) {
