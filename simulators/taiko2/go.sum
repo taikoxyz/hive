@@ -708,8 +708,8 @@ github.com/supranational/blst v0.3.11 h1:LyU6FolezeWAhvQk0k6O/d49jqgO52MSDDfYgbe
 github.com/supranational/blst v0.3.11/go.mod h1:jZJtfjgudtNl4en1tzwPIV3KjUnQUvG3/j+w+fVonLw=
 github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d h1:vfofYNRScrDdvS342BElfbETmL1Aiz3i2t0zfRj16Hs=
 github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d/go.mod h1:RRCYJbIwD5jmqPI9XoAFR0OcDxqUctll6zUj/+B4S48=
-github.com/taikoxyz/hive v0.0.0-20240806143836-a760a970cce1 h1:2Mz162csetGICEHCu7olAvmJb70kzgjsArWcH3604MI=
-github.com/taikoxyz/hive v0.0.0-20240806143836-a760a970cce1/go.mod h1:c6iRc6X6jVdKznjzlVUmOjwEtFECeBnb8hp/UGMq4DA=
+github.com/taikoxyz/hive v0.0.0-20240806151559-fdfb7355409b h1:jN1bwBuugE7IQHrPoqE/QEhJUiMZvWe92smhijCVBJs=
+github.com/taikoxyz/hive v0.0.0-20240806151559-fdfb7355409b/go.mod h1:c6iRc6X6jVdKznjzlVUmOjwEtFECeBnb8hp/UGMq4DA=
 github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07/go.mod h1:kDXzergiv9cbyO7IOYJZWg1U88JhDg3PB6klq9Hg2pA=
 github.com/thomaso-mirodin/intmath v0.0.0-20160323211736-5dc6d854e46e h1:cR8/SYRgyQCt5cNCMniB/ZScMkhI9nk8U5C7SbISXjo=
 github.com/thomaso-mirodin/intmath v0.0.0-20160323211736-5dc6d854e46e/go.mod h1:Tu4lItkATkonrYuvtVjG0/rhy15qrNGNTjPdaphtZ/8=
