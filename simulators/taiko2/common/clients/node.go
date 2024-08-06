@@ -1,6 +1,7 @@
 package clients
 
 import (
+	"context"
 	"fmt"
 	"github.com/ethereum/hive/hivesim"
 	"github.com/marioevz/eth-clients/clients"
@@ -67,6 +68,14 @@ func (n *Node) Start() error {
 	} else {
 		n.Logf("No validator client started")
 	}
+
+	// Deploy contracts if needed
+	if n.L1EthClient != nil && (n.DriverClient != nil || n.ProposerClient != nil || n.ProverClient != nil) {
+		if err := n.L1EthClient.DeployContracts(context.Background()); err != nil {
+			return err
+		}
+	}
+
 	if n.L2EthClient != nil {
 		if err := n.L2EthClient.Start(); err != nil {
 			return err

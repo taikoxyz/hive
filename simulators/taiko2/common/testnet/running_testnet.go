@@ -217,7 +217,6 @@ func StartTestnet(
 					LogEngineCalls:         env.LogEngineCalls,
 				},
 			},
-			driverDef != nil || proverDef != nil || proposerDef != nil,
 		)
 		nodeClient.BeaconClient = prep.prepareBeaconNode(
 			parentCtx,

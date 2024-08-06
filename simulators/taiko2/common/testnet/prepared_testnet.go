@@ -198,7 +198,6 @@ func (p *PreparedTestnet) prepareExecutionNode(
 	consensus el.ExecutionConsensus,
 	chain []*types.Block,
 	config clients.ExecutionClientConfig,
-	deploy bool,
 ) *clients.ExecutionClient {
 	if eth1Def == nil {
 		return nil
@@ -262,7 +261,6 @@ func (p *PreparedTestnet) prepareExecutionNode(
 		Client: cm,
 		Logger: testnet.T,
 		Config: config,
-		Deploy: deploy,
 	}
 }
 

@@ -94,8 +94,6 @@ type ExecutionClient struct {
 	httpClient   *ethclient.Client
 
 	startupComplete bool
-
-	Deploy bool
 }
 
 func (ec *ExecutionClient) Logf(format string, values ...interface{}) {
@@ -246,14 +244,20 @@ func (ec *ExecutionClient) Init(ctx context.Context) (err error) {
 		}
 	}
 
-	if ec.Deploy {
-		return ec.DeployContracts(ctx, chainID, client)
-	}
-
 	return nil
 }
 
-func (ec *ExecutionClient) DeployContracts(ctx context.Context, chainID *big.Int, client *ethclient.Client) error {
+func (ec *ExecutionClient) DeployContracts(ctx context.Context) error {
+	client, err := ethclient.DialContext(ctx, ec.HttpURL())
+	if err != nil {
+		return err
+	}
+
+	chainID, err := client.ChainID(ctx)
+	if err != nil {
+		return err
+	}
+
 	sk, err := crypto.HexToECDSA("ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
 	if err != nil {
 		return err
