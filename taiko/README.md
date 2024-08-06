@@ -14,7 +14,7 @@ make update
 
 ```shell
 cd taiko
-sh scripts/update_bindings.sh
+sh scripts/abigen.sh
 ```
 
 ## Get txs and env for taiko contract.
