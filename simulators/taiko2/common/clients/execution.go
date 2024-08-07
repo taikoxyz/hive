@@ -80,12 +80,14 @@ type ExecutionClientConfig struct {
 	TerminalTotalDifficulty int64
 	Subnet                  string
 	JWTSecret               [32]byte
+	Network                 string
 }
 
 type ExecutionClient struct {
-	Client
-	Logger utils.Logging
-	Config ExecutionClientConfig
+	*HiveManagedClient
+	Logger    utils.Logging
+	Config    ExecutionClientConfig
+	networkIP string
 
 	proxy     *execution.Proxy
 	latestfcu *api.ForkchoiceStateV1
@@ -103,26 +105,32 @@ func (ec *ExecutionClient) Logf(format string, values ...interface{}) {
 }
 
 func (ec *ExecutionClient) HttpURL() string {
-	return fmt.Sprintf("http://%v:%d", ec.GetHost(), PortHttpRPC)
+	return fmt.Sprintf("http://%v:%d", ec.GetIP(), PortHttpRPC)
 }
 
 func (ec *ExecutionClient) WSURL() string {
-	return fmt.Sprintf("ws://%v:%d", ec.GetHost(), PortWSRPC)
+	return fmt.Sprintf("ws://%v:%d", ec.GetIP(), PortWSRPC)
 }
 
 func (ec *ExecutionClient) EngineURL() string {
-	return fmt.Sprintf("http://%v:%d", ec.GetHost(), PortEngineRPC)
+	return fmt.Sprintf("http://%v:%d", ec.GetIP(), PortEngineRPC)
 }
 
-func (ec *ExecutionClient) MustGetEnode() string {
-	if enodeClient, ok := ec.Client.(EnodeClient); ok {
-		addr, err := enodeClient.GetEnodeURL()
-		if err == nil {
-			return addr
-		}
-		panic(err)
+func (ec *ExecutionClient) NetworkIP() string {
+	if ec.networkIP != "" {
+		return ec.networkIP
 	}
-	panic(fmt.Errorf("invalid client type"))
+
+	t := ec.T
+	var err error
+	ec.networkIP, err = t.Sim.ContainerNetworkIP(t.SuiteID, ec.Config.Network, ec.Client.Container)
+	if err != nil {
+		t.Logf("Error getting network IP: %v", err)
+		return ec.GetHost()
+	}
+	t.Logf("execution network IP: %s", ec.networkIP)
+
+	return ec.networkIP
 }
 
 func (ec *ExecutionClient) ConfiguredTTD() *big.Int {
@@ -130,13 +138,10 @@ func (ec *ExecutionClient) ConfiguredTTD() *big.Int {
 }
 
 func (ec *ExecutionClient) Start() error {
-	if !ec.Client.IsRunning() {
-		if managedClient, ok := ec.Client.(clients.ManagedClient); !ok {
-			return fmt.Errorf("attempted to start an unmanaged client")
-		} else {
-			if err := managedClient.Start(); err != nil {
-				return err
-			}
+	ec.Logf("Starting execution client %d", ec.Config.ClientIndex)
+	if !ec.IsRunning() {
+		if err := ec.HiveManagedClient.Start(); err != nil {
+			return err
 		}
 	}
 
@@ -144,7 +149,7 @@ func (ec *ExecutionClient) Start() error {
 }
 
 func (ec *ExecutionClient) Init(ctx context.Context) (err error) {
-	if !ec.Client.IsRunning() {
+	if !ec.IsRunning() {
 		return fmt.Errorf("execution client not yet launched")
 	}
 	if !ec.startupComplete {
@@ -248,6 +253,8 @@ func (ec *ExecutionClient) Init(ctx context.Context) (err error) {
 }
 
 func (ec *ExecutionClient) DeployContracts(ctx context.Context) error {
+	ec.Logf("Deploying contracts for execution client %d", ec.Config.ClientIndex)
+	ec.Logf("execution http url: %s", ec.HttpURL())
 	client, err := ethclient.DialContext(ctx, ec.HttpURL())
 	if err != nil {
 		return err
@@ -267,9 +274,8 @@ func (ec *ExecutionClient) DeployContracts(ctx context.Context) error {
 		return err
 	}
 
+	var latestTx *types.Transaction
 	for _, tx := range params.ContractTxs {
-		data, _ := json.Marshal(tx)
-		ec.Logf("Deploying contract: %v", string(data))
 		signedTx, err := auth.Signer(auth.From, tx)
 		if err != nil {
 			return err
@@ -278,39 +284,33 @@ func (ec *ExecutionClient) DeployContracts(ctx context.Context) error {
 		if err := client.SendTransaction(ctx, signedTx); err != nil {
 			return err
 		}
+		latestTx = signedTx
 	}
 
-	// check results.
-	for _, tx := range params.ContractTxs {
-		if tx.To() == nil {
-			_, err := bind.WaitDeployed(context.Background(), client, tx)
-			if err != nil {
-				return fmt.Errorf("failed to wait deployed: %v", err)
-			}
-		} else {
-			receipt, err := bind.WaitMined(context.Background(), client, tx)
-			if err != nil {
-				return fmt.Errorf("failed to wait mined, hash: %s, err: %v", tx.Hash().String(), err)
-			}
-			if receipt.Status != types.ReceiptStatusSuccessful {
-				return fmt.Errorf("failed to call contract, hash: %s", tx.Hash().String())
-			}
+	// Wait the latest tx mined.
+	if latestTx.To() == nil {
+		_, err := bind.WaitDeployed(context.Background(), client, latestTx)
+		if err != nil {
+			return fmt.Errorf("failed to wait deployed: %v", err)
+		}
+	} else {
+		receipt, err := bind.WaitMined(context.Background(), client, latestTx)
+		if err != nil {
+			return fmt.Errorf("failed to wait mined, hash: %s, err: %v", latestTx.Hash().String(), err)
+		}
+		if receipt.Status != types.ReceiptStatusSuccessful {
+			return fmt.Errorf("failed to call contract, hash: %s", latestTx.Hash().String())
 		}
 	}
 
+	// init contracts.
 	envs := params.EnvParams.Copy()
 	envs["L1_HTTP"] = ec.HttpURL()
-
-	// init contracts.
 	return taiko.InitTaikoContract(envs)
 }
 
 func (ec *ExecutionClient) Shutdown() error {
-	if managedClient, ok := ec.Client.(clients.ManagedClient); !ok {
-		return fmt.Errorf("attempted to shutdown an unmanaged client")
-	} else {
-		return managedClient.Shutdown()
-	}
+	return ec.HiveManagedClient.Shutdown()
 }
 
 func (ec *ExecutionClient) Proxy() *execution.Proxy {
@@ -563,15 +563,11 @@ func (all ExecutionClients) Enodes() (string, error) {
 	enodes := make([]string, 0)
 	for _, en := range all {
 		if en.IsRunning() {
-			if enodeClient, ok := en.Client.(EnodeClient); ok {
-				enode, err := enodeClient.GetEnodeURL()
-				if err != nil {
-					return "", err
-				}
-				enodes = append(enodes, enode)
-			} else {
-				return "", fmt.Errorf("invalid client type")
+			enode, err := en.GetEnodeURL()
+			if err != nil {
+				return "", err
 			}
+			enodes = append(enodes, enode)
 		}
 	}
 	return strings.Join(enodes, ","), nil

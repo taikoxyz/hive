@@ -95,6 +95,9 @@ func PrepareTestnet(
 		return nil, fmt.Errorf("error producing consensus cfg bundle: %v", err)
 	}
 
+	// network settings
+	networkParams := hivesim.WithInitialNetworks([]string{cfg.Network})
+
 	commonParams := hivesim.Params{
 		"HIVE_LOGLEVEL":           getLogLevelString(cfg.LogLevel),
 		"HIVE_TAIKO2_JWT_SECRET":  cfg.JWTSecret,
@@ -103,11 +106,8 @@ func PrepareTestnet(
 
 	executionOpts := hivesim.Bundle(
 		genesisJsonBundle,
-		hivesim.Params{
-			"HIVE_TAIKO2_FEE_RECEIPT": cfg.FeeReceipt,
-			"HIVE_TAIKO2_CHAIN_ID":    fmt.Sprintf("%d", executionGenesis.ChainID()),
-		},
 		commonParams,
+		networkParams,
 	)
 
 	// Pre-generate PoW chains for clients that require it
@@ -141,6 +141,7 @@ func PrepareTestnet(
 		genesisSSZBundle,
 		commonParams,
 		beaconParams,
+		networkParams,
 	)
 
 	validatorParams := hivesim.Params{
@@ -151,6 +152,7 @@ func PrepareTestnet(
 		configBundle,
 		commonParams,
 		validatorParams,
+		networkParams,
 	)
 
 	taikoGethOpts := hivesim.Bundle(hivesim.Params{
@@ -166,10 +168,10 @@ func PrepareTestnet(
 		beaconOpts:       beaconOpts,
 		validatorOpts:    validatorOpts,
 
-		taikoGethOpts: taikoGethOpts,
-		driverOpts:    hivesim.Bundle(commonParams),
-		proposerOpts:  hivesim.Bundle(commonParams),
-		proverOpts:    hivesim.Bundle(commonParams),
+		taikoGethOpts: hivesim.Bundle(taikoGethOpts, networkParams),
+		driverOpts:    hivesim.Bundle(commonParams, networkParams),
+		proposerOpts:  hivesim.Bundle(commonParams, networkParams),
+		proverOpts:    hivesim.Bundle(commonParams, networkParams),
 	}, nil
 }
 
@@ -258,9 +260,9 @@ func (p *PreparedTestnet) prepareExecutionNode(
 	}
 
 	return &clients.ExecutionClient{
-		Client: cm,
-		Logger: testnet.T,
-		Config: config,
+		HiveManagedClient: cm,
+		Logger:            testnet.T,
+		Config:            config,
 	}
 }
 
@@ -290,9 +292,9 @@ func (p *PreparedTestnet) prepareBeaconNode(
 	}
 
 	cl := &clients.BeaconClient{
-		Client: cm,
-		Logger: testnet.T,
-		Config: config,
+		HiveManagedClient: cm,
+		Logger:            testnet.T,
+		Config:            config,
 	}
 
 	// This method will return the options used to run the client.
@@ -414,6 +416,7 @@ func (p *PreparedTestnet) prepareValidatorClient(
 
 func (p *PreparedTestnet) prepareTaikoGethClient(
 	ctx context.Context,
+	network string,
 	testnet *Testnet,
 	eth2Def *hivesim.ClientDefinition,
 ) *clients.TaikoGethClient {
@@ -433,8 +436,9 @@ func (p *PreparedTestnet) prepareTaikoGethClient(
 	}
 
 	return &clients.TaikoGethClient{
-		Client: cm,
-		Logger: testnet.T,
+		HiveManagedClient: cm,
+		Logger:            testnet.T,
+		Network:           network,
 	}
 }
 
@@ -457,17 +461,23 @@ func (p *PreparedTestnet) prepareDriverClient(
 
 	getEnvs := func() hivesim.Params {
 		envs := params.EnvParams.Copy()
-		envs["L1_HTTP"] = fmt.Sprintf("http://%v:8545", l1Client.GetHost())
-		envs["L1_WS"] = fmt.Sprintf("ws://%v:8546", l1Client.GetHost())
-		envs["L1_BEACON"] = fmt.Sprintf("http://%v:3500", beaconClient.GetHost())
-		envs["L2_AUTH"] = fmt.Sprintf("http://%v:8551", l2Client.GetHost())
-		envs["L2_HTTP"] = fmt.Sprintf("http://%v:8545", l2Client.GetHost())
-		envs["L2_WS"] = fmt.Sprintf("ws://%v:8546", l2Client.GetHost())
+		envs["L1_HTTP"] = fmt.Sprintf("http://%v:8545", l1Client.NetworkIP())
+		envs["L1_WS"] = fmt.Sprintf("ws://%v:8546", l1Client.NetworkIP())
+		envs["L1_BEACON"] = fmt.Sprintf("http://%v:3500", beaconClient.NetworkIP())
+		envs["L2_AUTH"] = fmt.Sprintf("http://%v:8551", l2Client.NetworkIP())
+		envs["L2_HTTP"] = fmt.Sprintf("http://%v:8545", l2Client.NetworkIP())
+		envs["L2_WS"] = fmt.Sprintf("ws://%v:8546", l2Client.NetworkIP())
 		return envs
 	}
 
 	cm.OptionsGenerator = func() ([]hivesim.StartOption, error) {
-		opts := []hivesim.StartOption{p.driverOpts, getEnvs()}
+		envs := getEnvs()
+		data, err := json.Marshal(envs)
+		if err != nil {
+			return nil, err
+		}
+		testnet.Logf("driver envs: %s", string(data))
+		opts := []hivesim.StartOption{p.driverOpts, envs}
 		return opts, nil
 	}
 
@@ -492,12 +502,12 @@ func (p *PreparedTestnet) prepareProposerClient(
 
 	getEnvs := func() hivesim.Params {
 		envs := params.EnvParams.Copy()
-		envs["L1_HTTP"] = fmt.Sprintf("http://%v:8545", l1Client.GetHost())
-		envs["L1_WS"] = fmt.Sprintf("ws://%v:8546", l1Client.GetHost())
-		envs["L1_BEACON"] = fmt.Sprintf("http://%v:3500", beaconClient.GetHost())
-		envs["L2_AUTH"] = fmt.Sprintf("http://%v:8551", l2Client.GetHost())
-		envs["L2_HTTP"] = fmt.Sprintf("http://%v:8545", l2Client.GetHost())
-		envs["L2_WS"] = fmt.Sprintf("ws://%v:8546", l2Client.GetHost())
+		envs["L1_HTTP"] = fmt.Sprintf("http://%v:8545", l1Client.NetworkIP())
+		envs["L1_WS"] = fmt.Sprintf("ws://%v:8546", l1Client.NetworkIP())
+		envs["L1_BEACON"] = fmt.Sprintf("http://%v:3500", beaconClient.NetworkIP())
+		envs["L2_AUTH"] = fmt.Sprintf("http://%v:8551", l2Client.NetworkIP())
+		envs["L2_HTTP"] = fmt.Sprintf("http://%v:8545", l2Client.NetworkIP())
+		envs["L2_WS"] = fmt.Sprintf("ws://%v:8546", l2Client.NetworkIP())
 		return envs
 	}
 
@@ -531,12 +541,12 @@ func (p *PreparedTestnet) prepareProverClient(
 
 	getEnvs := func() hivesim.Params {
 		envs := params.EnvParams.Copy()
-		envs["L1_HTTP"] = fmt.Sprintf("http://%v:8545", l1Client.GetHost())
-		envs["L1_WS"] = fmt.Sprintf("ws://%v:8546", l1Client.GetHost())
-		envs["L1_BEACON"] = fmt.Sprintf("http://%v:3500", beaconClient.GetHost())
-		envs["L2_AUTH"] = fmt.Sprintf("http://%v:8551", l2Client.GetHost())
-		envs["L2_HTTP"] = fmt.Sprintf("http://%v:8545", l2Client.GetHost())
-		envs["L2_WS"] = fmt.Sprintf("ws://%v:8546", l2Client.GetHost())
+		envs["L1_HTTP"] = fmt.Sprintf("http://%v:8545", l1Client.NetworkIP())
+		envs["L1_WS"] = fmt.Sprintf("ws://%v:8546", l1Client.NetworkIP())
+		envs["L1_BEACON"] = fmt.Sprintf("http://%v:3500", beaconClient.NetworkIP())
+		envs["L2_AUTH"] = fmt.Sprintf("http://%v:8551", l2Client.NetworkIP())
+		envs["L2_HTTP"] = fmt.Sprintf("http://%v:8545", l2Client.NetworkIP())
+		envs["L2_WS"] = fmt.Sprintf("ws://%v:8546", l2Client.NetworkIP())
 		return envs
 	}
 
@@ -544,7 +554,14 @@ func (p *PreparedTestnet) prepareProverClient(
 		T:                    testnet.T,
 		HiveClientDefinition: proverDef,
 		OptionsGenerator: func() ([]hivesim.StartOption, error) {
-			opts := []hivesim.StartOption{p.proverOpts, getEnvs()}
+			envs := getEnvs()
+			data, err := json.Marshal(envs)
+			if err != nil {
+				return nil, err
+			}
+			testnet.Logf("Prover envs: %s", string(data))
+
+			opts := []hivesim.StartOption{p.proverOpts, envs}
 			return opts, nil
 		},
 	}

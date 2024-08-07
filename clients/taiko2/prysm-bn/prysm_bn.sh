@@ -67,11 +67,8 @@ beacon-chain \
   --interop-eth1data-votes=true \
   --accept-terms-of-use=true \
   $bootnode_option \
-  --p2p-host-ip="${CONTAINER_IP}" \
-  --p2p-local-ip="${CONTAINER_IP}" \
   --execution-endpoint="$HIVE_TAIKO2_ETH1_RPC_ADDRS" \
   --jwt-secret=$EXECUTION_DIR/jwtsecret \
-  --no-discovery=true \
   --min-sync-peers=0 \
   --subscribe-all-subnets=true \
   $metrics_option \

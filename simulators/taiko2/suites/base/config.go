@@ -82,7 +82,7 @@ func (ts BaseTestSpec) GetTestnetConfig(
 		},
 		NodeDefinitions: nodeDefinitions,
 		Network:         "taiko2_base_test",
-		LogLevel:        4,
+		LogLevel:        3,
 		JWTSecret:       "7365637265747365637265747365637265747365637265747365637265747365",
 		FeeReceipt:      "a0Ee7A142d267C1f36714E4a8F75612F20a79720",
 	}

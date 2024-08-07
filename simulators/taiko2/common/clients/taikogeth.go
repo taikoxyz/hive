@@ -4,15 +4,17 @@ import (
 	"context"
 	"fmt"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/marioevz/eth-clients/clients"
 	"taiko2/common/utils"
 	"time"
 )
 
 type TaikoGethClient struct {
-	Client
-	Logger utils.Logging
-	eth    *ethclient.Client
+	*HiveManagedClient
+	Logger    utils.Logging
+	Network   string
+	networkIP string
+
+	eth *ethclient.Client
 }
 
 func (t *TaikoGethClient) Logf(format string, values ...interface{}) {
@@ -22,12 +24,9 @@ func (t *TaikoGethClient) Logf(format string, values ...interface{}) {
 }
 
 func (t *TaikoGethClient) Start() error {
-	if !t.Client.IsRunning() {
-		if managedClient, ok := t.Client.(clients.ManagedClient); !ok {
-			return fmt.Errorf("attempted to start an unmanaged client")
-		} else {
-			return managedClient.Start()
-		}
+	t.Logf("Starting taiko geth client")
+	if !t.IsRunning() {
+		return t.HiveManagedClient.Start()
 	}
 
 	return t.Init(context.Background())
@@ -53,11 +52,23 @@ func (t *TaikoGethClient) Init(ctx context.Context) error {
 }
 
 func (t *TaikoGethClient) Shutdown() error {
-	if managedClient, ok := t.Client.(clients.ManagedClient); !ok {
-		return fmt.Errorf("attempted to shutdown an unmanaged client")
-	} else {
-		return managedClient.Shutdown()
+	return t.HiveManagedClient.Shutdown()
+}
+
+func (t *TaikoGethClient) NetworkIP() string {
+	if t.networkIP != "" {
+		return t.networkIP
 	}
+
+	var err error
+	t.networkIP, err = t.T.Sim.ContainerNetworkIP(t.T.SuiteID, t.Network, t.Client.Container)
+	if err != nil {
+		t.Logf("Error getting network IP: %v", err)
+		return t.GetHost()
+	}
+	t.T.Logf("taiko geth network IP %v", t.networkIP)
+
+	return t.networkIP
 }
 
 func (t *TaikoGethClient) HttpURL() string {

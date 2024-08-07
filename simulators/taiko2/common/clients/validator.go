@@ -21,6 +21,7 @@ func (vc *ValidatorClient) Logf(format string, values ...interface{}) {
 }
 
 func (vc *ValidatorClient) Start() error {
+	vc.Logf("Starting validator client %d", vc.ClientIndex)
 	if !vc.Client.IsRunning() {
 		if managedClient, ok := vc.Client.(clients.ManagedClient); !ok {
 			return fmt.Errorf("attempted to start an unmanaged client")

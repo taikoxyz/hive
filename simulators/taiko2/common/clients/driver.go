@@ -19,6 +19,7 @@ func (d *DriverClient) Logf(format string, values ...interface{}) {
 }
 
 func (d *DriverClient) Start() error {
+	d.Logf("Starting driver client %d", d.ClientIndex)
 	if !d.Client.IsRunning() {
 		if managedClient, ok := d.Client.(clients.ManagedClient); !ok {
 			return fmt.Errorf("attempted to start an unmanaged client")

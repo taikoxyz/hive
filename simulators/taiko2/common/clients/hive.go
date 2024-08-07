@@ -18,16 +18,16 @@ type HiveManagedClient struct {
 	HiveClientDefinition *hivesim.ClientDefinition
 	Port                 int64
 
-	hiveClient        *hivesim.Client
+	Client            *hivesim.Client
 	extraStartOptions []hivesim.StartOption
 }
 
 func (h *HiveManagedClient) HiveClient() *hivesim.Client {
-	return h.hiveClient
+	return h.Client
 }
 
 func (h *HiveManagedClient) IsRunning() bool {
-	return h.hiveClient != nil
+	return h.Client != nil
 }
 
 func (h *HiveManagedClient) Start() error {
@@ -45,14 +45,14 @@ func (h *HiveManagedClient) Start() error {
 		opts = append(opts, h.extraStartOptions...)
 	}
 
-	h.hiveClient = h.T.StartClient(h.HiveClientDefinition.Name, opts...)
-	if h.hiveClient == nil {
+	h.Client = h.T.StartClient(h.HiveClientDefinition.Name, opts...)
+	if h.Client == nil {
 		return fmt.Errorf("unable to launch client")
 	}
 	h.T.Logf(
 		"Started client %s, container %s",
 		h.ClientType(),
-		h.hiveClient.Container,
+		h.Client.Container,
 	)
 	return nil
 }
@@ -69,39 +69,39 @@ func (h *HiveManagedClient) AddStartOption(opts ...interface{}) {
 }
 
 func (h *HiveManagedClient) GetAddress() string {
-	if h.hiveClient == nil {
+	if h.Client == nil {
 		return ""
 	}
 	if h.Port > 0 {
-		return fmt.Sprintf("http://%s:%d", h.hiveClient.IP, h.Port)
+		return fmt.Sprintf("http://%s:%d", h.Client.IP, h.Port)
 	}
-	return fmt.Sprintf("http://%s", h.hiveClient.IP)
+	return fmt.Sprintf("http://%s", h.Client.IP)
 }
 
 func (h *HiveManagedClient) GetIP() net.IP {
-	if h.hiveClient == nil {
+	if h.Client == nil {
 		return net.IP{}
 	}
-	return h.hiveClient.IP
+	return h.Client.IP
 }
 
 func (h *HiveManagedClient) GetHost() string {
-	if h.hiveClient == nil {
+	if h.Client == nil {
 		return ""
 	}
-	return h.hiveClient.IP.String()
+	return h.Client.IP.String()
 }
 
 func (h *HiveManagedClient) Shutdown() error {
-	if err := h.T.Sim.StopClient(h.T.SuiteID, h.T.TestID, h.hiveClient.Container); err != nil {
+	if err := h.T.Sim.StopClient(h.T.SuiteID, h.T.TestID, h.Client.Container); err != nil {
 		return err
 	}
-	h.hiveClient = nil
+	h.Client = nil
 	return nil
 }
 
 func (h *HiveManagedClient) GetEnodeURL() (string, error) {
-	return h.hiveClient.EnodeURL()
+	return h.Client.EnodeURL()
 }
 
 func (h *HiveManagedClient) ClientType() string {

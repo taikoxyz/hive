@@ -69,13 +69,6 @@ func (n *Node) Start() error {
 		n.Logf("No validator client started")
 	}
 
-	// Deploy contracts if needed
-	if n.L1EthClient != nil && (n.DriverClient != nil || n.ProposerClient != nil || n.ProverClient != nil) {
-		if err := n.L1EthClient.DeployContracts(context.Background()); err != nil {
-			return err
-		}
-	}
-
 	if n.L2EthClient != nil {
 		if err := n.L2EthClient.Start(); err != nil {
 			return err
@@ -83,6 +76,14 @@ func (n *Node) Start() error {
 	} else {
 		n.Logf("No taiko geth client started")
 	}
+
+	// Deploy contracts if needed
+	if n.L1EthClient != nil && (n.DriverClient != nil || n.ProposerClient != nil || n.ProverClient != nil) {
+		if err := n.L1EthClient.DeployContracts(context.Background()); err != nil {
+			return err
+		}
+	}
+
 	if n.DriverClient != nil {
 		if err := n.DriverClient.Start(); err != nil {
 			return err
@@ -109,8 +110,8 @@ func (n *Node) Start() error {
 
 var networkCreated = make(map[hivesim.SuiteID]bool)
 
-func (n *Node) CreateOrConnectNetwork(t *hivesim.T, network string) error {
-	n.Logf("Creating or connecting to network %s", network)
+func (n *Node) CreateNetwork(t *hivesim.T, network string) error {
+	n.Logf("Creating network %s", network)
 	if !networkCreated[t.SuiteID] {
 		if err := t.Sim.CreateNetwork(t.SuiteID, network); err != nil {
 			t.Fatal("can't create network:", err)
@@ -119,49 +120,6 @@ func (n *Node) CreateOrConnectNetwork(t *hivesim.T, network string) error {
 			t.Fatal("can't connect simulation to network:", err)
 		}
 		networkCreated[t.SuiteID] = true
-
-	}
-	if n.L1EthClient != nil {
-		client := n.L1EthClient.HiveClient()
-		if err := t.Sim.ConnectContainer(t.SuiteID, network, client.Container); err != nil {
-			t.Fatalf("can't connect %s container to network, err = %v", client.Type, err)
-		}
-	}
-	if n.BeaconClient != nil {
-		client := n.BeaconClient.HiveClient()
-		if err := t.Sim.ConnectContainer(t.SuiteID, network, client.Container); err != nil {
-			t.Fatalf("can't connect %s container to network, err = %v", client.Type, err)
-		}
-	}
-	if n.ValidatorClient != nil {
-		client := n.ValidatorClient.HiveClient()
-		if err := t.Sim.ConnectContainer(t.SuiteID, network, client.Container); err != nil {
-			t.Fatalf("can't connect %s container to network, err = %v", client.Type, err)
-		}
-	}
-	if n.L2EthClient != nil {
-		client := n.L2EthClient.HiveClient()
-		if err := t.Sim.ConnectContainer(t.SuiteID, network, client.Container); err != nil {
-			t.Fatalf("can't connect %s container to network, err = %v", client.Type, err)
-		}
-	}
-	if n.DriverClient != nil {
-		client := n.DriverClient.HiveClient()
-		if err := t.Sim.ConnectContainer(t.SuiteID, network, client.Container); err != nil {
-			t.Fatalf("can't connect %s container to network, err = %v", client.Type, err)
-		}
-	}
-	if n.ProposerClient != nil {
-		client := n.ProposerClient.HiveClient()
-		if err := t.Sim.ConnectContainer(t.SuiteID, network, client.Container); err != nil {
-			t.Fatalf("can't connect %s container to network, err = %v", client.Type, err)
-		}
-	}
-	if n.ProverClient != nil {
-		client := n.ProverClient.HiveClient()
-		if err := t.Sim.ConnectContainer(t.SuiteID, network, client.Container); err != nil {
-			t.Fatalf("can't connect %s container to network, err = %v", client.Type, err)
-		}
 	}
 	return nil
 }

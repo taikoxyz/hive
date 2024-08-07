@@ -210,6 +210,7 @@ func StartTestnet(
 				TerminalTotalDifficulty: executionTTD,
 				Subnet:                  node.GetExecutionSubnet(),
 				JWTSecret:               ethcommon.HexToHash(config.JWTSecret),
+				Network:                 config.Network,
 				ProxyConfig: &clients.ExecutionProxyConfig{
 					Host:                   simulatorIP,
 					Port:                   exec_client.PortEngineRPC + nodeIndex,
@@ -230,6 +231,7 @@ func StartTestnet(
 				GenesisValidatorsRoot:   &testnet.genesisValidatorsRoot,
 				GenesisTime:             &testnet.genesisTime,
 				Subnet:                  node.GetConsensusSubnet(),
+				Network:                 config.Network,
 			},
 			nodeClient.L1EthClient,
 		)
@@ -244,6 +246,7 @@ func StartTestnet(
 
 		nodeClient.L2EthClient = prep.prepareTaikoGethClient(
 			parentCtx,
+			config.Network,
 			testnet,
 			taikoGethDef,
 		)
@@ -277,13 +280,13 @@ func StartTestnet(
 		nodeClient.Index = nodeIndex
 		// Start the node clients if specified so
 		if !node.DisableStartup {
+			// Connect to the network if specified
+			if err = nodeClient.CreateNetwork(t, config.Network); err != nil {
+				t.Fatalf("FAIL: Unable to connect to network: %v", err)
+			}
 			t.Logf("Starting node %d", nodeIndex)
 			if err = nodeClient.Start(); err != nil {
 				t.Fatalf("FAIL: Unable to start node %d: %v", nodeIndex, err)
-			}
-			// Connect to the network if specified
-			if err = nodeClient.CreateOrConnectNetwork(t, config.Network); err != nil {
-				t.Fatalf("FAIL: Unable to connect to network: %v", err)
 			}
 		} else {
 			t.Logf("Node %d startup disabled, skipping", nodeIndex)

@@ -20,7 +20,7 @@ type TestSpec interface {
 	GetDescription() *utils.Description
 }
 
-// Add all tests to the suite
+// SuiteHydrate Add all tests to the suite
 func SuiteHydrate(
 	suite *hivesim.Suite,
 	clients *clients.ClientDefinitionsByRole,
@@ -53,7 +53,7 @@ func SuiteHydrate(
 				}
 				defer testnet.Stop()
 
-				time.Sleep(time.Second * 50)
+				time.Sleep(time.Second * 400)
 			},
 		},
 		)

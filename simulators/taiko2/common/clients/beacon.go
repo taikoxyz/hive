@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/marioevz/eth-clients/clients"
 	"github.com/protolambda/eth2api"
 	"github.com/protolambda/eth2api/client/beaconapi"
 	"github.com/protolambda/eth2api/client/nodeapi"
@@ -38,13 +37,14 @@ type BeaconClientConfig struct {
 	GenesisValidatorsRoot   *tree.Root
 	GenesisTime             *common.Timestamp
 	Subnet                  string
+	Network                 string
 }
 
 type BeaconClient struct {
-	Client
-	Logger utils.Logging
-	Config *BeaconClientConfig
-	//Builder interface{}
+	*HiveManagedClient
+	Logger    utils.Logging
+	Config    *BeaconClientConfig
+	networkIP string
 
 	api *eth2api.Eth2HttpClient
 }
@@ -55,14 +55,26 @@ func (bn *BeaconClient) Logf(format string, values ...interface{}) {
 	}
 }
 
+func (bn *BeaconClient) NetworkIP() string {
+	if bn.networkIP != "" {
+		return bn.networkIP
+	}
+
+	t := bn.T
+	var err error
+	bn.networkIP, err = t.Sim.ContainerNetworkIP(t.SuiteID, bn.Config.Network, bn.Client.Container)
+	if err != nil {
+		bn.Logf("Failed to get network IP: %v", err)
+		return bn.GetHost()
+	}
+	return bn.networkIP
+}
+
 func (bn *BeaconClient) Start() error {
+	bn.Logf("Starting beacon client %d", bn.Config.ClientIndex)
 	if !bn.IsRunning() {
-		if managedClient, ok := bn.Client.(clients.ManagedClient); !ok {
-			return fmt.Errorf("attempted to start an unmanaged client")
-		} else {
-			if err := managedClient.Start(); err != nil {
-				return err
-			}
+		if err := bn.HiveManagedClient.Start(); err != nil {
+			return err
 		}
 	}
 
@@ -116,11 +128,7 @@ func (bn *BeaconClient) Init(ctx context.Context) error {
 }
 
 func (bn *BeaconClient) Shutdown() error {
-	if managedClient, ok := bn.Client.(clients.ManagedClient); !ok {
-		return fmt.Errorf("attempted to shutdown an unmanaged client")
-	} else {
-		return managedClient.Shutdown()
-	}
+	return bn.HiveManagedClient.Shutdown()
 }
 
 func (bn *BeaconClient) ENR(parentCtx context.Context) (string, error) {

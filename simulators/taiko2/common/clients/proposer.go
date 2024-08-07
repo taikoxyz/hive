@@ -19,6 +19,7 @@ func (t *ProposerClient) Logf(format string, values ...interface{}) {
 }
 
 func (t *ProposerClient) Start() error {
+	t.Logf("Starting proposer client %d", t.ClientIndex)
 	if !t.Client.IsRunning() {
 		if managedClient, ok := t.Client.(clients.ManagedClient); !ok {
 			return fmt.Errorf("attempted to start an unmanaged client")
