@@ -17,4 +17,6 @@ func TestENV(t *testing.T) {
 		panic(err)
 	}
 	t.Log(genesis.Config.ChainID.Uint64())
+
+	t.Logf(ContractTxs[0].Hash().String())
 }
