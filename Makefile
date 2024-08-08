@@ -4,8 +4,9 @@ all: hive hivechain hiveview
 
 update:
 	@echo "Update dependencies..."
+	@git submodule update
 	@go mod tidy
-	@cd simulators/taiko2/taiko-mono/packages/protocol && git pull && pnpm install
+	@cd simulators/taiko2/taiko-mono/packages/protocol && git checkout main && pnpm install
 
 hive:
 	@echo "Building hive..."

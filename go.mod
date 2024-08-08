@@ -7,7 +7,7 @@ toolchain go1.22.1
 require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/ethereum/go-ethereum v1.14.5
-	github.com/ethereum/hive/hiveproxy v0.0.0-20240610172618-786a798a0cfe
+	github.com/ethereum/hive/hiveproxy v0.0.0-20240808014330-625b82294b46
 	github.com/evanw/esbuild v0.18.11
 	github.com/fsouza/go-dockerclient v1.11.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
@@ -47,7 +47,7 @@ require (
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/ethereum/c-kzg-4844 v1.0.0 // indirect
-	github.com/ethereum/go-verkle v0.1.1-0.20240306133620-7d920df305f0 // indirect
+	github.com/gballet/go-verkle v0.1.1-0.20231031103413-a67434b50f46 // indirect
 	github.com/getsentry/sentry-go v0.18.0 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
@@ -96,3 +96,5 @@ require (
 	google.golang.org/protobuf v1.33.0 // indirect
 	rsc.io/tmplfunc v0.0.3 // indirect
 )
+
+replace github.com/ethereum/go-ethereum v1.14.5 => github.com/ethereum/go-ethereum v1.13.15
