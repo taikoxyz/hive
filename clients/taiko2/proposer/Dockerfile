@@ -1,5 +1,5 @@
 ARG baseimage=us-docker.pkg.dev/evmchain/images/taiko-client
-ARG tag=latest
+ARG tag=main
 
 FROM $baseimage:$tag
 

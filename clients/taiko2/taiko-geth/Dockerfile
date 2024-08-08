@@ -1,5 +1,5 @@
 ARG baseimage=us-docker.pkg.dev/evmchain/images/taiko-geth
-ARG tag=latest
+ARG tag=taiko
 
 FROM $baseimage:$tag as builder
 
