@@ -220,4 +220,4 @@ replace github.com/protolambda/zrnt => github.com/marioevz/zrnt v0.26.2-0.202311
 
 replace github.com/protolambda/ztyp => github.com/marioevz/ztyp v0.0.0-20231106221254-dd6f24f13fd9
 
-replace github.com/ethereum/hive v0.0.0-20240808014330-625b82294b46 => github.com/taikoxyz/hive v0.0.0-20240808015640-34ebf5840206
+replace github.com/ethereum/hive v0.0.0-20240808014330-625b82294b46 => github.com/taikoxyz/hive v0.0.0-20240808092913-1d74e958eb52
