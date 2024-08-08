@@ -13,8 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/ethereum/hive/taiko"
-	"github.com/ethereum/hive/taiko/params"
 	"github.com/marioevz/eth-clients/clients"
 	"github.com/marioevz/eth-clients/clients/execution"
 	spoof "github.com/rauljordan/engine-proxy/proxy"
@@ -23,13 +21,8 @@ import (
 	"strings"
 	"sync"
 	"taiko2/common/utils"
+	"taiko2/params"
 	"time"
-)
-
-const (
-	PortHttpRPC   = 8545
-	PortWSRPC     = 8546
-	PortEngineRPC = 8551
 )
 
 var AllForkchoiceUpdatedCalls = []string{
@@ -105,15 +98,15 @@ func (ec *ExecutionClient) Logf(format string, values ...interface{}) {
 }
 
 func (ec *ExecutionClient) HttpURL() string {
-	return fmt.Sprintf("http://%v:%d", ec.GetIP(), PortHttpRPC)
+	return fmt.Sprintf("http://%v:%d", ec.NetworkIP(), EthHttpPort)
 }
 
 func (ec *ExecutionClient) WSURL() string {
-	return fmt.Sprintf("ws://%v:%d", ec.GetIP(), PortWSRPC)
+	return fmt.Sprintf("ws://%v:%d", ec.NetworkIP(), EthWSPort)
 }
 
 func (ec *ExecutionClient) EngineURL() string {
-	return fmt.Sprintf("http://%v:%d", ec.GetIP(), PortEngineRPC)
+	return fmt.Sprintf("http://%v:%d", ec.NetworkIP(), EthEngineRPC)
 }
 
 func (ec *ExecutionClient) NetworkIP() string {
@@ -126,7 +119,7 @@ func (ec *ExecutionClient) NetworkIP() string {
 	ec.networkIP, err = t.Sim.ContainerNetworkIP(t.SuiteID, ec.Config.Network, ec.Client.Container)
 	if err != nil {
 		t.Logf("Error getting network IP: %v", err)
-		return ec.GetHost()
+		return ec.HiveManagedClient.GetHost()
 	}
 	t.Logf("execution network IP: %s", ec.networkIP)
 
@@ -146,6 +139,50 @@ func (ec *ExecutionClient) Start() error {
 	}
 
 	return ec.Init(context.Background())
+}
+
+func (ec *ExecutionClient) Shutdown() error {
+	return ec.HiveManagedClient.Shutdown()
+}
+
+func (ec *ExecutionClient) EthIsReady(ctx context.Context, timeout time.Duration) error {
+	client, err := ethclient.DialContext(ctx, ec.HttpURL())
+	if err != nil {
+		return err
+	}
+	for ; ; <-time.Tick(time.Second) {
+		select {
+		case <-time.After(timeout):
+			return fmt.Errorf("reach timeout but l1geth is not ready")
+		default:
+			_, err = client.ChainID(ctx)
+			if err != nil {
+				continue
+			}
+			return nil
+		}
+	}
+}
+
+func (ec *ExecutionClient) VerifyNumber(ctx context.Context, timeout time.Duration, targetNumber uint64) error {
+	client, err := ethclient.DialContext(ctx, ec.HttpURL())
+	if err != nil {
+		return err
+	}
+	for ; ; <-time.Tick(time.Second) {
+		select {
+		case <-time.After(timeout):
+			return fmt.Errorf("failed to verify l1geth number, target_number: %d", targetNumber)
+		default:
+			number, err := client.BlockNumber(ctx)
+			if err != nil {
+				continue
+			}
+			if number >= targetNumber {
+				return nil
+			}
+		}
+	}
 }
 
 func (ec *ExecutionClient) Init(ctx context.Context) (err error) {
@@ -169,7 +206,7 @@ func (ec *ExecutionClient) Init(ctx context.Context) (err error) {
 		}
 
 		// Prepare proxy
-		dest := ec.EngineURL()
+		dest := fmt.Sprintf("http://%v:%d", ec.GetHost(), EthEngineRPC)
 
 		if ec.Config.ProxyConfig != nil {
 			p := execution.NewProxy(
@@ -226,27 +263,9 @@ func (ec *ExecutionClient) Init(ctx context.Context) (err error) {
 		}
 	}
 
-	var (
-		client  *ethclient.Client
-		chainID *big.Int
-	)
-	tick := time.NewTicker(time.Second)
-	defer tick.Stop()
-	for chainID == nil {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(time.Second * 10):
-			chainID = big.NewInt(0)
-			break
-		case <-tick.C:
-			ec.Logger.Logf("Waiting for chainID")
-			client, err = ethclient.DialContext(ctx, ec.HttpURL())
-			if err != nil {
-				continue
-			}
-			chainID, _ = client.ChainID(ctx)
-		}
+	// Wait until eth node is ready.
+	if err = ec.EthIsReady(ctx, time.Second*20); err != nil {
+		return err
 	}
 
 	return nil
@@ -306,11 +325,7 @@ func (ec *ExecutionClient) DeployContracts(ctx context.Context) error {
 	// init contracts.
 	envs := params.EnvParams.Copy()
 	envs["L1_HTTP"] = ec.HttpURL()
-	return taiko.InitTaikoContract(envs)
-}
-
-func (ec *ExecutionClient) Shutdown() error {
-	return ec.HiveManagedClient.Shutdown()
+	return utils.InitTaikoContract(envs)
 }
 
 func (ec *ExecutionClient) Proxy() *execution.Proxy {

@@ -18,21 +18,11 @@ import (
 	"time"
 )
 
-const (
-	PortBeaconTCP    = 9000
-	PortBeaconUDP    = 9000
-	PortBeaconAPI    = 3500
-	PortBeaconGRPC   = 4000
-	PortMetrics      = 8080
-	PortValidatorAPI = 5000
-)
-
-var EMPTY_TREE_ROOT = tree.Root{}
+const PortBeaconTCP = 9000
 
 type BeaconClientConfig struct {
 	ClientIndex             int
 	TerminalTotalDifficulty int64
-	BeaconAPIPort           int
 	Spec                    *consensus_config.Spec
 	GenesisValidatorsRoot   *tree.Root
 	GenesisTime             *common.Timestamp
@@ -55,6 +45,10 @@ func (bn *BeaconClient) Logf(format string, values ...interface{}) {
 	}
 }
 
+func (bn *BeaconClient) BeaconURL() string {
+	return fmt.Sprintf("http://%s:%d", bn.NetworkIP(), BeaconPort)
+}
+
 func (bn *BeaconClient) NetworkIP() string {
 	if bn.networkIP != "" {
 		return bn.networkIP
@@ -65,7 +59,7 @@ func (bn *BeaconClient) NetworkIP() string {
 	bn.networkIP, err = t.Sim.ContainerNetworkIP(t.SuiteID, bn.Config.Network, bn.Client.Container)
 	if err != nil {
 		bn.Logf("Failed to get network IP: %v", err)
-		return bn.GetHost()
+		return bn.HiveManagedClient.GetHost()
 	}
 	return bn.networkIP
 }
@@ -83,10 +77,6 @@ func (bn *BeaconClient) Start() error {
 
 func (bn *BeaconClient) Init(ctx context.Context) error {
 	if bn.api == nil {
-		port := bn.Config.BeaconAPIPort
-		if port == 0 {
-			port = PortBeaconAPI
-		}
 		bn.api = &eth2api.Eth2HttpClient{
 			Addr:  bn.GetAddress(),
 			Cli:   &http.Client{},

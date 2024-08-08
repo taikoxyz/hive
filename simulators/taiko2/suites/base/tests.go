@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/hive/hivesim"
-	taparams "github.com/ethereum/hive/taiko/params"
 	"github.com/prysmaticlabs/prysm/v4/config/params"
 	"taiko2/common/clients"
 	"taiko2/common/config/execution"
+	taparams "taiko2/params"
 	"taiko2/suites"
 )
 
@@ -55,7 +55,7 @@ func Suite(clients *clients.ClientDefinitionsByRole) hivesim.Suite {
 		ForkName:         Deneb,
 		BeaconConfig:     beaconConfig,
 		NumValidators:    64,
-		GenesisTimeDelay: 15,
+		GenesisTimeDelay: 3,
 		Genesis:          &genesis,
 	})
 	return testSuite

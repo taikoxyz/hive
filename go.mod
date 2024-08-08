@@ -117,5 +117,3 @@ require (
 )
 
 replace github.com/ethereum/hive/hiveproxy => ./hiveproxy
-
-replace github.com/ethereum/hive v0.0.0-20240715150805-600e094bce47 => github.com/taikoxyz/hive v0.0.0-20240716080305-2913d079b27c

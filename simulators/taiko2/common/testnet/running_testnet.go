@@ -225,7 +225,6 @@ func StartTestnet(
 			beaconDef,
 			&clients.BeaconClientConfig{
 				ClientIndex:             nodeIndex,
-				BeaconAPIPort:           clients.PortBeaconAPI,
 				TerminalTotalDifficulty: beaconTTD,
 				Spec:                    testnet.spec,
 				GenesisValidatorsRoot:   &testnet.genesisValidatorsRoot,

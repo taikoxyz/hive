@@ -18,6 +18,7 @@ type TestSpec interface {
 	GetTestnetConfig(clients.NodeDefinitions) *testnet.Config
 	GetDisplayName() string
 	GetDescription() *utils.Description
+	Verify(t *hivesim.T, ctx context.Context, testnet *testnet.Testnet)
 }
 
 // SuiteHydrate Add all tests to the suite
@@ -53,7 +54,11 @@ func SuiteHydrate(
 				}
 				defer testnet.Stop()
 
-				time.Sleep(time.Second * 400)
+				timeoutCtx, cancel := context.WithTimeout(ctx, time.Second*200)
+				defer cancel()
+
+				// verify status.
+				test.Verify(t, timeoutCtx, testnet)
 			},
 		},
 		)

@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/hive/hivesim"
-	"github.com/ethereum/hive/taiko/params"
-	beacon_client "github.com/marioevz/eth-clients/clients/beacon"
 	exec_client "github.com/marioevz/eth-clients/clients/execution"
 	"github.com/protolambda/zrnt/eth2/beacon/common"
 	"math/big"
@@ -17,6 +15,7 @@ import (
 	consensus_config "taiko2/common/config/consensus"
 	el "taiko2/common/config/execution"
 	"taiko2/common/utils"
+	"taiko2/params"
 )
 
 var (
@@ -128,7 +127,6 @@ func PrepareTestnet(
 	}
 
 	beaconParams := hivesim.Params{
-		"HIVE_TAIKO2_METRICS_PORT":                fmt.Sprintf("%d", beacon_client.PortMetrics),
 		"HIVE_TAIKO2_DEPOSIT_CONTRACT_ADDRESS":    executionGenesis.DepositAddress,
 		"HIVE_TAIKO2_DEPOSIT_DEPLOY_BLOCK_NUMBER": fmt.Sprintf("%d", executionGenesis.Block.NumberU64()),
 		"HIVE_TAIKO2_ETH1_GENESIS_TIME":           fmt.Sprintf("%d", executionGenesis.Genesis.Timestamp),
@@ -155,10 +153,8 @@ func PrepareTestnet(
 		networkParams,
 	)
 
-	taikoGethOpts := hivesim.Bundle(hivesim.Params{
-		"HIVE_TAIKO2_JWT_SECRET":  cfg.JWTSecret,
-		"HIVE_TAIKO2_FEE_RECEIPT": cfg.FeeReceipt,
-		"HIVE_LOGLEVEL":           fmt.Sprintf("%d", cfg.LogLevel),
+	taikoGethOpts := hivesim.Bundle(commonParams, hivesim.Params{
+		"HIVE_LOGLEVEL": fmt.Sprintf("%d", cfg.LogLevel),
 	})
 
 	return &PreparedTestnet{
@@ -288,7 +284,7 @@ func (p *PreparedTestnet) prepareBeaconNode(
 	cm := &clients.HiveManagedClient{
 		T:                    testnet.T,
 		HiveClientDefinition: beaconDef,
-		Port:                 int64(config.BeaconAPIPort),
+		Port:                 int64(clients.BeaconPort),
 	}
 
 	cl := &clients.BeaconClient{
@@ -398,8 +394,7 @@ func (p *PreparedTestnet) prepareValidatorClient(
 		}
 		// Hook up validator to beacon node
 		bnAPIOpt := hivesim.Params{
-			"HIVE_TAIKO2_BN_API_IP":   bn.GetHost(),
-			"HIVE_TAIKO2_BN_API_PORT": fmt.Sprintf("%d", bn.Config.BeaconAPIPort),
+			"HIVE_TAIKO2_BN_API_IP": bn.GetHost(),
 		}
 		opts := []hivesim.StartOption{p.validatorOpts, bnAPIOpt}
 
@@ -461,12 +456,12 @@ func (p *PreparedTestnet) prepareDriverClient(
 
 	getEnvs := func() hivesim.Params {
 		envs := params.EnvParams.Copy()
-		envs["L1_HTTP"] = fmt.Sprintf("http://%v:8545", l1Client.NetworkIP())
-		envs["L1_WS"] = fmt.Sprintf("ws://%v:8546", l1Client.NetworkIP())
-		envs["L1_BEACON"] = fmt.Sprintf("http://%v:3500", beaconClient.NetworkIP())
-		envs["L2_AUTH"] = fmt.Sprintf("http://%v:8551", l2Client.NetworkIP())
-		envs["L2_HTTP"] = fmt.Sprintf("http://%v:8545", l2Client.NetworkIP())
-		envs["L2_WS"] = fmt.Sprintf("ws://%v:8546", l2Client.NetworkIP())
+		envs["L1_HTTP"] = l1Client.HttpURL()
+		envs["L1_WS"] = l1Client.WSURL()
+		envs["L1_BEACON"] = beaconClient.BeaconURL()
+		envs["L2_AUTH"] = l2Client.EngineURL()
+		envs["L2_HTTP"] = l2Client.HttpURL()
+		envs["L2_WS"] = l2Client.WSURL()
 		return envs
 	}
 
@@ -502,12 +497,12 @@ func (p *PreparedTestnet) prepareProposerClient(
 
 	getEnvs := func() hivesim.Params {
 		envs := params.EnvParams.Copy()
-		envs["L1_HTTP"] = fmt.Sprintf("http://%v:8545", l1Client.NetworkIP())
-		envs["L1_WS"] = fmt.Sprintf("ws://%v:8546", l1Client.NetworkIP())
-		envs["L1_BEACON"] = fmt.Sprintf("http://%v:3500", beaconClient.NetworkIP())
-		envs["L2_AUTH"] = fmt.Sprintf("http://%v:8551", l2Client.NetworkIP())
-		envs["L2_HTTP"] = fmt.Sprintf("http://%v:8545", l2Client.NetworkIP())
-		envs["L2_WS"] = fmt.Sprintf("ws://%v:8546", l2Client.NetworkIP())
+		envs["L1_HTTP"] = l1Client.HttpURL()
+		envs["L1_WS"] = l1Client.WSURL()
+		envs["L1_BEACON"] = beaconClient.BeaconURL()
+		envs["L2_AUTH"] = l2Client.EngineURL()
+		envs["L2_HTTP"] = l2Client.HttpURL()
+		envs["L2_WS"] = l2Client.WSURL()
 		return envs
 	}
 
@@ -541,12 +536,12 @@ func (p *PreparedTestnet) prepareProverClient(
 
 	getEnvs := func() hivesim.Params {
 		envs := params.EnvParams.Copy()
-		envs["L1_HTTP"] = fmt.Sprintf("http://%v:8545", l1Client.NetworkIP())
-		envs["L1_WS"] = fmt.Sprintf("ws://%v:8546", l1Client.NetworkIP())
-		envs["L1_BEACON"] = fmt.Sprintf("http://%v:3500", beaconClient.NetworkIP())
-		envs["L2_AUTH"] = fmt.Sprintf("http://%v:8551", l2Client.NetworkIP())
-		envs["L2_HTTP"] = fmt.Sprintf("http://%v:8545", l2Client.NetworkIP())
-		envs["L2_WS"] = fmt.Sprintf("ws://%v:8546", l2Client.NetworkIP())
+		envs["L1_HTTP"] = l1Client.HttpURL()
+		envs["L1_WS"] = l1Client.WSURL()
+		envs["L1_BEACON"] = beaconClient.BeaconURL()
+		envs["L2_AUTH"] = l2Client.EngineURL()
+		envs["L2_HTTP"] = l2Client.HttpURL()
+		envs["L2_WS"] = l2Client.WSURL()
 		return envs
 	}
 

@@ -10,6 +10,13 @@ import (
 	"taiko2/common/utils"
 )
 
+const (
+	EthHttpPort  = 8545
+	EthWSPort    = 8546
+	EthEngineRPC = 8551
+	BeaconPort   = 3500
+)
+
 type Client interface {
 	clients.Client
 	HiveClient() *hivesim.Client
@@ -125,28 +132,8 @@ func (n *Node) CreateNetwork(t *hivesim.T, network string) error {
 }
 
 func (n *Node) Shutdown() error {
-	if n.L1EthClient != nil {
-		if err := n.L1EthClient.Shutdown(); err != nil {
-			return err
-		}
-	}
-	if n.BeaconClient != nil {
-		if err := n.BeaconClient.Shutdown(); err != nil {
-			return err
-		}
-	}
-	if n.ValidatorClient != nil {
-		if err := n.ValidatorClient.Shutdown(); err != nil {
-			return err
-		}
-	}
-	if n.L2EthClient != nil {
-		if err := n.L2EthClient.Shutdown(); err != nil {
-			return err
-		}
-	}
-	if n.DriverClient != nil {
-		if err := n.DriverClient.Shutdown(); err != nil {
+	if n.ProverClient != nil {
+		if err := n.ProverClient.Shutdown(); err != nil {
 			return err
 		}
 	}
@@ -155,8 +142,28 @@ func (n *Node) Shutdown() error {
 			return err
 		}
 	}
-	if n.ProverClient != nil {
-		if err := n.ProverClient.Shutdown(); err != nil {
+	if n.DriverClient != nil {
+		if err := n.DriverClient.Shutdown(); err != nil {
+			return err
+		}
+	}
+	if n.L2EthClient != nil {
+		if err := n.L2EthClient.Shutdown(); err != nil {
+			return err
+		}
+	}
+	if n.ValidatorClient != nil {
+		if err := n.ValidatorClient.Shutdown(); err != nil {
+			return err
+		}
+	}
+	if n.BeaconClient != nil {
+		if err := n.BeaconClient.Shutdown(); err != nil {
+			return err
+		}
+	}
+	if n.L1EthClient != nil {
+		if err := n.L1EthClient.Shutdown(); err != nil {
 			return err
 		}
 	}

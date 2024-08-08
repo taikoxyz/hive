@@ -13,8 +13,6 @@ type TaikoGethClient struct {
 	Logger    utils.Logging
 	Network   string
 	networkIP string
-
-	eth *ethclient.Client
 }
 
 func (t *TaikoGethClient) Logf(format string, values ...interface{}) {
@@ -32,27 +30,65 @@ func (t *TaikoGethClient) Start() error {
 	return t.Init(context.Background())
 }
 
-func (t *TaikoGethClient) Init(ctx context.Context) error {
-	var err error
-	t.eth, err = ethclient.Dial(t.HttpURL())
+func (t *TaikoGethClient) EthIsReady(ctx context.Context, timeout time.Duration) error {
+	client, err := ethclient.DialContext(ctx, t.HttpURL())
 	if err != nil {
 		return err
 	}
-	// Wait until taiko geth is ready.
-	for {
-		if _, err = t.eth.ChainID(ctx); err == nil {
-			return nil
-		}
+	for ; ; <-time.Tick(time.Second) {
 		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(time.Second * 2):
+		case <-time.After(timeout):
+			return fmt.Errorf("reach timeout but l1geth is not ready")
+		default:
+			_, err = client.ChainID(ctx)
+			if err != nil {
+				continue
+			}
+			return nil
 		}
 	}
 }
 
+func (t *TaikoGethClient) VerifyNumber(ctx context.Context, timeout time.Duration, targetNumber uint64) error {
+	client, err := ethclient.DialContext(ctx, t.HttpURL())
+	if err != nil {
+		return err
+	}
+	for ; ; <-time.Tick(time.Second) {
+		select {
+		case <-time.After(timeout):
+			return fmt.Errorf("reach timeout but l2geth is not ready")
+		default:
+			number, err := client.BlockNumber(ctx)
+			if err != nil {
+				continue
+			}
+			if number >= targetNumber {
+				return nil
+			}
+		}
+	}
+}
+
+func (t *TaikoGethClient) Init(ctx context.Context) error {
+	// Wait until taiko geth is ready.
+	return t.EthIsReady(ctx, time.Second*20)
+}
+
 func (t *TaikoGethClient) Shutdown() error {
 	return t.HiveManagedClient.Shutdown()
+}
+
+func (t *TaikoGethClient) HttpURL() string {
+	return fmt.Sprintf("http://%v:%d", t.NetworkIP(), EthHttpPort)
+}
+
+func (t *TaikoGethClient) WSURL() string {
+	return fmt.Sprintf("ws://%v:%d", t.NetworkIP(), EthWSPort)
+}
+
+func (t *TaikoGethClient) EngineURL() string {
+	return fmt.Sprintf("http://%v:%d", t.NetworkIP(), EthEngineRPC)
 }
 
 func (t *TaikoGethClient) NetworkIP() string {
@@ -69,8 +105,4 @@ func (t *TaikoGethClient) NetworkIP() string {
 	t.T.Logf("taiko geth network IP %v", t.networkIP)
 
 	return t.networkIP
-}
-
-func (t *TaikoGethClient) HttpURL() string {
-	return fmt.Sprintf("http://%v:%d", t.GetHost(), PortHttpRPC)
 }

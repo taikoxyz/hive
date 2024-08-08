@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/hive/hivesim"
-	taparams "github.com/ethereum/hive/taiko/params"
 	"github.com/prysmaticlabs/prysm/v4/config/params"
 	"github.com/stretchr/testify/assert"
 	"taiko2/common/clients"
 	execution_config "taiko2/common/config/execution"
 	"taiko2/common/testnet"
+	taparams "taiko2/params"
 	"testing"
 )
 
