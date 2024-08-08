@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ethereum/hive/internal/libdocker"
-	"github.com/ethereum/hive/internal/libhive"
+	"github.com/taikoxyz/hive/internal/libdocker"
+	"github.com/taikoxyz/hive/internal/libhive"
 )
 
 var (

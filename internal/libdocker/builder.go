@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ethereum/hive/internal/libhive"
 	docker "github.com/fsouza/go-dockerclient"
+	"github.com/taikoxyz/hive/internal/libhive"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
