@@ -1,4 +1,4 @@
-package main
+package hivesim
 
 import (
 	"context"
@@ -14,11 +14,12 @@ import (
 
 var (
 	DefaultHiveConfig = &HiveConfig{
-		ResultsRoot:     "workspace/logs",
-		Loglevel:        3,
-		SimParallelism:  1,
-		SimLogLevel:     4,
-		ClientTimeLimit: time.Minute * 3,
+		ResultsRoot:    "workspace/logs",
+		Loglevel:       3,
+		SimParallelism: 1,
+		SimLogLevel:    4,
+		ClientTimeOut:  time.Minute * 3,
+		BaseDir:        ".",
 	}
 )
 
@@ -35,8 +36,11 @@ func hiveConfigWithDefault(cfg *HiveConfig) *HiveConfig {
 	if cfg.SimLogLevel == 0 {
 		cfg.SimLogLevel = DefaultHiveConfig.SimLogLevel
 	}
-	if cfg.ClientTimeLimit == 0 {
-		cfg.ClientTimeLimit = DefaultHiveConfig.ClientTimeLimit
+	if cfg.ClientTimeOut == 0 {
+		cfg.ClientTimeOut = DefaultHiveConfig.ClientTimeOut
+	}
+	if cfg.BaseDir == "" {
+		cfg.BaseDir = DefaultHiveConfig.BaseDir
 	}
 	return cfg
 }
@@ -50,13 +54,16 @@ type HiveConfig struct {
 	DockerOutput   bool
 
 	SimPattern     string
+	SimTestPattern string
 	SimParallelism int
 	SimRandomSeed  int
 	SimTimeLimit   time.Duration
 	SimLogLevel    int
 
-	Clients         []string
-	ClientTimeLimit time.Duration
+	Clients       []string
+	ClientTimeOut time.Duration
+
+	BaseDir string
 }
 
 type HiveFramework struct {
@@ -69,7 +76,7 @@ type HiveFramework struct {
 
 func NewHiveFramework(config *HiveConfig) (*HiveFramework, error) {
 	cfg := hiveConfigWithDefault(config)
-	inv, err := libhive.LoadInventory(".")
+	inv, err := libhive.LoadInventory(config.BaseDir)
 	if err != nil {
 		return nil, err
 	}
@@ -112,11 +119,11 @@ func NewHiveFramework(config *HiveConfig) (*HiveFramework, error) {
 		env: libhive.SimEnv{
 			LogDir:             cfg.ResultsRoot,
 			SimLogLevel:        cfg.SimLogLevel,
-			SimTestPattern:     cfg.SimPattern,
+			SimTestPattern:     cfg.SimTestPattern,
 			SimParallelism:     cfg.SimParallelism,
 			SimRandomSeed:      cfg.SimRandomSeed,
 			SimDurationLimit:   cfg.SimTimeLimit,
-			ClientStartTimeout: cfg.ClientTimeLimit,
+			ClientStartTimeout: cfg.ClientTimeOut,
 		},
 		simList:    simList,
 		clientList: clients,
