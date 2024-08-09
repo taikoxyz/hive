@@ -1,5 +1,7 @@
 #!/bin/sh
 
+docker pull us-docker.pkg.dev/evmchain/images/taiko-geth:taiko
+
 # start and stop docker compose
 docker/start.sh
 trap "docker/stop.sh" EXIT INT KILL ERR
