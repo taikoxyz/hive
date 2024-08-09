@@ -20,6 +20,7 @@ var (
 		SimLogLevel:    4,
 		ClientTimeOut:  time.Minute * 3,
 		BaseDir:        ".",
+		DockerPull:     true,
 	}
 )
 
@@ -42,6 +43,9 @@ func hiveConfigWithDefault(cfg *HiveConfig) *HiveConfig {
 	if cfg.BaseDir == "" {
 		cfg.BaseDir = DefaultHiveConfig.BaseDir
 	}
+	if cfg.DockerPull == false {
+		cfg.DockerPull = DefaultHiveConfig.DockerPull
+	}
 	return cfg
 }
 
@@ -49,9 +53,9 @@ type HiveConfig struct {
 	ResultsRoot string
 	Loglevel    int
 
-	DockerEndpoint string
-	DockerNoCache  string
-	DockerOutput   bool
+	DockerPull    bool
+	DockerNoCache string
+	DockerOutput  bool
 
 	SimPattern     string
 	SimTestPattern string
@@ -87,7 +91,7 @@ func NewHiveFramework(config *HiveConfig) (*HiveFramework, error) {
 
 	dockerConfig := &libdocker.Config{
 		Inventory:           inv,
-		PullEnabled:         false,
+		PullEnabled:         config.DockerPull,
 		UseCredentialHelper: false,
 		ContainerOutput:     os.Stderr,
 		BuildOutput:         os.Stderr,
@@ -105,7 +109,7 @@ func NewHiveFramework(config *HiveConfig) (*HiveFramework, error) {
 		dockerConfig.BuildOutput = os.Stderr
 	}
 
-	builder, cb, err := libdocker.Connect(cfg.DockerEndpoint, dockerConfig)
+	builder, cb, err := libdocker.Connect("", dockerConfig)
 	if err != nil {
 		return nil, err
 	}
