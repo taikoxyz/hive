@@ -100,7 +100,6 @@ require (
 )
 
 exclude (
-	github.com/crate-crypto/go-kzg-4844 v1.0.0
 	github.com/ethereum/go-ethereum v1.14.5
 	github.com/ethereum/go-ethereum v1.14.6
 	github.com/ethereum/go-ethereum v1.14.7
