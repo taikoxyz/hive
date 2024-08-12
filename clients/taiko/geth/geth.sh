@@ -8,9 +8,9 @@ set -e
 
 EXECUTION_DIR=/geth
 
-check_env "HIVE_TAIKO2_JWT_SECRET"
-check_env "HIVE_TAIKO2_CLIQUE_PRIVATEKEY"
-check_env "HIVE_TAIKO2_CLIQUE_ADDRESS"
+check_env "HIVE_TAIKO_JWT_SECRET"
+check_env "HIVE_TAIKO_CLIQUE_PRIVATEKEY"
+check_env "HIVE_TAIKO_CLIQUE_ADDRESS"
 
 echo genesis.json:
 cat /hive/input/genesis.json
@@ -19,14 +19,14 @@ cat /hive/input/genesis.json
 echo "Initializing database with genesis state..."
 geth init /hive/input/genesis.json
 
-if [ "$HIVE_TAIKO2_JWT_SECRET" != "" ]; then
-  echo "$HIVE_TAIKO2_JWT_SECRET" >$EXECUTION_DIR/jwtsecret
+if [ "$HIVE_TAIKO_JWT_SECRET" != "" ]; then
+  echo "$HIVE_TAIKO_JWT_SECRET" >$EXECUTION_DIR/jwtsecret
 fi
 
-if [ "$HIVE_TAIKO2_CLIQUE_PRIVATEKEY" != "" ]; then
+if [ "$HIVE_TAIKO_CLIQUE_PRIVATEKEY" != "" ]; then
   echo "Importing clique key..."
   echo "secret" >$EXECUTION_DIR/geth_password.txt
-  geth account import --password $EXECUTION_DIR/geth_password.txt <(echo "$HIVE_TAIKO2_CLIQUE_PRIVATEKEY")
+  geth account import --password $EXECUTION_DIR/geth_password.txt <(echo "$HIVE_TAIKO_CLIQUE_PRIVATEKEY")
 else
   echo "clique private key is not set, exiting..."
   exit 1
@@ -47,7 +47,7 @@ geth \
   --authrpc.addr=0.0.0.0 \
   --authrpc.jwtsecret=$EXECUTION_DIR/jwtsecret \
   --allow-insecure-unlock \
-  --unlock="$HIVE_TAIKO2_CLIQUE_ADDRESS" \
+  --unlock="$HIVE_TAIKO_CLIQUE_ADDRESS" \
   --password=$EXECUTION_DIR/geth_password.txt \
   --nodiscover \
   --gcmode=archive \

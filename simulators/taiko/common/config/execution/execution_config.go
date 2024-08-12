@@ -140,8 +140,8 @@ func (c ExecutionCliqueConsensus) HiveParams(node int) hivesim.Params {
 		c.CliqueAddress = DEFAULT_CLIQUE_MINER_ADDRESS
 	}
 	return hivesim.Params{
-		"HIVE_TAIKO2_CLIQUE_PRIVATEKEY": c.CliquePrivateKey,
-		"HIVE_TAIKO2_CLIQUE_ADDRESS":    c.CliqueAddress,
+		"HIVE_TAIKO_CLIQUE_PRIVATEKEY": c.CliquePrivateKey,
+		"HIVE_TAIKO_CLIQUE_ADDRESS":    c.CliqueAddress,
 	}
 }
 

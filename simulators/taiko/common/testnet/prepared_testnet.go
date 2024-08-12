@@ -98,9 +98,9 @@ func PrepareTestnet(
 	networkParams := hivesim.WithInitialNetworks([]string{cfg.Network})
 
 	commonParams := hivesim.Params{
-		"HIVE_LOGLEVEL":           getLogLevelString(cfg.LogLevel),
-		"HIVE_TAIKO2_JWT_SECRET":  cfg.JWTSecret,
-		"HIVE_TAIKO2_FEE_RECEIPT": cfg.FeeReceipt,
+		"HIVE_LOGLEVEL":          getLogLevelString(cfg.LogLevel),
+		"HIVE_TAIKO_JWT_SECRET":  cfg.JWTSecret,
+		"HIVE_TAIKO_FEE_RECEIPT": cfg.FeeReceipt,
 	}
 
 	executionOpts := hivesim.Bundle(
@@ -127,11 +127,11 @@ func PrepareTestnet(
 	}
 
 	beaconParams := hivesim.Params{
-		"HIVE_TAIKO2_DEPOSIT_CONTRACT_ADDRESS":    executionGenesis.DepositAddress,
-		"HIVE_TAIKO2_DEPOSIT_DEPLOY_BLOCK_NUMBER": fmt.Sprintf("%d", executionGenesis.Block.NumberU64()),
-		"HIVE_TAIKO2_ETH1_GENESIS_TIME":           fmt.Sprintf("%d", executionGenesis.Genesis.Timestamp),
-		"HIVE_TAIKO2_CHAIN_ID":                    fmt.Sprintf("%d", executionGenesis.ChainID()),
-		"HIVE_TAIKO2_MIN_SYNC_PEERS":              "0",
+		"HIVE_TAIKO_DEPOSIT_CONTRACT_ADDRESS":    executionGenesis.DepositAddress,
+		"HIVE_TAIKO_DEPOSIT_DEPLOY_BLOCK_NUMBER": fmt.Sprintf("%d", executionGenesis.Block.NumberU64()),
+		"HIVE_TAIKO_ETH1_GENESIS_TIME":           fmt.Sprintf("%d", executionGenesis.Genesis.Timestamp),
+		"HIVE_TAIKO_CHAIN_ID":                    fmt.Sprintf("%d", executionGenesis.ChainID()),
+		"HIVE_TAIKO_MIN_SYNC_PEERS":              "0",
 	}
 
 	beaconOpts := hivesim.Bundle(
@@ -143,7 +143,7 @@ func PrepareTestnet(
 	)
 
 	validatorParams := hivesim.Params{
-		"HIVE_TAIKO2_NUM_VALIDATORS": fmt.Sprintf("%d", executionGenesis.GenesisState.NumValidators()),
+		"HIVE_TAIKO_NUM_VALIDATORS": fmt.Sprintf("%d", executionGenesis.GenesisState.NumValidators()),
 	}
 
 	validatorOpts := hivesim.Bundle(
@@ -322,9 +322,9 @@ func (p *PreparedTestnet) prepareBeaconNode(
 			engineAddrs = append(engineAddrs, engineRPC)
 		}
 		opts = append(opts, hivesim.Params{
-			"HIVE_TAIKO2_ETH1_RPC_ADDRS":        strings.Join(addrs, ","),
-			"HIVE_TAIKO2_ETH1_ENGINE_RPC_ADDRS": strings.Join(engineAddrs, ","),
-			"HIVE_TAIKO2_BEACON_NODE_INDEX":     fmt.Sprintf("%d", config.ClientIndex),
+			"HIVE_TAIKO_ETH1_RPC_ADDRS":        strings.Join(addrs, ","),
+			"HIVE_TAIKO_ETH1_ENGINE_RPC_ADDRS": strings.Join(engineAddrs, ","),
+			"HIVE_TAIKO_BEACON_NODE_INDEX":     fmt.Sprintf("%d", config.ClientIndex),
 		})
 
 		currentlyRunningBcs := testnet.BeaconClients().
@@ -337,13 +337,13 @@ func (p *PreparedTestnet) prepareBeaconNode(
 					err,
 				)
 			} else if bootnodeENRs != "" {
-				opts = append(opts, hivesim.Params{"HIVE_TAIKO2_BOOTNODE_ENRS": bootnodeENRs})
+				opts = append(opts, hivesim.Params{"HIVE_TAIKO_BOOTNODE_ENRS": bootnodeENRs})
 			}
 
 			if staticPeers, err := currentlyRunningBcs.P2PAddrs(parentCtx); err != nil {
 				return nil, fmt.Errorf("failed to get p2paddr for every beacon node: %v", err)
 			} else if staticPeers != "" {
-				opts = append(opts, hivesim.Params{"HIVE_TAIKO2_STATIC_PEERS": staticPeers})
+				opts = append(opts, hivesim.Params{"HIVE_TAIKO_STATIC_PEERS": staticPeers})
 			}
 		}
 
@@ -394,7 +394,7 @@ func (p *PreparedTestnet) prepareValidatorClient(
 		}
 		// Hook up validator to beacon node
 		bnAPIOpt := hivesim.Params{
-			"HIVE_TAIKO2_BN_API_IP": bn.GetHost(),
+			"HIVE_TAIKO_BN_API_IP": bn.GetHost(),
 		}
 		opts := []hivesim.StartOption{p.validatorOpts, bnAPIOpt}
 

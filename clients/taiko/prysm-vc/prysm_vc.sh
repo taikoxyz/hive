@@ -8,8 +8,8 @@ set -e
 
 EXECUTION_DIR=/prysm
 
-check_env "HIVE_TAIKO2_FEE_RECEIPT"
-check_env "HIVE_TAIKO2_BN_API_IP"
+check_env "HIVE_TAIKO_FEE_RECEIPT"
+check_env "HIVE_TAIKO_BN_API_IP"
 
 mkdir -p $EXECUTION_DIR/data/vc
 
@@ -26,7 +26,7 @@ case "$HIVE_LOGLEVEL" in
 5) LOG=trace ;;
 esac
 
-builder_option=$([[ "$HIVE_TAIKO2_BUILDER_ENDPOINT" == "" ]] && echo "" || echo "--enable-builder")
+builder_option=$([[ "$HIVE_TAIKO_BUILDER_ENDPOINT" == "" ]] && echo "" || echo "--enable-builder")
 echo BUILDER=$builder_option
 
 echo Starting Prysm Validator Client
@@ -34,10 +34,10 @@ echo Starting Prysm Validator Client
 validator \
   --verbosity="$LOG" \
   --chain-config-file="/hive/input/config.yaml" \
-  --beacon-rpc-provider="$HIVE_TAIKO2_BN_API_IP:4000" \
+  --beacon-rpc-provider="$HIVE_TAIKO_BN_API_IP:4000" \
   --accept-terms-of-use=true \
   --interop-start-index=0 \
-  --interop-num-validators="${HIVE_TAIKO2_NUM_VALIDATORS:-64}" \
+  --interop-num-validators="${HIVE_TAIKO_NUM_VALIDATORS:-64}" \
   --datadir="$EXECUTION_DIR/data/vc" \
   --force-clear-db \
   $builder_option

@@ -81,7 +81,7 @@ func (ts BaseTestSpec) GetTestnetConfig(
 			CliqueAddress:    "123463a4B065722E99115D6c222f267d9cABb524",
 		},
 		NodeDefinitions: nodeDefinitions,
-		Network:         "taiko2_base_test",
+		Network:         "taiko_base_test",
 		LogLevel:        3,
 		JWTSecret:       "7365637265747365637265747365637265747365637265747365637265747365",
 		FeeReceipt:      "a0Ee7A142d267C1f36714E4a8F75612F20a79720",

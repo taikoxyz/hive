@@ -6,7 +6,7 @@ update:
 	@echo "Update dependencies..."
 	@git submodule update
 	@go mod tidy
-	@cd simulators/taiko2/taiko-mono/packages/protocol && git checkout main && pnpm install
+	@cd simulators/taiko/taiko-mono/packages/protocol && git checkout main && pnpm install
 
 hive:
 	@echo "Building hive..."

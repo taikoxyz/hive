@@ -59,8 +59,6 @@ func SuiteHydrate(
 
 				// Verify nodes.
 				test.VerifyNodes(timeoutCtx, t, testnet)
-
-				time.Sleep(time.Second * 100)
 			},
 		})
 	}

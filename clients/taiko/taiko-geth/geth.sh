@@ -7,8 +7,8 @@ HIVE_NETWORK_ID=${HIVE_NETWORK_ID:-167001}
 # Immediately abort the script on any error encountered
 set -e
 
-if [ "$HIVE_TAIKO2_JWT_SECRET" != "" ]; then
-  echo "$HIVE_TAIKO2_JWT_SECRET" >/geth/jwt.hex
+if [ "$HIVE_TAIKO_JWT_SECRET" != "" ]; then
+  echo "$HIVE_TAIKO_JWT_SECRET" >/geth/jwt.hex
 fi
 
 echo "Starting taiko geth..."
