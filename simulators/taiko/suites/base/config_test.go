@@ -18,36 +18,7 @@ func TestCC(t *testing.T) {
 		{
 			Name:    "go-ethereum",
 			Version: "client-1-version",
-			Meta:    hivesim.ClientMetadata{Roles: []string{"eth1"}},
-		},
-		{
-			Name:    "prysm-bn",
-			Version: "client-2-version",
-			Meta:    hivesim.ClientMetadata{Roles: []string{"beacon"}},
-		}, {
-			Name:    "prysm-vc",
-			Version: "client-3-version",
-			Meta:    hivesim.ClientMetadata{Roles: []string{"validator"}},
-		},
-		{
-			Name:    "taiko-geth",
-			Version: "taiko-geth-4-version",
-			Meta:    hivesim.ClientMetadata{Roles: []string{"taiko-geth"}},
-		},
-		{
-			Name:    "proposer",
-			Version: "proposer-5-version",
-			Meta:    hivesim.ClientMetadata{Roles: []string{"proposer"}},
-		},
-		{
-			Name:    "driver",
-			Version: "driver-6-version",
-			Meta:    hivesim.ClientMetadata{Roles: []string{"driver"}},
-		},
-		{
-			Name:    "prover",
-			Version: "prover-7-version",
-			Meta:    hivesim.ClientMetadata{Roles: []string{"prover"}},
+			Meta:    hivesim.ClientMetadata{Roles: []string{"anvil"}},
 		},
 	}
 
@@ -76,6 +47,7 @@ func TestCC(t *testing.T) {
 
 		for _, node := range config.NodeDefinitions {
 			var (
+				anvilDef     = env.Clients.ClientByNameAndRole(node.L1EthClient, "anvil")
 				executionDef = env.Clients.ClientByNameAndRole(node.L1EthClient, "eth1")
 				beaconDef    = env.Clients.ClientByNameAndRole(node.ConsensusClient, "beacon")
 				validatorDef = env.Clients.ClientByNameAndRole(node.ValidatorClientName(), "validator")
@@ -84,7 +56,7 @@ func TestCC(t *testing.T) {
 				proposerDef  = env.Clients.ClientByNameAndRole(node.ProposerClient, "proposer")
 				proverDef    = env.Clients.ClientByNameAndRole(node.ProverClient, "prover")
 			)
-			t.Log(executionDef, beaconDef, validatorDef, taikoGethDef, driverDef, proposerDef, proverDef)
+			t.Log(executionDef, beaconDef, validatorDef, taikoGethDef, driverDef, proposerDef, proverDef, anvilDef)
 		}
 
 		genesisState := &execution_config.GenesisState{

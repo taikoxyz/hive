@@ -34,6 +34,7 @@ type Node struct {
 	// Index of the node in the network/testnet
 	Index int
 	// L1 chain clients that comprise the node
+	AnvilClient     *AnvilClient
 	L1EthClient     *ExecutionClient
 	BeaconClient    *BeaconClient
 	ValidatorClient *ValidatorClient

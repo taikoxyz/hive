@@ -175,6 +175,7 @@ func StartTestnet(
 		var (
 			nodeClient = testnet.Nodes[nodeIndex]
 
+			anvilDef     = env.Clients.ClientByNameAndRole(node.L1EthClient, "anvil")
 			executionDef = env.Clients.ClientByNameAndRole(node.L1EthClient, "eth1")
 			beaconDef    = env.Clients.ClientByNameAndRole(node.ConsensusClient, "beacon")
 			validatorDef = env.Clients.ClientByNameAndRole(node.ValidatorClientName(), "validator")
@@ -199,26 +200,37 @@ func StartTestnet(
 
 		// Prepare the client objects with all the information necessary to
 		// eventually start
-		nodeClient.L1EthClient = prep.prepareExecutionNode(
-			parentCtx,
-			testnet,
-			executionDef,
-			config.Eth1Consensus,
-			node.Chain,
-			clients.ExecutionClientConfig{
-				ClientIndex:             nodeIndex,
-				TerminalTotalDifficulty: executionTTD,
-				Subnet:                  node.GetExecutionSubnet(),
-				JWTSecret:               ethcommon.HexToHash(config.JWTSecret),
-				Network:                 config.Network,
-				ProxyConfig: &clients.ExecutionProxyConfig{
-					Host:                   simulatorIP,
-					Port:                   exec_client.PortEngineRPC + nodeIndex,
-					TrackForkchoiceUpdated: false,
-					LogEngineCalls:         env.LogEngineCalls,
+		if anvilDef != nil {
+			nodeClient.AnvilClient = prep.prepareAnvilNode(
+				parentCtx,
+				config.Network,
+				testnet,
+				anvilDef,
+			)
+		}
+		if executionDef != nil {
+			nodeClient.L1EthClient = prep.prepareExecutionNode(
+				parentCtx,
+				testnet,
+				executionDef,
+				config.Eth1Consensus,
+				node.Chain,
+				clients.ExecutionClientConfig{
+					ClientIndex:             nodeIndex,
+					TerminalTotalDifficulty: executionTTD,
+					Subnet:                  node.GetExecutionSubnet(),
+					JWTSecret:               ethcommon.HexToHash(config.JWTSecret),
+					Network:                 config.Network,
+					ProxyConfig: &clients.ExecutionProxyConfig{
+						Host:                   simulatorIP,
+						Port:                   exec_client.PortEngineRPC + nodeIndex,
+						TrackForkchoiceUpdated: false,
+						LogEngineCalls:         env.LogEngineCalls,
+					},
 				},
-			},
-		)
+			)
+		}
+
 		nodeClient.BeaconClient = prep.prepareBeaconNode(
 			parentCtx,
 			testnet,

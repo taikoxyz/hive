@@ -107,6 +107,10 @@ func PrepareTestnet(
 		genesisJsonBundle,
 		commonParams,
 		networkParams,
+		// Add for anvil.
+		hivesim.Params{
+			"HIVE_TAIKO2_BLOCK_TIME": fmt.Sprintf("%d", spec.SecondsPerSlot),
+		},
 	)
 
 	// Pre-generate PoW chains for clients that require it
@@ -184,6 +188,33 @@ func (p *PreparedTestnet) createTestnet(t *hivesim.T) *Testnet {
 
 		Validators:      genesisState.Validators(),
 		ValidatorGroups: make(map[string]*utils.Validators),
+	}
+}
+
+func (p *PreparedTestnet) prepareAnvilNode(
+	ctx context.Context,
+	network string,
+	testnet *Testnet,
+	anvilDef *hivesim.ClientDefinition,
+) *clients.AnvilClient {
+	if anvilDef == nil {
+		return nil
+	}
+	testnet.Logf("Preparing anvil node: %s (%s)", anvilDef.Name, anvilDef.Version)
+	cm := &clients.HiveManagedClient{
+		T:                    testnet.T,
+		HiveClientDefinition: anvilDef,
+		Port:                 clients.AnvilPort,
+	}
+	cm.OptionsGenerator = func() ([]hivesim.StartOption, error) {
+		opts := []hivesim.StartOption{p.executionOpts}
+		return opts, nil
+	}
+
+	return &clients.AnvilClient{
+		HiveManagedClient: cm,
+		Logger:            testnet.T,
+		Network:           network,
 	}
 }
 

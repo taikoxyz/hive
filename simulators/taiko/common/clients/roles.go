@@ -22,7 +22,7 @@ func ClientsByRole(
 	var out ClientDefinitionsByRole
 	for _, client := range available {
 		switch true {
-		case client.HasRole("eth1"):
+		case client.HasRole("eth1") || client.HasRole("anvil"):
 			out.Eth1 = append(out.Eth1, client)
 		case client.HasRole("beacon"):
 			out.Beacon = append(out.Beacon, client)
@@ -45,6 +45,8 @@ func (c *ClientDefinitionsByRole) ClientByNameAndRole(
 	name, role string,
 ) *hivesim.ClientDefinition {
 	switch role {
+	case "anvil":
+		return byName(c.Eth1, name)
 	case "beacon":
 		return byName(c.Beacon, name)
 	case "validator":

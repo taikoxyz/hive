@@ -18,10 +18,21 @@ func (ts BaseTestSpec) VerifyNodes(ctx context.Context, t *hivesim.T, testnet *t
 
 func (ts BaseTestSpec) verify(ctx context.Context, t *hivesim.T, node *clients.Node) {
 	var (
+		anvil = node.AnvilClient
 		l1Eth = node.L1EthClient
 		l2Eth = node.L2EthClient
 	)
 
+	if anvil != nil {
+		if !anvil.IsRunning() {
+			t.Fatalf("anvil node is not running!")
+		}
+		// Verify l1eth node run successfully.
+		err := anvil.VerifyNumber(ctx, time.Second*200, 1)
+		if err != nil {
+			t.Fatalf("failed to verify l1geth number, err: %v", err)
+		}
+	}
 	if l1Eth != nil {
 		if !l1Eth.IsRunning() {
 			t.Fatalf("l1eth node is not running!")
