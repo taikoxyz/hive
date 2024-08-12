@@ -13,6 +13,3 @@ simulators/**/target
 
 hivesim-rs/Cargo.lock
 hivesim-rs/target
-
-# ignore genesis ssz file
-simulators/taiko2/genesis.ssz

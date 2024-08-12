@@ -10,12 +10,12 @@ import (
 func TestCC(t *testing.T) {
 	handler, err := NewHiveFramework(&HiveConfig{
 		BaseDir:        "/Users/huan/projects/taiko/hive",
-		SimPattern:     "taiko2",
+		SimPattern:     "taiko",
 		SimTestPattern: "eth2-deneb-testnet/test-deneb-genesis",
 		Clients: []string{
-			"taiko2/geth",
-			"taiko2/prysm-bn",
-			"taiko2/prysm-vc",
+			"taiko/geth",
+			"taiko/prysm-bn",
+			"taiko/prysm-vc",
 		},
 	})
 	assert.NoError(t, err)

@@ -3,7 +3,7 @@ ARG tag=taiko
 
 FROM $baseimage:$tag as builder
 
-FROM alpine:latest
+FROM alpine:3.20.2
 COPY --from=builder /usr/local/bin/geth /usr/local/bin/geth
 
 # Generate the version.txt file.
@@ -13,7 +13,6 @@ WORKDIR /geth
 
 # Inject the startup script.
 ADD geth.sh .
-ADD jwt.hex .
 
 # Export the usual networking ports to allow outside access to the node
 EXPOSE 8545 8546 8551 30303 30303/udp
