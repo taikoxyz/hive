@@ -11,11 +11,8 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/marioevz/eth-clients/clients"
 	"github.com/marioevz/eth-clients/clients/execution"
-	spoof "github.com/rauljordan/engine-proxy/proxy"
 	"math/big"
 	"net"
 	"strings"
@@ -24,41 +21,6 @@ import (
 	"taiko/params"
 	"time"
 )
-
-var AllForkchoiceUpdatedCalls = []string{
-	"engine_forkchoiceUpdatedV1",
-	"engine_forkchoiceUpdatedV2",
-	"engine_forkchoiceUpdatedV3",
-}
-
-var AllGetPayloadCalls = []string{
-	"engine_getPayloadV1",
-	"engine_getPayloadV2",
-	"engine_getPayloadV3",
-}
-
-var AllNewPayloadCalls = []string{
-	"engine_newPayloadV1",
-	"engine_newPayloadV2",
-	"engine_newPayloadV3",
-}
-
-var AllEngineCalls = []string{
-	"engine_forkchoiceUpdatedV1",
-	"engine_forkchoiceUpdatedV2",
-	"engine_forkchoiceUpdatedV3",
-	"engine_getPayloadV1",
-	"engine_getPayloadV2",
-	"engine_getPayloadV3",
-	"engine_newPayloadV1",
-	"engine_newPayloadV2",
-	"engine_newPayloadV3",
-}
-
-type EnodeClient interface {
-	clients.Client
-	GetEnodeURL() (string, error)
-}
 
 type ExecutionProxyConfig struct {
 	Host                   net.IP
@@ -77,10 +39,8 @@ type ExecutionClientConfig struct {
 }
 
 type ExecutionClient struct {
-	*HiveManagedClient
-	Logger    utils.Logging
-	Config    ExecutionClientConfig
-	networkIP string
+	*BaseNode
+	Config ExecutionClientConfig
 
 	proxy     *execution.Proxy
 	latestfcu *api.ForkchoiceStateV1
@@ -91,184 +51,12 @@ type ExecutionClient struct {
 	startupComplete bool
 }
 
-func (ec *ExecutionClient) Logf(format string, values ...interface{}) {
-	if l := ec.Logger; l != nil {
-		l.Logf(format, values...)
-	}
-}
-
-func (ec *ExecutionClient) HttpURL() string {
-	return fmt.Sprintf("http://%v:%d", ec.NetworkIP(), EthHttpPort)
-}
-
-func (ec *ExecutionClient) WSURL() string {
-	return fmt.Sprintf("ws://%v:%d", ec.NetworkIP(), EthWSPort)
-}
-
 func (ec *ExecutionClient) EngineURL() string {
 	return fmt.Sprintf("http://%v:%d", ec.NetworkIP(), EthEngineRPC)
 }
 
-func (ec *ExecutionClient) NetworkIP() string {
-	if ec.networkIP != "" {
-		return ec.networkIP
-	}
-
-	t := ec.T
-	var err error
-	ec.networkIP, err = t.Sim.ContainerNetworkIP(t.SuiteID, ec.Config.Network, ec.Client.Container)
-	if err != nil {
-		t.Logf("Error getting network IP: %v", err)
-		return ec.HiveManagedClient.GetHost()
-	}
-	t.Logf("execution network IP: %s", ec.networkIP)
-
-	return ec.networkIP
-}
-
 func (ec *ExecutionClient) ConfiguredTTD() *big.Int {
 	return big.NewInt(ec.Config.TerminalTotalDifficulty)
-}
-
-func (ec *ExecutionClient) Start() error {
-	ec.Logf("Starting execution client %d", ec.Config.ClientIndex)
-	if !ec.IsRunning() {
-		if err := ec.HiveManagedClient.Start(); err != nil {
-			return err
-		}
-	}
-
-	return ec.Init(context.Background())
-}
-
-func (ec *ExecutionClient) Shutdown() error {
-	return ec.HiveManagedClient.Shutdown()
-}
-
-func (ec *ExecutionClient) EthIsReady(ctx context.Context, timeout time.Duration) error {
-	client, err := ethclient.DialContext(ctx, ec.HttpURL())
-	if err != nil {
-		return err
-	}
-	for ; ; <-time.Tick(time.Second) {
-		select {
-		case <-time.After(timeout):
-			return fmt.Errorf("reach timeout but l1geth is not ready")
-		default:
-			_, err = client.ChainID(ctx)
-			if err != nil {
-				continue
-			}
-			return nil
-		}
-	}
-}
-
-func (ec *ExecutionClient) VerifyNumber(ctx context.Context, timeout time.Duration, targetNumber uint64) error {
-	client, err := ethclient.DialContext(ctx, ec.HttpURL())
-	if err != nil {
-		return err
-	}
-	for ; ; <-time.Tick(time.Second) {
-		select {
-		case <-time.After(timeout):
-			return fmt.Errorf("failed to verify l1geth number, target_number: %d", targetNumber)
-		default:
-			number, err := client.BlockNumber(ctx)
-			if err != nil {
-				continue
-			}
-			if number >= targetNumber {
-				return nil
-			}
-		}
-	}
-}
-
-func (ec *ExecutionClient) Init(ctx context.Context) (err error) {
-	if !ec.IsRunning() {
-		return fmt.Errorf("execution client not yet launched")
-	}
-	if !ec.startupComplete {
-		defer func() {
-			ec.startupComplete = true
-		}()
-
-		// Prepare HTTP Client
-		ec.engineClient, err = rpc.DialOptions(context.Background(), ec.EngineURL(), rpc.WithHTTPAuth(node.NewJWTAuth(ec.Config.JWTSecret)))
-		if err != nil {
-			return err
-		}
-
-		ec.httpClient, err = ethclient.DialContext(ctx, ec.HttpURL())
-		if err != nil {
-			return err
-		}
-
-		// Prepare proxy
-		dest := fmt.Sprintf("http://%v:%d", ec.GetHost(), EthEngineRPC)
-
-		if ec.Config.ProxyConfig != nil {
-			p := execution.NewProxy(
-				ec.Config.ProxyConfig.Host,
-				ec.Config.ProxyConfig.Port,
-				dest,
-				ec.Config.JWTSecret[:],
-			)
-
-			if ec.Config.ProxyConfig.TrackForkchoiceUpdated {
-				logCallback := func(req []byte) *spoof.Spoof {
-					var (
-						fcState api.ForkchoiceStateV1
-						pAttr   api.PayloadAttributes
-						err     error
-					)
-					err = execution.UnmarshalFromJsonRPCRequest(
-						req,
-						&fcState,
-						&pAttr,
-					)
-					if err == nil {
-						ec.latestfcu = &fcState
-					} else {
-						ec.Logf(
-							"Error trying to unmarshal forkchoice state: %v. Latest FCU will be nil",
-							err,
-						)
-						ec.latestfcu = nil
-					}
-					return nil
-				}
-				p.AddRequestCallbacks(logCallback, AllForkchoiceUpdatedCalls...)
-			}
-
-			if ec.Config.ProxyConfig.LogEngineCalls {
-				logCallback := func(res []byte, req []byte) *spoof.Spoof {
-					ec.Logf(
-						"DEBUG: execution client %d, request: %s",
-						ec.Config.ClientIndex,
-						req,
-					)
-					ec.Logf(
-						"DEBUG: execution client %d, response: %s",
-						ec.Config.ClientIndex,
-						res,
-					)
-					return nil
-				}
-				p.AddResponseCallbacks(logCallback, AllEngineCalls...)
-			}
-
-			ec.proxy = p
-		}
-	}
-
-	// Wait until eth node is ready.
-	if err = ec.EthIsReady(ctx, time.Second*20); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (ec *ExecutionClient) DeployContracts(ctx context.Context) error {

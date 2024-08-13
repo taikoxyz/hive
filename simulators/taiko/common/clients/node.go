@@ -55,6 +55,11 @@ func (n *Node) Logf(format string, values ...interface{}) {
 // Starts all clients included in the bundle
 func (n *Node) Start() error {
 	n.Logf("Starting validator client bundle %d", n.Index)
+	if n.AnvilClient != nil {
+		if err := n.AnvilClient.Start(); err != nil {
+			return err
+		}
+	}
 	if n.L1EthClient != nil {
 		if err := n.L1EthClient.Start(); err != nil {
 			return err

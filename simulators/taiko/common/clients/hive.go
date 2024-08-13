@@ -13,13 +13,16 @@ var _ clients.ManagedClient = &HiveManagedClient{}
 type HiveOptionsGenerator func() ([]hivesim.StartOption, error)
 
 type HiveManagedClient struct {
-	T                    *hivesim.T
+	*hivesim.T
 	OptionsGenerator     HiveOptionsGenerator
 	HiveClientDefinition *hivesim.ClientDefinition
 	Port                 int64
 
 	Client            *hivesim.Client
 	extraStartOptions []hivesim.StartOption
+
+	Network   string
+	networkIP string
 }
 
 func (h *HiveManagedClient) HiveClient() *hivesim.Client {
@@ -31,7 +34,7 @@ func (h *HiveManagedClient) IsRunning() bool {
 }
 
 func (h *HiveManagedClient) Start() error {
-	h.T.Logf("Starting client %s", h.ClientType())
+	h.Logf("Starting %s client", h.ClientType())
 	opts, err := h.OptionsGenerator()
 	if err != nil {
 		return fmt.Errorf("unable to get start options: %v", err)
@@ -45,11 +48,11 @@ func (h *HiveManagedClient) Start() error {
 		opts = append(opts, h.extraStartOptions...)
 	}
 
-	h.Client = h.T.StartClient(h.HiveClientDefinition.Name, opts...)
+	h.Client = h.StartClient(h.HiveClientDefinition.Name, opts...)
 	if h.Client == nil {
 		return fmt.Errorf("unable to launch client")
 	}
-	h.T.Logf(
+	h.Logf(
 		"Started client %s, container %s",
 		h.ClientType(),
 		h.Client.Container,
@@ -66,6 +69,22 @@ func (h *HiveManagedClient) AddStartOption(opts ...interface{}) {
 			h.extraStartOptions = append(h.extraStartOptions, o)
 		}
 	}
+}
+
+func (h *HiveManagedClient) NetworkIP() string {
+	if h.networkIP != "" {
+		return h.networkIP
+	}
+
+	var err error
+	h.networkIP, err = h.Sim.ContainerNetworkIP(h.SuiteID, h.Network, h.Client.Container)
+	if err != nil {
+		h.Logf("Error getting network IP: %v", err)
+		return h.GetHost()
+	}
+	h.Logf("taiko geth network IP %v", h.networkIP)
+
+	return h.networkIP
 }
 
 func (h *HiveManagedClient) GetAddress() string {
@@ -93,7 +112,8 @@ func (h *HiveManagedClient) GetHost() string {
 }
 
 func (h *HiveManagedClient) Shutdown() error {
-	if err := h.T.Sim.StopClient(h.T.SuiteID, h.T.TestID, h.Client.Container); err != nil {
+	h.Logf("Shutting down %s client, container %s", h.ClientType(), h.Client.Container)
+	if err := h.Sim.StopClient(h.SuiteID, h.TestID, h.Client.Container); err != nil {
 		return err
 	}
 	h.Client = nil

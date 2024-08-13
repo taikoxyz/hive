@@ -32,47 +32,13 @@ type BeaconClientConfig struct {
 
 type BeaconClient struct {
 	*HiveManagedClient
-	Logger    utils.Logging
-	Config    *BeaconClientConfig
-	networkIP string
+	Config *BeaconClientConfig
 
 	api *eth2api.Eth2HttpClient
 }
 
-func (bn *BeaconClient) Logf(format string, values ...interface{}) {
-	if l := bn.Logger; l != nil {
-		l.Logf(format, values...)
-	}
-}
-
 func (bn *BeaconClient) BeaconURL() string {
 	return fmt.Sprintf("http://%s:%d", bn.NetworkIP(), BeaconPort)
-}
-
-func (bn *BeaconClient) NetworkIP() string {
-	if bn.networkIP != "" {
-		return bn.networkIP
-	}
-
-	t := bn.T
-	var err error
-	bn.networkIP, err = t.Sim.ContainerNetworkIP(t.SuiteID, bn.Config.Network, bn.Client.Container)
-	if err != nil {
-		bn.Logf("Failed to get network IP: %v", err)
-		return bn.HiveManagedClient.GetHost()
-	}
-	return bn.networkIP
-}
-
-func (bn *BeaconClient) Start() error {
-	bn.Logf("Starting beacon client %d", bn.Config.ClientIndex)
-	if !bn.IsRunning() {
-		if err := bn.HiveManagedClient.Start(); err != nil {
-			return err
-		}
-	}
-
-	return bn.Init(context.Background())
 }
 
 func (bn *BeaconClient) Init(ctx context.Context) error {
@@ -115,10 +81,6 @@ func (bn *BeaconClient) Init(ctx context.Context) error {
 	default:
 		return nil
 	}
-}
-
-func (bn *BeaconClient) Shutdown() error {
-	return bn.HiveManagedClient.Shutdown()
 }
 
 func (bn *BeaconClient) ENR(parentCtx context.Context) (string, error) {

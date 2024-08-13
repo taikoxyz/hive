@@ -212,9 +212,11 @@ func (p *PreparedTestnet) prepareAnvilNode(
 	}
 
 	return &clients.AnvilClient{
-		HiveManagedClient: cm,
-		Logger:            testnet.T,
-		Network:           network,
+		BaseNode: &clients.BaseNode{
+			HiveManagedClient: cm,
+			HttpPort:          clients.AnvilPort,
+			WSPort:            clients.AnvilPort,
+		},
 	}
 }
 
@@ -287,9 +289,10 @@ func (p *PreparedTestnet) prepareExecutionNode(
 	}
 
 	return &clients.ExecutionClient{
-		HiveManagedClient: cm,
-		Logger:            testnet.T,
-		Config:            config,
+		BaseNode: &clients.BaseNode{
+			HiveManagedClient: cm,
+		},
+		Config: config,
 	}
 }
 
@@ -320,7 +323,6 @@ func (p *PreparedTestnet) prepareBeaconNode(
 
 	cl := &clients.BeaconClient{
 		HiveManagedClient: cm,
-		Logger:            testnet.T,
 		Config:            config,
 	}
 
@@ -433,10 +435,7 @@ func (p *PreparedTestnet) prepareValidatorClient(
 	}
 
 	return &clients.ValidatorClient{
-		Client:       cm,
-		Logger:       testnet.T,
-		ClientIndex:  keyIndex,
-		BeaconClient: bn,
+		HiveManagedClient: cm,
 	}
 }
 
@@ -462,9 +461,9 @@ func (p *PreparedTestnet) prepareTaikoGethClient(
 	}
 
 	return &clients.TaikoGethClient{
-		HiveManagedClient: cm,
-		Logger:            testnet.T,
-		Network:           network,
+		BaseNode: &clients.BaseNode{
+			HiveManagedClient: cm,
+		},
 	}
 }
 
@@ -502,8 +501,7 @@ func (p *PreparedTestnet) prepareDriverClient(
 	}
 
 	return &clients.DriverClient{
-		Client: cm,
-		Logger: testnet.T,
+		HiveManagedClient: cm,
 	}
 }
 
@@ -541,8 +539,7 @@ func (p *PreparedTestnet) prepareProposerClient(
 	}
 
 	return &clients.ProposerClient{
-		Client: cm,
-		Logger: testnet.T,
+		HiveManagedClient: cm,
 	}
 }
 
@@ -580,7 +577,6 @@ func (p *PreparedTestnet) prepareProverClient(
 	}
 
 	return &clients.ProverClient{
-		Client: cm,
-		Logger: testnet.T,
+		HiveManagedClient: cm,
 	}
 }
