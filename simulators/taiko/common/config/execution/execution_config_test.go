@@ -1,11 +1,14 @@
 package execution_config
 
 import (
-	"context"
+	"encoding/json"
 	"errors"
+	"github.com/ethereum/go-ethereum/core"
+	"github.com/prysmaticlabs/prysm/v4/config/params"
 	"github.com/stretchr/testify/assert"
 	"math/big"
 	"taiko/common/config"
+	taparams "taiko/params"
 	"testing"
 )
 
@@ -71,20 +74,28 @@ func TestBuildChainConfig(t *testing.T) {
 }
 
 func TestGetGenesisFromFile(t *testing.T) {
-	genesisState := &GenesisState{
-		ForkName:           "deneb",
-		NumValidators:      64,
-		GenesisTimeDelay:   15,
-		ChainConfigFile:    "/Users/huan/projects/taiko/hive/simulators/taiko/config.yml",
-		OutputSSZ:          "/Users/huan/projects/taiko/hive/simulators/taiko/genesis.ssz",
-		GethGenesisJsonIn:  "/Users/huan/projects/taiko/hive/simulators/taiko/genesis.json",
-		GethGenesisJsonOut: "/Users/huan/projects/taiko/hive/simulators/taiko/genesis.json",
+	// Load params.yml
+	beaconConfig, err := params.UnmarshalConfig(taparams.ConfigContent, nil)
+	if err != nil {
+		panic(err)
 	}
 
-	state, _, err := generateBeaconState(context.Background(), genesisState)
-	if err != nil {
-		t.Fatalf("Error loading genesis: %v", err)
+	var genesis core.Genesis
+	// Load genesis.json
+	if err = json.Unmarshal(taparams.GenesisContent, &genesis); err != nil {
+		panic(err)
 	}
+
+	genesisState := &GenesisState{
+		ForkName:         "deneb",
+		BeaconConfig:     beaconConfig,
+		NumValidators:    64,
+		GenesisTimeDelay: 3,
+		Genesis:          &genesis,
+	}
+
+	executionGenesis, _, err := BuildExecutionGenesis(genesisState)
+	assert.NoError(t, err)
 
 	type MinimumSSZMarshal interface {
 		MarshalSSZ() ([]byte, error)
@@ -96,7 +107,7 @@ func TestGetGenesisFromFile(t *testing.T) {
 		}
 		return marshaler.MarshalSSZ()
 	}
-	encoded, err := marshalFn(state)
+	encoded, err := marshalFn(executionGenesis.GenesisState)
 	assert.NoError(t, err)
 	t.Log("encoded length: ", len(encoded))
 }

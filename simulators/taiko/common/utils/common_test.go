@@ -24,7 +24,7 @@ func setL1Automine(url string, automine bool) error {
 }
 
 func TestDeployContracts(t *testing.T) {
-	url := "http://localhost:8545"
+	url := "http://localhost:8645"
 	assert.NoError(t, DeployContracts(context.Background(), url))
 	assert.NoError(t, setIntervalMining(url, 3))
 }
