@@ -7,8 +7,8 @@ check_env "L1_WS"
 check_env "L1_BEACON"
 check_env "L2_WS"
 check_env "L2_AUTH"
-check_env "TAIKO_L1"
-check_env "TAIKO_L2"
+check_env "TAIKO_L1_ADDRESS"
+check_env "TAIKO_L2_ADDRESS"
 check_env "HIVE_TAIKO_JWT_SECRET"
 
 if [ "$HIVE_TAIKO_JWT_SECRET" != "" ]; then

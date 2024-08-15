@@ -93,7 +93,7 @@ func initTaikoContract(params map[string]string) error {
 		return err
 	}
 
-	taikoToken, err := taikotoken.NewTaikoToken(common.HexToAddress(os.Getenv("TAIKO_TOKEN")), l1client)
+	taikoToken, err := taikotoken.NewTaikoToken(common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")), l1client)
 	if err != nil {
 		return err
 	}
@@ -113,7 +113,7 @@ func initTaikoContract(params map[string]string) error {
 	allowance, err := taikoToken.Allowance(
 		nil,
 		crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey),
-		common.HexToAddress(os.Getenv("TAIKO_L1")),
+		common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
 	)
 	if err != nil {
 		return err
@@ -195,7 +195,7 @@ func setAllowance(client *ethclient.Client, key *ecdsa.PrivateKey, taikoToken *t
 		return err
 	}
 
-	tx, err := taikoToken.Approve(auth, common.HexToAddress(os.Getenv("TAIKO_L1")), bigInt)
+	tx, err := taikoToken.Approve(auth, common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")), bigInt)
 	if err != nil {
 		return err
 	}
