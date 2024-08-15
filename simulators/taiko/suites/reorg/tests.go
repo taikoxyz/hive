@@ -1,4 +1,4 @@
-package suite_base
+package suite_reorg
 
 import (
 	"encoding/json"
@@ -6,37 +6,39 @@ import (
 	"github.com/ethereum/hive/hivesim"
 	"github.com/prysmaticlabs/prysm/v4/config/params"
 	"taiko/common/clients"
-	"taiko/common/config/execution"
+	execution_config "taiko/common/config/execution"
 	taparams "taiko/params"
 	"taiko/suites"
+	suite_base "taiko/suites/base"
 )
 
 var testSuite = hivesim.Suite{
-	Name:        "taiko-deneb-testnet",
-	DisplayName: "Deneb Testnet",
-	Description: `Collection of test vectors that use a L1EthClient+BeaconNode+ValidatorClient testnet for Cancun+Deneb.`,
-	Location:    "suites/base",
+	Name:        "taiko-deneb-reorg",
+	DisplayName: "Deneb reorg",
+	Description: "",
+	Location:    "suites/reorg",
 }
 
 var Tests = make([]suites.TestSpec, 0)
 
 func init() {
 	Tests = append(Tests,
-		BaseTestSpec{
-			Name:        "test-deneb-genesis",
-			DisplayName: "Deneb Genesis",
-			Description: `
-			Sanity test to check the beacon clients can start with deneb genesis.
+		ReorgTestSpec{
+			BaseTestSpec: suite_base.BaseTestSpec{
+				Name:        "test-deneb-reorg",
+				DisplayName: "Deneb Reorg",
+				Description: `
+			Reorg l1eth and test taiko-client work normally.
 			`,
-			DenebGenesis: true,
-			GenesisExecutionWithdrawalCredentialsShares: 1,
-			WaitForFinality: true,
-			NodeCount:       1,
-			ValidatorCount:  5,
+				DenebGenesis: true,
+				GenesisExecutionWithdrawalCredentialsShares: 1,
+				WaitForFinality: true,
+				NodeCount:       1,
+				ValidatorCount:  5,
+			},
 		},
 	)
 }
-
 func Suite(clients clients.ClientsByRole) hivesim.Suite {
 	// Load params.yml
 	beaconConfig, err := params.UnmarshalConfig(taparams.ConfigContent, nil)

@@ -15,20 +15,19 @@ var Deneb string = "deneb"
 
 type TestSpec interface {
 	GetName() string
-	GetTestnetConfig(clients.NodeDefinitions) *testnet.Config
+	GetTestnetConfig() *testnet.Config
 	GetDisplayName() string
 	GetDescription() *utils.Description
-	VerifyNodes(ctx context.Context, t *hivesim.T, testnet *testnet.Testnet)
+	Verify(ctx context.Context, t *hivesim.T, testnet *testnet.Testnet)
 }
 
 // SuiteHydrate Add all tests to the suite
 func SuiteHydrate(
 	suite *hivesim.Suite,
-	clients *clients.ClientDefinitionsByRole,
+	clients clients.ClientsByRole,
 	tests []TestSpec,
 	generateState *execution_config.GenesisState,
 ) {
-	clientCombinations := clients.Combinations()
 	for _, test := range tests {
 		test := test
 		suite.Add(hivesim.TestSpec{
@@ -38,17 +37,11 @@ func SuiteHydrate(
 			Run: func(t *hivesim.T) {
 				t.Logf("Starting test: %s", test.GetName())
 				defer t.Logf("Finished test: %s", test.GetName())
-				env := &testnet.Environment{
-					Clients: clients,
-				}
-
-				t.Logf("Starting testnet with %d nodes", len(clientCombinations))
-				config := test.GetTestnetConfig(clientCombinations)
 
 				// Create the testnet
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
-				testnet := testnet.StartTestnet(ctx, t, env, config, generateState)
+				testnet := testnet.StartTestnet(ctx, t, clients, test.GetTestnetConfig(), generateState)
 				if testnet == nil {
 					t.Fatalf("failed to start testnet")
 				}
@@ -58,7 +51,7 @@ func SuiteHydrate(
 				defer cancel()
 
 				// Verify nodes.
-				test.VerifyNodes(timeoutCtx, t, testnet)
+				test.Verify(timeoutCtx, t, testnet)
 			},
 		})
 	}

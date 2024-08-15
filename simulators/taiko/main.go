@@ -4,6 +4,7 @@ import (
 	"github.com/ethereum/hive/hivesim"
 	"taiko/common/clients"
 	suite_base "taiko/suites/base"
+	suite_reorg "taiko/suites/reorg"
 )
 
 func main() {
@@ -14,10 +15,11 @@ func main() {
 		panic(err)
 	}
 
-	clientsByRole := clients.ClientsByRole(clientTypes)
+	clientsByRole := clients.GetClientsByRole(clientTypes)
 	if clientsByRole == nil {
 		panic("failed to create clients by role")
 	}
 
 	hivesim.MustRunSuite(sim, suite_base.Suite(clientsByRole))
+	hivesim.MustRunSuite(sim, suite_reorg.Suite(clientsByRole))
 }

@@ -5,7 +5,6 @@ import (
 	execution_config "taiko/common/config/execution"
 
 	blobber_config "github.com/marioevz/blobber/config"
-	"taiko/common/clients"
 )
 
 var (
@@ -26,10 +25,7 @@ var (
 )
 
 type Config struct {
-	// Node configurations to launch. Each node as a proportional share of
-	// validators.
-	NodeDefinitions clients.NodeDefinitions             `json:"node_definitions,omitempty"`
-	Eth1Consensus   execution_config.ExecutionConsensus `json:"eth1_consensus,omitempty"`
+	Eth1Consensus execution_config.ExecutionConsensus `json:"eth1_consensus,omitempty"`
 
 	// Execution Layer specific config
 	InitialBaseFeePerGas *big.Int `json:"initial_base_fee_per_gas,omitempty"`
@@ -75,12 +71,6 @@ func (a *Config) Join(b *Config) *Config {
 		a.InitialBaseFeePerGas,
 		b.InitialBaseFeePerGas,
 	)
-
-	if b.NodeDefinitions != nil {
-		c.NodeDefinitions = b.NodeDefinitions
-	} else {
-		c.NodeDefinitions = a.NodeDefinitions
-	}
 
 	if b.Eth1Consensus != nil {
 		c.Eth1Consensus = b.Eth1Consensus

@@ -64,7 +64,7 @@ func (h ExecutableDataHistory) LatestWithdrawalsIndex() uint64 {
 	return latest
 }
 
-// Consensus Layer Client Mock used to sync the Execution Clients once the TTD has been reached
+// Consensus Layer simClient Mock used to sync the Execution Clients once the TTD has been reached
 type CLMocker struct {
 	*hivesim.T
 	// List of Engine Clients being served by the CL Mocker
@@ -176,7 +176,7 @@ func (cl *CLMocker) GenesisBlock() *types.Block {
 	return cl.Genesis.ToBlock()
 }
 
-// Add a Client to be kept in sync with the latest payloads
+// Add a simClient to be kept in sync with the latest payloads
 func (cl *CLMocker) AddEngineClient(ec client.EngineClient) {
 	cl.EngineClientsLock.Lock()
 	defer cl.EngineClientsLock.Unlock()
@@ -184,7 +184,7 @@ func (cl *CLMocker) AddEngineClient(ec client.EngineClient) {
 	cl.EngineClients = append(cl.EngineClients, ec)
 }
 
-// Remove a Client to stop sending latest payloads
+// Remove a simClient to stop sending latest payloads
 func (cl *CLMocker) RemoveEngineClient(ec client.EngineClient) {
 	cl.EngineClientsLock.Lock()
 	defer cl.EngineClientsLock.Unlock()
@@ -283,7 +283,7 @@ func (cl *CLMocker) SetTTDBlockClient(ec client.EngineClient) {
 	} else {
 		cl.Logf("CLMocker: TTD has been reached at block %d (%d>=%d)\n", cl.LatestHeader.Number, td, ec.TerminalTotalDifficulty())
 		jsH, _ := json.MarshalIndent(cl.LatestHeader, "", " ")
-		cl.Logf("CLMocker: Client: %s, Block %d: %s\n", ec.ID(), cl.LatestHeader.Number, jsH)
+		cl.Logf("CLMocker: simClient: %s, Block %d: %s\n", ec.ID(), cl.LatestHeader.Number, jsH)
 		cl.ChainTotalDifficulty = td
 	}
 
@@ -693,32 +693,32 @@ func (cl *CLMocker) ProduceSingleBlock(callbacks BlockProcessCallbacks) {
 		defer cancel()
 		newHeader, err := ec.HeaderByNumber(ctx, cl.LatestHeadNumber)
 		if err != nil {
-			cl.Logf("CLMocker: Client %v did not accept the new payload: %v", ec.ID(), err)
+			cl.Logf("CLMocker: simClient %v did not accept the new payload: %v", ec.ID(), err)
 			continue
 		}
 		if newHeader.Hash() != cl.LatestPayloadBuilt.BlockHash {
-			cl.Logf("CLMocker: Client %v produced a new header with incorrect hash: %v != %v", ec.ID(), newHeader.Hash(), cl.LatestPayloadBuilt.BlockHash)
+			cl.Logf("CLMocker: simClient %v produced a new header with incorrect hash: %v != %v", ec.ID(), newHeader.Hash(), cl.LatestPayloadBuilt.BlockHash)
 			continue
 		}
 		// Check that the new finalized header has the correct properties
 		// ommersHash == 0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347
 		if newHeader.UncleHash != types.EmptyUncleHash {
-			cl.Fatalf("CLMocker: Client %v produced a new header with incorrect ommersHash: %v", ec.ID(), newHeader.UncleHash)
+			cl.Fatalf("CLMocker: simClient %v produced a new header with incorrect ommersHash: %v", ec.ID(), newHeader.UncleHash)
 		}
 		// difficulty == 0
 		if newHeader.Difficulty.Cmp(common.Big0) != 0 {
-			cl.Fatalf("CLMocker: Client %v produced a new header with incorrect difficulty: %v", ec.ID(), newHeader.Difficulty)
+			cl.Fatalf("CLMocker: simClient %v produced a new header with incorrect difficulty: %v", ec.ID(), newHeader.Difficulty)
 		}
 		// mixHash == prevRandao
 		if newHeader.MixDigest != cl.PrevRandaoHistory[cl.LatestHeadNumber.Uint64()] {
-			cl.Fatalf("CLMocker: Client %v produced a new header with incorrect mixHash: %v != %v", ec.ID(), newHeader.MixDigest, cl.PrevRandaoHistory[cl.LatestHeadNumber.Uint64()])
+			cl.Fatalf("CLMocker: simClient %v produced a new header with incorrect mixHash: %v != %v", ec.ID(), newHeader.MixDigest, cl.PrevRandaoHistory[cl.LatestHeadNumber.Uint64()])
 		}
 		// nonce == 0x0000000000000000
 		if newHeader.Nonce != (types.BlockNonce{}) {
-			cl.Fatalf("CLMocker: Client %v produced a new header with incorrect nonce: %v", ec.ID(), newHeader.Nonce)
+			cl.Fatalf("CLMocker: simClient %v produced a new header with incorrect nonce: %v", ec.ID(), newHeader.Nonce)
 		}
 		if len(newHeader.Extra) > 32 {
-			cl.Fatalf("CLMocker: Client %v produced a new header with incorrect extraData (len > 32): %v", ec.ID(), newHeader.Extra)
+			cl.Fatalf("CLMocker: simClient %v produced a new header with incorrect extraData (len > 32): %v", ec.ID(), newHeader.Extra)
 		}
 		cl.LatestHeader = newHeader
 	}

@@ -164,7 +164,7 @@ func (api *simAPI) startClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Client launch parameters are given as multipart/form-data.
+	// simClient launch parameters are given as multipart/form-data.
 	const maxMemory = 8 * 1024 * 1024
 	if err := r.ParseMultipartForm(maxMemory); err != nil {
 		log15.Error("API: could not parse node request", "error", err)

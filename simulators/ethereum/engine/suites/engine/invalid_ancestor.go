@@ -479,7 +479,7 @@ func (tc InvalidMissingAncestorReOrgSyncTest) Execute(t *test.Env) {
 						t.Logf("INFO (%s): Block %d: %s", t.TestName, k, js)
 					}
 
-					t.Fatalf("FAIL (%s): Client returned VALID on an invalid chain: %v", t.TestName, r.Status)
+					t.Fatalf("FAIL (%s): simClient returned VALID on an invalid chain: %v", t.TestName, r.Status)
 				}
 
 				select {

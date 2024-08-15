@@ -3,9 +3,10 @@ package clients
 import (
 	"context"
 	"fmt"
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/hive/hivesim"
 	"github.com/marioevz/eth-clients/clients"
-	"github.com/marioevz/eth-clients/clients/execution"
+	"github.com/prysmaticlabs/prysm/v4/config/params"
 	"strings"
 	"taiko/common/utils"
 )
@@ -44,6 +45,9 @@ type Node struct {
 	DriverClient   *DriverClient
 	ProposerClient *ProposerClient
 	ProverClient   *ProverClient
+
+	BeaconConfig *params.BeaconChainConfig
+	Genesis      *core.Genesis
 }
 
 func (n *Node) Logf(format string, values ...interface{}) {
@@ -64,59 +68,56 @@ func (n *Node) Start() error {
 		if err := n.L1EthClient.Start(); err != nil {
 			return err
 		}
-	} else {
-		n.Logf("No execution client started")
 	}
 	if n.BeaconClient != nil {
 		if err := n.BeaconClient.Start(); err != nil {
 			return err
 		}
-	} else {
-		n.Logf("No beacon client started")
 	}
 	if n.ValidatorClient != nil {
 		if err := n.ValidatorClient.Start(); err != nil {
 			return err
 		}
-	} else {
-		n.Logf("No validator client started")
 	}
 
 	if n.L2EthClient != nil {
 		if err := n.L2EthClient.Start(); err != nil {
 			return err
 		}
-	} else {
-		n.Logf("No taiko geth client started")
 	}
 
 	// Deploy contracts if needed
-	if n.L1EthClient != nil && (n.DriverClient != nil || n.ProposerClient != nil || n.ProverClient != nil) {
-		if err := n.L1EthClient.DeployContracts(context.Background()); err != nil {
-			return err
+	if n.DriverClient != nil || n.ProposerClient != nil || n.ProverClient != nil {
+		if n.AnvilClient != nil {
+			if err := utils.DeployContracts(context.Background(), n.AnvilClient.HttpURL()); err != nil {
+				return err
+			}
+		} else {
+			if err := utils.DeployContracts(context.Background(), n.L1EthClient.HttpURL()); err != nil {
+				return err
+			}
 		}
+	}
+
+	// equal to `anvil --block-time secondsPerSlot`
+	if n.AnvilClient != nil {
+		n.AnvilClient.SetIntervalMining(n.BeaconConfig.SecondsPerSlot)
 	}
 
 	if n.DriverClient != nil {
 		if err := n.DriverClient.Start(); err != nil {
 			return err
 		}
-	} else {
-		n.Logf("No driver client started")
 	}
 	if n.ProposerClient != nil {
 		if err := n.ProposerClient.Start(); err != nil {
 			return err
 		}
-	} else {
-		n.Logf("No proposer client started")
 	}
 	if n.ProverClient != nil {
 		if err := n.ProverClient.Start(); err != nil {
 			return err
 		}
-	} else {
-		n.Logf("No prover client started")
 	}
 	return nil
 }
@@ -173,6 +174,11 @@ func (n *Node) Shutdown() error {
 			return err
 		}
 	}
+	if n.AnvilClient != nil {
+		if err := n.AnvilClient.Shutdown(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -203,17 +209,6 @@ func (all Nodes) ExecutionClients() ExecutionClients {
 		}
 	}
 	return en
-}
-
-// Return all proxy pointers, even the ones not currently running
-func (all Nodes) Proxies() execution.Proxies {
-	ps := make(execution.Proxies, 0)
-	for _, n := range all {
-		if n.L1EthClient != nil {
-			ps = append(ps, n.L1EthClient)
-		}
-	}
-	return ps
 }
 
 // Return all beacon clients, even the ones not currently running

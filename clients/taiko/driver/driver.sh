@@ -3,7 +3,6 @@
 . /taiko-client/common.sh
 
 # taiko-client's necessary common envs.
-echo "L1_WS: $L1_WS"
 check_env "L1_WS"
 check_env "L1_BEACON"
 check_env "L2_WS"

@@ -29,7 +29,7 @@ import (
 )
 
 type HiveRPCEngineStarter struct {
-	// Client parameters used to launch the default client
+	// simClient parameters used to launch the default client
 	ClientType              string
 	ChainFile               string
 	TerminalTotalDifficulty *big.Int
@@ -174,7 +174,7 @@ var _ client.EngineClient = (*HiveRPCEngineClient)(nil)
 
 // NewClient creates a engine client that uses the given RPC client.
 func NewHiveRPCEngineClient(h *hivesim.Client, enginePort int, ethPort int, jwtSecretBytes []byte, ttd *big.Int, transport http.RoundTripper) *HiveRPCEngineClient {
-	// Prepare HTTP Client
+	// Prepare HTTP simClient
 	httpClient := rpc.WithHTTPClient(&http.Client{Transport: transport})
 
 	engineRpcClient, err := rpc.DialOptions(context.Background(), fmt.Sprintf("http://%s:%d/", h.IP, enginePort), httpClient)
@@ -182,7 +182,7 @@ func NewHiveRPCEngineClient(h *hivesim.Client, enginePort int, ethPort int, jwtS
 		panic(err)
 	}
 
-	// Prepare ETH Client
+	// Prepare ETH simClient
 	ethRpcClient, err := rpc.DialOptions(context.Background(), fmt.Sprintf("http://%s:%d/", h.IP, ethPort), httpClient)
 	if err != nil {
 		panic(err)

@@ -50,7 +50,7 @@ type GethNodeTestConfiguration struct {
 	ChainFile string
 }
 type GethNodeEngineStarter struct {
-	// Client parameters used to launch the default client
+	// simClient parameters used to launch the default client
 	ChainFile               string
 	TerminalTotalDifficulty *big.Int
 

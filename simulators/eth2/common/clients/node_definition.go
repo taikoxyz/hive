@@ -12,11 +12,11 @@ import (
 )
 
 // Describe a node setup, which consists of:
-// - Execution Client
-// - Beacon Client
-// - Validator Client
+// - Execution simClient
+// - Beacon simClient
+// - Validator simClient
 type NodeDefinition struct {
-	// Client Types
+	// simClient Types
 	ExecutionClient string `json:"execution_client"`
 	ConsensusClient string `json:"consensus_client"`
 	ValidatorClient string `json:"validator_client"`

@@ -21,13 +21,12 @@ import (
 const PortBeaconTCP = 9000
 
 type BeaconClientConfig struct {
-	ClientIndex             int
-	TerminalTotalDifficulty int64
-	Spec                    *consensus_config.Spec
-	GenesisValidatorsRoot   *tree.Root
-	GenesisTime             *common.Timestamp
-	Subnet                  string
-	Network                 string
+	ClientIndex           int
+	Spec                  *consensus_config.Spec
+	GenesisValidatorsRoot *tree.Root
+	GenesisTime           *common.Timestamp
+	Subnet                string
+	Network               string
 }
 
 type BeaconClient struct {

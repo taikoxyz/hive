@@ -307,7 +307,7 @@ func getBlock(client *rpc.Client, arg string) (blockhash []byte, responseJSON st
 	blockData := make(map[string]interface{})
 	if err := client.Call(&blockData, "eth_getBlockByNumber", arg, false); err != nil {
 		// Make one more attempt
-		fmt.Println("Client connect failed, making one more attempt...")
+		fmt.Println("simClient connect failed, making one more attempt...")
 		if err = client.Call(&blockData, "eth_getBlockByNumber", arg, false); err != nil {
 			return nil, "", err
 		}

@@ -112,7 +112,7 @@ func (r *Runner) Run(ctx context.Context, sim string, env SimEnv) (SimResult, er
 // launched and the API server runs on the local network instead of listening for requests
 // on the docker network.
 //
-// Note: Sim* options in env are ignored, but Client* options and LogDir still apply.
+// Note: Sim* options in env are ignored, but simClient* options and LogDir still apply.
 func (r *Runner) RunDevMode(ctx context.Context, env SimEnv, endpoint string) error {
 	if err := CreateWorkspace(env.LogDir); err != nil {
 		return err

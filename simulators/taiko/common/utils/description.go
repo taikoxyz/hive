@@ -21,8 +21,8 @@ type subsection struct {
 
 const (
 	CategoryTestnetConfiguration         = "Testnet Configuration"
-	CategoryVerificationsExecutionClient = "Verifications (Execution Client)"
-	CategoryVerificationsConsensusClient = "Verifications (Consensus Client)"
+	CategoryVerificationsExecutionClient = "Verifications (Execution simClient)"
+	CategoryVerificationsConsensusClient = "Verifications (Consensus simClient)"
 )
 
 // NewDescription creates a new instance of Description

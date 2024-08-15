@@ -18,7 +18,7 @@ import (
 
 var Tests = []test.BaseSpec{
 	{
-		Name:           "Sync Client Post Merge",
+		Name:           "Sync simClient Post Merge",
 		Run:            postMergeSync,
 		TimeoutSeconds: 180,
 		ChainFile:      "blocks_1024_td_135112316.rlp",
@@ -109,7 +109,7 @@ func AddSyncTestsToSuite(sim *hivesim.Simulation, suite *hivesim.Suite, tests []
 
 }
 
-// Client Sync tests
+// simClient Sync tests
 func postMergeSync(t *test.Env) {
 	// Launch another client after the PoS transition has happened in the main client.
 	// Sync should eventually happen without issues.
@@ -153,7 +153,7 @@ func postMergeSync(t *test.Env) {
 			t.Fatalf("FAIL (%s): Unable to obtain latest header: %v", t.TestName, err)
 		}
 		if t.CLMock.LatestHeader != nil && latestHeader.Hash() == t.CLMock.LatestHeader.Hash() {
-			t.Logf("INFO (%v): Client (%v) is now synced to latest PoS block: %v", t.TestName, secondaryEngine.ID(), latestHeader.Hash())
+			t.Logf("INFO (%v): simClient (%v) is now synced to latest PoS block: %v", t.TestName, secondaryEngine.ID(), latestHeader.Hash())
 			break
 		}
 	}

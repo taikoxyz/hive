@@ -65,7 +65,7 @@ func (spec ReExecutePayloadTest) Execute(t *test.Env) {
 		OnGetPayload: func() {
 			// Check that the transaction was included
 			if len(t.CLMock.LatestPayloadBuilt.Transactions) == 0 {
-				t.Fatalf("FAIL (%s): Client failed to include the expected transaction in payload built", t.TestName)
+				t.Fatalf("FAIL (%s): simClient failed to include the expected transaction in payload built", t.TestName)
 			}
 		},
 	})
@@ -144,7 +144,7 @@ func (spec InOrderPayloadExecutionTest) Execute(t *test.Env) {
 		},
 		OnGetPayload: func() {
 			if len(t.CLMock.LatestPayloadBuilt.Transactions) < (txPerPayload / 2) {
-				t.Fatalf("FAIL (%s): Client failed to include all the expected transactions in payload built: %d < %d", t.TestName, len(t.CLMock.LatestPayloadBuilt.Transactions), (txPerPayload / 2))
+				t.Fatalf("FAIL (%s): simClient failed to include all the expected transactions in payload built: %d < %d", t.TestName, len(t.CLMock.LatestPayloadBuilt.Transactions), (txPerPayload / 2))
 			}
 			txsIncluded += len(t.CLMock.LatestPayloadBuilt.Transactions)
 		},
@@ -271,7 +271,7 @@ func (spec MultiplePayloadsExtendingCanonicalChainTest) Execute(t *test.Env) {
 
 		// Check that the transaction was included
 		if len(basePayload.Transactions) == 0 {
-			t.Fatalf("FAIL (%s): Client failed to include the expected transaction in payload built", t.TestName)
+			t.Fatalf("FAIL (%s): simClient failed to include the expected transaction in payload built", t.TestName)
 		}
 
 		// Fabricate and send multiple new payloads by changing the PrevRandao field
@@ -317,7 +317,7 @@ func (s NewPayloadOnSyncingClientTest) WithMainFork(fork config.Fork) test.Spec 
 }
 
 func (s NewPayloadOnSyncingClientTest) GetName() string {
-	name := "Valid NewPayload->ForkchoiceUpdated on Syncing Client"
+	name := "Valid NewPayload->ForkchoiceUpdated on Syncing simClient"
 	return name
 }
 
@@ -372,7 +372,7 @@ func (spec NewPayloadOnSyncingClientTest) Execute(t *test.Env) {
 		OnGetPayload: func() {
 			// Check that the transaction was included
 			if len(t.CLMock.LatestPayloadBuilt.Transactions) == 0 {
-				t.Fatalf("FAIL (%s): Client failed to include the expected transaction in payload built", t.TestName)
+				t.Fatalf("FAIL (%s): simClient failed to include the expected transaction in payload built", t.TestName)
 			}
 		},
 	})
@@ -504,7 +504,7 @@ func (spec NewPayloadWithMissingFcUTest) Execute(t *test.Env) {
 		OnGetPayload: func() {
 			// Check that the transaction was included
 			if len(t.CLMock.LatestPayloadBuilt.Transactions) == 0 {
-				t.Fatalf("FAIL (%s): Client failed to include the expected transaction in payload built", t.TestName)
+				t.Fatalf("FAIL (%s): simClient failed to include the expected transaction in payload built", t.TestName)
 			}
 		},
 	})

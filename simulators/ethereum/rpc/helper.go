@@ -85,7 +85,7 @@ func runWS(t *hivesim.T, c *hivesim.Client, v *vault, fn func(*TestEnv)) {
 
 // CallContext is a helper method that forwards a raw RPC request to
 // the underlying RPC client. This can be used to call RPC methods
-// that are not supported by the ethclient.Client.
+// that are not supported by the ethclient.simClient.
 func (t *TestEnv) CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error {
 	return t.RPC.CallContext(ctx, result, method, args...)
 }

@@ -644,7 +644,7 @@ type SendBlobTransactions struct {
 	SkipVerificationFromNode bool
 	// Account index to send the blob transactions from
 	AccountIndex uint64
-	// Client index to send the blob transactions to
+	// simClient index to send the blob transactions to
 	ClientIndex uint64
 }
 
@@ -777,7 +777,7 @@ func (step SendModifiedLatestPayload) Description() string {
 
 // A step that attempts to peer to the client using devp2p, and checks the forkid of the client
 type DevP2PClientPeering struct {
-	// Client index to peer to
+	// simClient index to peer to
 	ClientIndex uint64
 }
 
@@ -829,7 +829,7 @@ func (step DevP2PClientPeering) Description() string {
 
 // A step that requests a Transaction hash via P2P and expects the correct full blob tx
 type DevP2PRequestPooledTransactionHash struct {
-	// Client index to request the transaction hash from
+	// simClient index to request the transaction hash from
 	ClientIndex uint64
 	// Use existing connection from previous step
 	UseExistingConnection bool

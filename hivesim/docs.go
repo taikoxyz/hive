@@ -369,11 +369,11 @@ func (docs *docsCollector) EndTest(testSuite SuiteID, test TestID, testResult Te
 	return nil
 }
 
-// Return a generic "Client" client type.
+// Return a generic "simClient" client type.
 func (docs *docsCollector) ClientTypes() ([]*ClientDefinition, error) {
 	return []*ClientDefinition{
 		{
-			Name:    "Client",
+			Name:    "simClient",
 			Version: "1.0.0",
 		},
 	}, nil

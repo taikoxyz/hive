@@ -30,9 +30,6 @@ type BaseTestSpec struct {
 	GenesisExitedShares                         int
 	GenesisSlashedShares                        int
 
-	// Actions
-	ExitValidatorsShare int
-
 	// Verifications
 	EpochsAfterFork beacon.Epoch
 	WaitForBlobs    bool
@@ -60,31 +57,16 @@ func (ts BaseTestSpec) GetValidatingNodeCount() int {
 	return ts.GetNodeCount()
 }
 
-func (ts BaseTestSpec) GetTestnetConfig(
-	allNodeDefinitions clients.NodeDefinitions,
-) *testnet.Config {
-	maxValidatingNodeIndex := ts.GetValidatingNodeCount()
-	nodeDefinitions := make(clients.NodeDefinitions, 0)
-	for i := 0; i < ts.GetNodeCount(); i++ {
-		n := allNodeDefinitions[i%len(allNodeDefinitions)]
-		if i < maxValidatingNodeIndex {
-			n.ValidatorShares = 1
-		} else {
-			n.ValidatorShares = 0
-		}
-		nodeDefinitions = append(nodeDefinitions, n)
-	}
-
+func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
 	return &testnet.Config{
 		Eth1Consensus: execution_config.ExecutionCliqueConsensus{
 			CliquePrivateKey: "2e0834786285daccd064ca17f1654f67b4aef298acbb82cef9ec422fb4975622",
 			CliqueAddress:    "123463a4B065722E99115D6c222f267d9cABb524",
 		},
-		NodeDefinitions: nodeDefinitions,
-		Network:         "taiko_base_test",
-		LogLevel:        3,
-		JWTSecret:       "7365637265747365637265747365637265747365637265747365637265747365",
-		FeeReceipt:      "a0Ee7A142d267C1f36714E4a8F75612F20a79720",
+		Network:    "taiko_base_test",
+		LogLevel:   3,
+		JWTSecret:  "7365637265747365637265747365637265747365637265747365637265747365",
+		FeeReceipt: "a0Ee7A142d267C1f36714E4a8F75612F20a79720",
 	}
 }
 

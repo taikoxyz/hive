@@ -13,10 +13,71 @@ import (
 	"math/big"
 	"os"
 	"taiko/bindings/taikotoken"
+	"taiko/params"
 )
 
+func DeployContracts(ctx context.Context, url string) error {
+	fmt.Println("Deploying contracts in l1geth client")
+	fmt.Printf("http url: %s", url)
+
+	client, err := ethclient.DialContext(ctx, url)
+	if err != nil {
+		return err
+	}
+
+	chainID, err := client.ChainID(ctx)
+	if err != nil {
+		return err
+	}
+
+	sk, err := crypto.HexToECDSA("ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
+	if err != nil {
+		return err
+	}
+	auth, err := bind.NewKeyedTransactorWithChainID(sk, chainID)
+	if err != nil {
+		return err
+	}
+
+	signedTxs := make([]*types.Transaction, 0, len(params.ContractTxs))
+	for _, tx := range params.ContractTxs {
+		signedTx, err := auth.Signer(auth.From, tx)
+		if err != nil {
+			return err
+		}
+
+		if err := client.SendTransaction(ctx, signedTx); err != nil {
+			return err
+		}
+		signedTxs = append(signedTxs, signedTx)
+	}
+
+	// Wait the latest tx mined.
+	for _, tx := range signedTxs {
+		if tx.To() == nil {
+			_, err := bind.WaitDeployed(context.Background(), client, tx)
+			if err != nil {
+				return fmt.Errorf("failed to wait deployed: %v", err)
+			}
+		} else {
+			receipt, err := bind.WaitMined(context.Background(), client, tx)
+			if err != nil {
+				return fmt.Errorf("failed to wait mined, hash: %s, err: %v", tx.Hash().String(), err)
+			}
+			if receipt.Status != types.ReceiptStatusSuccessful {
+				return fmt.Errorf("failed to call contract, hash: %s", tx.Hash().String())
+			}
+		}
+	}
+
+	// init contracts.
+	envs := params.EnvParams.Copy()
+	envs["L1_HTTP"] = url
+	return initTaikoContract(envs)
+}
+
 // InitTaikoContract init taiko contracts.
-func InitTaikoContract(params map[string]string) error {
+func initTaikoContract(params map[string]string) error {
 	for k, v := range params {
 		if err := os.Setenv(k, v); err != nil {
 			return err

@@ -97,9 +97,9 @@ func MustRunSuite(host *Simulation, suite Suite) {
 // TestSpec is the description of a test.
 //
 // Using this test type doesn't launch any clients by default. To interact with clients,
-// you can launch them using the t.Client method:
+// you can launch them using the t.simClient method:
 //
-//	c := t.Client()
+//	c := t.simClient()
 //	c.RPC().Call(...)
 //
 // or run a subtest using t.RunClientTest():

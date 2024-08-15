@@ -1056,7 +1056,7 @@ var Tests = []test.Spec{
 			MainFork: config.Cancun,
 			// We request two blocks from the client, first on shanghai and then on cancun, both with
 			// the same parent.
-			// Client must respond correctly to later request.
+			// simClient must respond correctly to later request.
 			ForkHeight:              1,
 			BlockTimestampIncrement: 2,
 		},
@@ -1776,7 +1776,7 @@ var Tests = []test.Spec{
 			},
 			// Peer with the client before sending txs
 			DevP2PClientPeering{
-				ClientIndex:        0,
+				ClientIndex: 0,
 			},
 			// Send a single blob transaction
 			SendBlobTransactions{
@@ -1806,7 +1806,7 @@ var Tests = []test.Spec{
 			},
 			// Peer with the client before sending txs
 			DevP2PClientPeering{
-				ClientIndex:        0,
+				ClientIndex: 0,
 			},
 			// Send multiple blob transaction
 			SendBlobTransactions{

@@ -18,7 +18,7 @@ type HiveManagedClient struct {
 	HiveClientDefinition *hivesim.ClientDefinition
 	Port                 int64
 
-	Client            *hivesim.Client
+	simClient         *hivesim.Client
 	extraStartOptions []hivesim.StartOption
 
 	Network   string
@@ -26,11 +26,11 @@ type HiveManagedClient struct {
 }
 
 func (h *HiveManagedClient) HiveClient() *hivesim.Client {
-	return h.Client
+	return h.simClient
 }
 
 func (h *HiveManagedClient) IsRunning() bool {
-	return h.Client != nil
+	return h.simClient != nil
 }
 
 func (h *HiveManagedClient) Start() error {
@@ -48,14 +48,14 @@ func (h *HiveManagedClient) Start() error {
 		opts = append(opts, h.extraStartOptions...)
 	}
 
-	h.Client = h.StartClient(h.HiveClientDefinition.Name, opts...)
-	if h.Client == nil {
+	h.simClient = h.StartClient(h.HiveClientDefinition.Name, opts...)
+	if h.simClient == nil {
 		return fmt.Errorf("unable to launch client")
 	}
 	h.Logf(
 		"Started client %s, container %s",
 		h.ClientType(),
-		h.Client.Container,
+		h.simClient.Container,
 	)
 	return nil
 }
@@ -77,51 +77,51 @@ func (h *HiveManagedClient) NetworkIP() string {
 	}
 
 	var err error
-	h.networkIP, err = h.Sim.ContainerNetworkIP(h.SuiteID, h.Network, h.Client.Container)
+	h.networkIP, err = h.Sim.ContainerNetworkIP(h.SuiteID, h.Network, h.simClient.Container)
 	if err != nil {
 		h.Logf("Error getting network IP: %v", err)
 		return h.GetHost()
 	}
-	h.Logf("taiko geth network IP %v", h.networkIP)
+	h.Logf("%s network IP %v", h.ClientType(), h.networkIP)
 
 	return h.networkIP
 }
 
 func (h *HiveManagedClient) GetAddress() string {
-	if h.Client == nil {
+	if h.simClient == nil {
 		return ""
 	}
 	if h.Port > 0 {
-		return fmt.Sprintf("http://%s:%d", h.Client.IP, h.Port)
+		return fmt.Sprintf("http://%s:%d", h.simClient.IP, h.Port)
 	}
-	return fmt.Sprintf("http://%s", h.Client.IP)
+	return fmt.Sprintf("http://%s", h.simClient.IP)
 }
 
 func (h *HiveManagedClient) GetIP() net.IP {
-	if h.Client == nil {
+	if h.simClient == nil {
 		return net.IP{}
 	}
-	return h.Client.IP
+	return h.simClient.IP
 }
 
 func (h *HiveManagedClient) GetHost() string {
-	if h.Client == nil {
+	if h.simClient == nil {
 		return ""
 	}
-	return h.Client.IP.String()
+	return h.simClient.IP.String()
 }
 
 func (h *HiveManagedClient) Shutdown() error {
-	h.Logf("Shutting down %s client, container %s", h.ClientType(), h.Client.Container)
-	if err := h.Sim.StopClient(h.SuiteID, h.TestID, h.Client.Container); err != nil {
+	h.Logf("Shutting down %s client, container %s", h.ClientType(), h.simClient.Container)
+	if err := h.Sim.StopClient(h.SuiteID, h.TestID, h.simClient.Container); err != nil {
 		return err
 	}
-	h.Client = nil
+	h.simClient = nil
 	return nil
 }
 
 func (h *HiveManagedClient) GetEnodeURL() (string, error) {
-	return h.Client.EnodeURL()
+	return h.simClient.EnodeURL()
 }
 
 func (h *HiveManagedClient) ClientType() string {

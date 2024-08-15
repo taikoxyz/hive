@@ -1875,7 +1875,7 @@ func (s *MaxInitcodeSizeSpec) Execute(t *test.Env) {
 	t.CLMock.ProduceSingleBlock(clmock.BlockProcessCallbacks{
 		OnGetPayload: func() {
 			if len(t.CLMock.LatestPayloadBuilt.Transactions) > 0 {
-				t.Fatalf("FAIL: Client included tx exceeding the MAX_INITCODE_SIZE in payload")
+				t.Fatalf("FAIL: simClient included tx exceeding the MAX_INITCODE_SIZE in payload")
 			}
 		},
 	})
@@ -1888,7 +1888,7 @@ func (s *MaxInitcodeSizeSpec) Execute(t *test.Env) {
 		}
 		err = t.Engine.SendTransaction(t.TestContext, tx)
 		if err == nil {
-			t.Fatalf("FAIL: Client accepted tx exceeding the MAX_INITCODE_SIZE: %v", tx)
+			t.Fatalf("FAIL: simClient accepted tx exceeding the MAX_INITCODE_SIZE: %v", tx)
 		}
 		txBack, isPending, err := t.Engine.TransactionByHash(t.TestContext, tx.Hash())
 		if txBack != nil || isPending || err == nil {
@@ -1911,7 +1911,7 @@ func (s *MaxInitcodeSizeSpec) Execute(t *test.Env) {
 				t.Fatalf("FAIL: Unable to marshal valid tx to binary: %v", err)
 			}
 			if len(t.CLMock.LatestPayloadBuilt.Transactions) != 1 || !bytes.Equal(validTxBytes, t.CLMock.LatestPayloadBuilt.Transactions[0]) {
-				t.Fatalf("FAIL: Client did not include valid tx with MAX_INITCODE_SIZE")
+				t.Fatalf("FAIL: simClient did not include valid tx with MAX_INITCODE_SIZE")
 			}
 			// Customize the payload to include a tx with an invalid initcode
 			if invTx, ok := invalidTx.(*types.Transaction); ok {

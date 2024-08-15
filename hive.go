@@ -37,7 +37,7 @@ func main() {
 
 		clientsFile = flag.String("client-file", "", `YAML `+"`file`"+` containing client configurations.`)
 
-		clients = flag.String("client", "go-ethereum", "Comma separated `list` of clients to use. Client names in the list may be given as\n"+
+		clients = flag.String("client", "go-ethereum", "Comma separated `list` of clients to use. simClient names in the list may be given as\n"+
 			"just the client name, or a client_branch specifier. If a branch name is supplied,\n"+
 			"the client image will use the given git branch or docker tag. Multiple instances of\n"+
 			"a single client type may be requested with different branches.\n"+

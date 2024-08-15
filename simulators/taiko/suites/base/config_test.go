@@ -22,9 +22,8 @@ func TestCC(t *testing.T) {
 		},
 	}
 
-	clientsByRole := clients.ClientsByRole(clientTypes)
-
-	clientCombinations := clientsByRole.Combinations()
+	clientsByRole := clients.GetClientsByRole(clientTypes)
+	_ = clientsByRole
 
 	// Load params.yml
 	beaconConfig, err := params.UnmarshalConfig(taparams.ConfigContent, nil)
@@ -38,27 +37,7 @@ func TestCC(t *testing.T) {
 		panic(err)
 	}
 
-	env := &testnet.Environment{
-		Clients: clientsByRole,
-	}
-
 	for _, test := range Tests {
-		config := test.GetTestnetConfig(clientCombinations)
-
-		for _, node := range config.NodeDefinitions {
-			var (
-				anvilDef     = env.Clients.ClientByNameAndRole(node.L1EthClient, "anvil")
-				executionDef = env.Clients.ClientByNameAndRole(node.L1EthClient, "eth1")
-				beaconDef    = env.Clients.ClientByNameAndRole(node.ConsensusClient, "beacon")
-				validatorDef = env.Clients.ClientByNameAndRole(node.ValidatorClientName(), "validator")
-				taikoGethDef = env.Clients.ClientByNameAndRole(node.L2EthClient, "taiko-geth")
-				driverDef    = env.Clients.ClientByNameAndRole(node.DriverClient, "driver")
-				proposerDef  = env.Clients.ClientByNameAndRole(node.ProposerClient, "proposer")
-				proverDef    = env.Clients.ClientByNameAndRole(node.ProverClient, "prover")
-			)
-			t.Log(executionDef, beaconDef, validatorDef, taikoGethDef, driverDef, proposerDef, proverDef, anvilDef)
-		}
-
 		genesisState := &execution_config.GenesisState{
 			ForkName:         "deneb",
 			BeaconConfig:     beaconConfig,
@@ -67,8 +46,9 @@ func TestCC(t *testing.T) {
 			Genesis:          &genesis,
 		}
 
-		prep, err := testnet.PrepareTestnet(config, genesisState)
+		prep, err := testnet.PrepareTestnet(test.GetTestnetConfig(), genesisState)
+		_ = prep
 		assert.NoError(t, err)
-		t.Log(prep)
 	}
+
 }

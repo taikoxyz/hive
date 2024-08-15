@@ -4,12 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	api "github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/marioevz/eth-clients/clients/execution"
@@ -18,28 +16,24 @@ import (
 	"strings"
 	"sync"
 	"taiko/common/utils"
-	"taiko/params"
 	"time"
 )
 
 type ExecutionProxyConfig struct {
-	Host                   net.IP
-	Port                   int
-	LogEngineCalls         bool
-	TrackForkchoiceUpdated bool
+	Host net.IP
+	Port int
 }
 
 type ExecutionClientConfig struct {
-	ClientIndex             int
-	ProxyConfig             *ExecutionProxyConfig
-	TerminalTotalDifficulty int64
-	Subnet                  string
-	JWTSecret               [32]byte
-	Network                 string
+	ClientIndex int
+	ProxyConfig *ExecutionProxyConfig
+	Subnet      string
+	JWTSecret   [32]byte
+	Network     string
 }
 
 type ExecutionClient struct {
-	*BaseNode
+	*EthNode
 	Config ExecutionClientConfig
 
 	proxy     *execution.Proxy
@@ -53,71 +47,6 @@ type ExecutionClient struct {
 
 func (ec *ExecutionClient) EngineURL() string {
 	return fmt.Sprintf("http://%v:%d", ec.NetworkIP(), EthEngineRPC)
-}
-
-func (ec *ExecutionClient) ConfiguredTTD() *big.Int {
-	return big.NewInt(ec.Config.TerminalTotalDifficulty)
-}
-
-func (ec *ExecutionClient) DeployContracts(ctx context.Context) error {
-	ec.Logf("Deploying contracts for execution client %d", ec.Config.ClientIndex)
-	ec.Logf("execution http url: %s", ec.HttpURL())
-	client, err := ethclient.DialContext(ctx, ec.HttpURL())
-	if err != nil {
-		return err
-	}
-
-	chainID, err := client.ChainID(ctx)
-	if err != nil {
-		return err
-	}
-
-	sk, err := crypto.HexToECDSA("ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
-	if err != nil {
-		return err
-	}
-	auth, err := bind.NewKeyedTransactorWithChainID(sk, chainID)
-	if err != nil {
-		return err
-	}
-
-	var latestTx *types.Transaction
-	for _, tx := range params.ContractTxs {
-		signedTx, err := auth.Signer(auth.From, tx)
-		if err != nil {
-			return err
-		}
-
-		if err := client.SendTransaction(ctx, signedTx); err != nil {
-			return err
-		}
-		latestTx = signedTx
-	}
-
-	// Wait the latest tx mined.
-	if latestTx.To() == nil {
-		_, err := bind.WaitDeployed(context.Background(), client, latestTx)
-		if err != nil {
-			return fmt.Errorf("failed to wait deployed: %v", err)
-		}
-	} else {
-		receipt, err := bind.WaitMined(context.Background(), client, latestTx)
-		if err != nil {
-			return fmt.Errorf("failed to wait mined, hash: %s, err: %v", latestTx.Hash().String(), err)
-		}
-		if receipt.Status != types.ReceiptStatusSuccessful {
-			return fmt.Errorf("failed to call contract, hash: %s", latestTx.Hash().String())
-		}
-	}
-
-	// init contracts.
-	envs := params.EnvParams.Copy()
-	envs["L1_HTTP"] = ec.HttpURL()
-	return utils.InitTaikoContract(envs)
-}
-
-func (ec *ExecutionClient) Proxy() *execution.Proxy {
-	return ec.proxy
 }
 
 func (ec *ExecutionClient) GetLatestForkchoiceUpdated(

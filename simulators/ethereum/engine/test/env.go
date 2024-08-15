@@ -73,7 +73,7 @@ func Run(testSpec Spec, ttd *big.Int, timeout time.Duration, t *hivesim.T, c *hi
 		clMocker.CloseClients()
 	}()
 
-	// Create Engine client from main hivesim.Client to be used by tests
+	// Create Engine client from main hivesim.simClient to be used by tests
 	ec := hive_rpc.NewHiveRPCEngineClient(c, globals.EnginePortHTTP, globals.EthPortHTTP, globals.DefaultJwtTokenSecretBytes, ttd, &helper.LoggingRoundTrip{
 		Logger: t,
 		ID:     c.Container,
@@ -142,6 +142,6 @@ func (t *Env) MainTTD() *big.Int {
 
 func (t *Env) HandleClientPostRunVerification(ec client.EngineClient) {
 	if err := ec.PostRunVerifications(); err != nil {
-		t.Fatalf("FAIL (%s): Client failed post-run verification: %v", t.TestName, err)
+		t.Fatalf("FAIL (%s): simClient failed post-run verification: %v", t.TestName, err)
 	}
 }
