@@ -9,13 +9,18 @@ import (
 
 func TestCC(t *testing.T) {
 	handler, err := NewHiveFramework(&HiveConfig{
+		DockerPull:     false,
 		BaseDir:        "/Users/huan/projects/taiko/hive",
 		SimPattern:     "taiko",
-		SimTestPattern: "eth2-deneb-testnet/test-deneb-genesis",
+		SimTestPattern: "taiko-deneb-testnet/test-deneb-genesis",
 		Clients: []string{
 			"taiko/geth",
 			"taiko/prysm-bn",
 			"taiko/prysm-vc",
+			"taiko/taiko-geth",
+			"taiko/driver",
+			"taiko/proposer",
+			"taiko/prover",
 		},
 	})
 	assert.NoError(t, err)
