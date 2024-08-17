@@ -3,6 +3,7 @@ package libhive
 import (
 	"context"
 	"fmt"
+	docker "github.com/fsouza/go-dockerclient"
 	"io"
 	"io/fs"
 	"mime/multipart"
@@ -60,6 +61,9 @@ type ContainerOptions struct {
 	// options are mutually exclusive.
 	LogFile string
 	Output  io.WriteCloser
+
+	// Docker container params.
+	HostConfig *docker.HostConfig
 
 	// Input: if set, container stdin draws from the given reader.
 	Input io.ReadCloser

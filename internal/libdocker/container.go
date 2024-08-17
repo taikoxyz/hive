@@ -79,7 +79,8 @@ func (b *ContainerBackend) CreateContainer(ctx context.Context, imageName string
 		vars = append(vars, key+"="+val)
 	}
 	createOpts := docker.CreateContainerOptions{
-		Context: ctx,
+		Context:    ctx,
+		HostConfig: opt.HostConfig,
 		Config: &docker.Config{
 			Image: imageName,
 			Env:   vars,
@@ -423,7 +424,7 @@ func (b *ContainerBackend) runContainer(ctx context.Context, logger log15.Logger
 	closer.w = waiter
 
 	logger.Debug("starting container")
-	if err := b.client.StartContainerWithContext(id, nil, ctx); err != nil {
+	if err := b.client.StartContainerWithContext(id, opts.HostConfig, ctx); err != nil {
 		closer.Close()
 		logger.Error("failed to start container", "err", err)
 		return nil, err
