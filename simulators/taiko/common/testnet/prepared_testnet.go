@@ -188,7 +188,12 @@ func (p *PreparedTestnet) prepareAnvilNode(
 		Port:                 clients.AnvilPort,
 	}
 	cm.OptionsGenerator = func() ([]hivesim.StartOption, error) {
-		opts := []hivesim.StartOption{p.executionOpts}
+		opts := []hivesim.StartOption{
+			p.executionOpts,
+			hivesim.Params{ // Expose the anvil port to the host.
+				"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp", clients.AnvilPort),
+			},
+		}
 		return opts, nil
 	}
 
@@ -218,7 +223,7 @@ func (p *PreparedTestnet) prepareExecutionNode(
 		T:                    testnet.T,
 		HiveClientDefinition: eth1Def,
 		Network:              config.Network,
-		Port:                 exec_client.PortEngineRPC,
+		Port:                 clients.EthEngineRPC,
 	}
 
 	// This method will return the options used to run the client.
@@ -227,6 +232,11 @@ func (p *PreparedTestnet) prepareExecutionNode(
 	cm.OptionsGenerator = func() ([]hivesim.StartOption, error) {
 		opts := []hivesim.StartOption{p.executionOpts}
 		opts = append(opts, consensus.HiveParams(config.ClientIndex))
+
+		// Expose the eth1 ports to the host.
+		opts = append(opts, hivesim.Params{
+			"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp,%d/tcp", clients.EthHttpPort, clients.EthWSPort),
+		})
 
 		currentlyRunningEcs := testnet.ExecutionClients().
 			Running().
@@ -285,6 +295,11 @@ func (p *PreparedTestnet) prepareBeaconNode(
 	// beacon clients on the network at startup.
 	cm.OptionsGenerator = func() ([]hivesim.StartOption, error) {
 		opts := []hivesim.StartOption{p.beaconOpts}
+
+		// Expose the eth1 ports to the host.
+		opts = append(opts, hivesim.Params{
+			"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp", clients.BeaconPort),
+		})
 
 		// Hook up beacon node to (maybe multiple) eth1 nodes
 		var engineAddrs []string
@@ -364,6 +379,12 @@ func (p *PreparedTestnet) prepareTaikoGethClient(
 	}
 	cm.OptionsGenerator = func() ([]hivesim.StartOption, error) {
 		opts := []hivesim.StartOption{p.taikoGethOpts}
+
+		// Expose the eth1 ports to the host.
+		opts = append(opts, hivesim.Params{
+			"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp,%d/tcp", clients.EthHttpPort, clients.EthWSPort),
+		})
+
 		return opts, nil
 	}
 

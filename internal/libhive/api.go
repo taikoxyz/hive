@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	docker "github.com/fsouza/go-dockerclient"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -230,6 +231,27 @@ func (api *simAPI) startClient(w http.ResponseWriter, r *http.Request) {
 		env["HIVE_LOGLEVEL"] = strconv.Itoa(api.env.SimLogLevel)
 	}
 
+	var hostConfig *docker.HostConfig
+	if bindings := env["HIVE_DOCKER_PORT_BINDINGS"]; bindings != "" {
+		if hostConfig == nil {
+			hostConfig = &docker.HostConfig{}
+		}
+		log15.Info("API: client port bindings env", "bindings", strings.Split(bindings, ","))
+
+		portBindings := map[docker.Port][]docker.PortBinding{}
+		for _, binding := range strings.Split(bindings, ",") {
+			ports := strings.Split(strings.TrimSpace(binding), ":")
+			switch len(ports) {
+			case 1:
+				portBindings[docker.Port(ports[0])] = []docker.PortBinding{{HostPort: ""}}
+			case 2:
+				portBindings[docker.Port(ports[0])] = []docker.PortBinding{{HostPort: ports[1]}}
+			default:
+			}
+		}
+		hostConfig.PortBindings = portBindings
+	}
+
 	// Set up the timeout.
 	timeout := api.env.ClientStartTimeout
 	if timeout == 0 {
@@ -239,7 +261,7 @@ func (api *simAPI) startClient(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	// Create the client container.
-	options := ContainerOptions{Env: env, Files: files}
+	options := ContainerOptions{Env: env, Files: files, HostConfig: hostConfig}
 	containerID, err := api.backend.CreateContainer(ctx, clientDef.Image, options)
 	if err != nil {
 		log15.Error("API: client container create failed", "client", clientDef.Name, "error", err)
