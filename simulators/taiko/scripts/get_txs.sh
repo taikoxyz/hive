@@ -5,10 +5,10 @@
 
 END_BLOCK=$(cast block-number --rpc-url "$L1_PROBE_URL")
 
-for ((block = 0; block <= END_BLOCK; block++)); do
+for block in $(seq 0 "$END_BLOCK"); do
   echo "Checking block $block"
   # Get all the transactions.
-  transactions=$(cast block $block --json --rpc-url "$L1_PROBE_URL" | jq -r '.transactions[]')
+  transactions=$(cast block "$block" --json --rpc-url "$L1_PROBE_URL" | jq -r '.transactions[]')
 
   rm -rf params/l1contract_txs.txt
 
