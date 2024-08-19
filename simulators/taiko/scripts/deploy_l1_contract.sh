@@ -1,11 +1,11 @@
 #!/bin/sh
 
 # start and stop docker compose
-sh docker/start.sh
-trap "docker/stop.sh" EXIT INT KILL ERR
+docker compose -f docker/docker-compose.yml up -d --wait
+trap "docker compose -f docker/docker-compose.yml down" EXIT INT KILL ERR
 
 # get docker env
-. docker/docker_env.sh
+. scripts/docker_env.sh
 
 # Get the hash of L2 genesis.
 export L2_GENESIS_HASH=$(
