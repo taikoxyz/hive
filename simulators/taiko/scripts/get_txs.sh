@@ -1,6 +1,6 @@
 #!/bin/bash
 
-rm params/l1contract_txs.txt /dev/null 2>&1
+rm -rf params/l1contract_txs.txt
 
 L1_PROBE_URL=${L1_PROBE_URL:-http://localhost:8545}
 START_BLOCK=0
