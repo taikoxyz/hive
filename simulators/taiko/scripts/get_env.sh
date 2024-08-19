@@ -7,7 +7,7 @@ export TAIKO_L2_ADDRESS=0x1670010000000000000000000000000000010001
 export L2_SUGGESTED_FEE_RECIPIENT=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 
 # get deployed contract address.
-DEPLOYMENT_JSON=$(cat taiko-mono/packages/protocol/deployments/deploy_l1.json)
+DEPLOYMENT_JSON=$(cat "$TAIKO_MONO_DIR"/packages/protocol/deployments/deploy_l1.json)
 export TAIKO_L1_ADDRESS=$(echo "$DEPLOYMENT_JSON" | jq '.taiko' | sed 's/\"//g')
 export TAIKO_TOKEN_ADDRESS=$(echo "$DEPLOYMENT_JSON" | jq '.taiko_token' | sed 's/\"//g')
 export GUARDIAN_PROVER_MINORITY=$(echo "$DEPLOYMENT_JSON" | jq '.guardian_prover_minority' | sed 's/\"//g')

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ ! -d "taiko-mono/packages/protocol/out" ]; then
+if [ ! -d "$TAIKO_MONO_DIR/packages/protocol/out" ]; then
     echo "ABI not generated in protocol package yet. Please run npm install && npx hardhat compile in ../protocol"
     exit 1
 fi
@@ -13,7 +13,7 @@ for (( i = 0; i < ${#paths[@]}; ++i ));
 do
     lower=$(echo "${names[i]}" | tr '[:upper:]' '[:lower:]')
     mkdir -p bindings/$lower
-    jq .abi taiko-mono/packages/protocol/out/${paths[i]}/${names[i]}.json > bindings/$lower/${names[i]}.json
+    jq .abi "$TAIKO_MONO_DIR"/packages/protocol/out/${paths[i]}/${names[i]}.json > bindings/$lower/${names[i]}.json
     abigen --abi bindings/$lower/${names[i]}.json \
     --pkg $lower \
     --type ${names[i]} \

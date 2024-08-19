@@ -21,7 +21,7 @@ check_env() {
 }
 
 check_command() {
-  if ! command -v "$1" &> /dev/null; then
+  if ! command -v "$1" &>/dev/null; then
     print_error "$1 could not be found"
     exit
   fi
