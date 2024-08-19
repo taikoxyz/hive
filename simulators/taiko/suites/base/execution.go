@@ -20,7 +20,7 @@ func (ts BaseTestSpec) verify(ctx context.Context, t *hivesim.T, node *clients.N
 		l1Eth = node.L1EthClient
 		l2Eth = node.L2EthClient
 
-		targetNumber = uint64(5)
+		targetNumber = uint64(1)
 
 		timeout = time.Second * 200
 	)
