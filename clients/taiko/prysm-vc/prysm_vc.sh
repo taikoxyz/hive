@@ -31,6 +31,7 @@ echo BUILDER=$builder_option
 
 echo Starting Prysm Validator Client
 
+LOG=info
 validator \
   --verbosity="$LOG" \
   --chain-config-file="/hive/input/config.yaml" \

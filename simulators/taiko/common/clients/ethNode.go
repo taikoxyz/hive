@@ -88,20 +88,45 @@ func (ec *EthNode) EthIsReady(ctx context.Context, timeout time.Duration) error 
 
 func (ec *EthNode) WaitNumber(ctx context.Context, timeout time.Duration, targetNumber uint64) error {
 	ethClient := ec.EthClient()
-	for ; ; <-time.Tick(time.Second) {
-		ec.Logf("waiting for %s to reach block number %d", ec.ClientType(), targetNumber)
+
+	current, times := uint64(0), timeout/time.Second
+	for ; times > 0 && targetNumber > current; current++ {
 		select {
-		case <-time.After(timeout):
-			return fmt.Errorf("reach timeout but l2geth is not ready")
-		default:
+		case <-time.Tick(time.Second):
 			number, err := ethClient.BlockNumber(ctx)
 			if err != nil {
 				ec.Logf("failed to get block number, err: %v", err)
 				continue
 			}
-			if number >= targetNumber {
-				return nil
+			if number > current {
+				times = timeout / time.Second
+				break
+			} else {
+				times--
+			}
+		}
+
+		for ; ; <-time.Tick(time.Second) {
+			ec.Logf("waiting for %s to reach block number %d", ec.ClientType(), targetNumber)
+
+			select {
+			case <-time.After(timeout):
+				return fmt.Errorf("reach timeout but l2geth is not ready")
+			default:
+				number, err := ethClient.BlockNumber(ctx)
+				if err != nil {
+					ec.Logf("failed to get block number, err: %v", err)
+					continue
+				}
+				if number > current {
+					break
+				}
 			}
 		}
 	}
+
+	if targetNumber > current {
+		return fmt.Errorf("failed to reach current number %d, current number: %d", targetNumber, current)
+	}
+	return nil
 }

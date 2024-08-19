@@ -20,7 +20,9 @@ func (ts BaseTestSpec) verify(ctx context.Context, t *hivesim.T, node *clients.N
 		l1Eth = node.L1EthClient
 		l2Eth = node.L2EthClient
 
-		targetNumber = uint64(1)
+		targetNumber = uint64(5)
+
+		timeout = time.Second * 200
 	)
 
 	if anvil != nil {
@@ -28,7 +30,7 @@ func (ts BaseTestSpec) verify(ctx context.Context, t *hivesim.T, node *clients.N
 			t.Fatalf("anvil node is not running!")
 		}
 		// Verify l1eth node run successfully.
-		err := anvil.WaitNumber(ctx, time.Second*200, targetNumber)
+		err := anvil.WaitNumber(ctx, timeout, targetNumber)
 		if err != nil {
 			t.Fatalf("failed to verify l1geth number, err: %v", err)
 		}
@@ -38,7 +40,7 @@ func (ts BaseTestSpec) verify(ctx context.Context, t *hivesim.T, node *clients.N
 			t.Fatalf("l1eth node is not running!")
 		}
 		// Verify l1eth node run successfully.
-		err := l1Eth.WaitNumber(ctx, time.Second*200, targetNumber)
+		err := l1Eth.WaitNumber(ctx, timeout, targetNumber)
 		if err != nil {
 			t.Fatalf("failed to verify l1geth number, err: %v", err)
 		}
@@ -49,7 +51,7 @@ func (ts BaseTestSpec) verify(ctx context.Context, t *hivesim.T, node *clients.N
 			t.Fatalf("l2eth node is not running!")
 		}
 		// Verify l2eth node run successfully.
-		err := l2Eth.WaitNumber(ctx, time.Second*200, targetNumber)
+		err := l2Eth.WaitNumber(ctx, timeout, targetNumber)
 		if err != nil {
 			t.Fatalf("failed to verify l2geth number, err: %v", err)
 		}
