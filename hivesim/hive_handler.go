@@ -93,8 +93,6 @@ func NewHiveFramework(config *HiveConfig) (*HiveFramework, error) {
 		Inventory:           inv,
 		PullEnabled:         config.DockerPull,
 		UseCredentialHelper: false,
-		ContainerOutput:     os.Stderr,
-		BuildOutput:         os.Stderr,
 	}
 	if cfg.DockerNoCache != "" {
 		re, err := regexp.Compile(cfg.DockerNoCache)
