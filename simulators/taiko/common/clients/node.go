@@ -89,10 +89,12 @@ func (n *Node) Start() error {
 	// Deploy contracts if needed
 	if n.DriverClient != nil || n.ProposerClient != nil || n.ProverClient != nil {
 		if n.AnvilClient != nil {
+			fmt.Printf("Deploying contracts in %s node, url: %s\n", n.AnvilClient.ClientType(), n.AnvilClient.HttpURL())
 			if err := utils.DeployContracts(context.Background(), n.AnvilClient.HttpURL()); err != nil {
 				return err
 			}
 		} else {
+			fmt.Printf("Deploying contracts in %s node, url: %s\n", n.L1EthClient.ClientType(), n.L1EthClient.HttpURL())
 			if err := utils.DeployContracts(context.Background(), n.L1EthClient.HttpURL()); err != nil {
 				return err
 			}

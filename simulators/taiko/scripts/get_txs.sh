@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# clean contract tx list.
+rm -rf params/l1contract_txs.txt
+
 # get docker env
 . scripts/docker_env.sh
 
@@ -9,8 +12,6 @@ for block in $(seq 0 "$END_BLOCK"); do
   echo "Checking block $block"
   # Get all the transactions.
   transactions=$(cast block "$block" --json --rpc-url "$L1_PROBE_URL" | jq -r '.transactions[]')
-
-  rm -rf params/l1contract_txs.txt
 
   # Store txs.
   for tx in $transactions; do

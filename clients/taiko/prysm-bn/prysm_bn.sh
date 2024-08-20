@@ -59,7 +59,7 @@ echo BUILDER=$builder_option
 echo Starting Prysm Beacon Node
 
 beacon-chain \
-  --verbosity="$LOG" \
+  --verbosity="warn" \
   --chain-id="${HIVE_TAIKO_CHAIN_ID:-7}" \
   --datadir=/data/beacon \
   --chain-config-file=/hive/input/config.yaml \
@@ -70,6 +70,7 @@ beacon-chain \
   --execution-endpoint="$HIVE_TAIKO_ETH1_RPC_ADDRS" \
   --jwt-secret=$EXECUTION_DIR/jwtsecret \
   --min-sync-peers=0 \
+  --minimum-peers-per-subnet=0 \
   --subscribe-all-subnets=true \
   $metrics_option \
   $builder_option \

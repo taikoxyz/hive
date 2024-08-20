@@ -90,7 +90,7 @@ func (ec *EthNode) WaitNumber(ctx context.Context, timeout time.Duration, target
 	ethClient := ec.EthClient()
 
 	current, times := uint64(0), timeout/time.Second
-	for times > 0 && targetNumber > current {
+	for times > 0 && targetNumber >= current {
 		select {
 		case <-time.Tick(time.Second):
 			number, err := ethClient.BlockNumber(ctx)

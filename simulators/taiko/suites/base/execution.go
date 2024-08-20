@@ -34,6 +34,7 @@ func (ts BaseTestSpec) verify(ctx context.Context, t *hivesim.T, node *clients.N
 		if err != nil {
 			t.Fatalf("failed to verify l1geth number, err: %v", err)
 		}
+		t.Logf("%s node is running successfully", anvil.ClientType())
 	}
 	if l1Eth != nil {
 		if !l1Eth.IsRunning() {
@@ -44,6 +45,7 @@ func (ts BaseTestSpec) verify(ctx context.Context, t *hivesim.T, node *clients.N
 		if err != nil {
 			t.Fatalf("failed to verify l1geth number, err: %v", err)
 		}
+		t.Logf("%s node is running successfully", l1Eth.ClientType())
 	}
 
 	if l2Eth != nil {
@@ -55,5 +57,6 @@ func (ts BaseTestSpec) verify(ctx context.Context, t *hivesim.T, node *clients.N
 		if err != nil {
 			t.Fatalf("failed to verify l2geth number, err: %v", err)
 		}
+		t.Logf("%s node is running successfully", l2Eth.ClientType())
 	}
 }

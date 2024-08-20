@@ -17,9 +17,6 @@ import (
 )
 
 func DeployContracts(ctx context.Context, url string) error {
-	fmt.Println("Deploying contracts in l1geth client")
-	fmt.Printf("http url: %s", url)
-
 	client, err := ethclient.DialContext(ctx, url)
 	if err != nil {
 		return err
@@ -49,6 +46,7 @@ func DeployContracts(ctx context.Context, url string) error {
 		if err := client.SendTransaction(ctx, signedTx); err != nil {
 			return err
 		}
+		fmt.Println("successfully send tx, hash: ", signedTx.Hash().String())
 		signedTxs = append(signedTxs, signedTx)
 	}
 
