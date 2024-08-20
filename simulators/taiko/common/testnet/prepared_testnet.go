@@ -142,6 +142,14 @@ func PrepareTestnet(
 		"HIVE_LOGLEVEL": fmt.Sprintf("%d", cfg.LogLevel),
 	})
 
+	taikoClientOpts := hivesim.Bundle(
+		commonParams,
+		networkParams,
+		hivesim.Params{
+			"TX_RECEIPT_QUERY_INTERVAL": "1s",
+		},
+	)
+
 	return &PreparedTestnet{
 		Spec:             spec,
 		ExecutionGenesis: executionGenesis,
@@ -150,9 +158,9 @@ func PrepareTestnet(
 		validatorOpts:    validatorOpts,
 
 		taikoGethOpts: hivesim.Bundle(taikoGethOpts, networkParams),
-		driverOpts:    hivesim.Bundle(commonParams, networkParams),
-		proposerOpts:  hivesim.Bundle(commonParams, networkParams),
-		proverOpts:    hivesim.Bundle(commonParams, networkParams),
+		driverOpts:    taikoClientOpts,
+		proposerOpts:  taikoClientOpts,
+		proverOpts:    taikoClientOpts,
 	}, nil
 }
 
@@ -382,7 +390,7 @@ func (p *PreparedTestnet) prepareTaikoGethClient(
 
 		// Expose the eth1 ports to the host.
 		opts = append(opts, hivesim.Params{
-			"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp,%d/tcp", clients.EthHttpPort, clients.EthWSPort),
+			"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp,%d/tcp,%d/tcp", clients.EthHttpPort, clients.EthWSPort, clients.EthEngineRPC),
 		})
 
 		return opts, nil
@@ -450,6 +458,9 @@ func (p *PreparedTestnet) prepareProposerClient(
 		HiveClientDefinition: proposerDef,
 		OptionsGenerator: func() ([]hivesim.StartOption, error) {
 			opts := []hivesim.StartOption{p.proposerOpts, getEnvs(anvilClient, l1Client, beaconClient, l2Client)}
+			opts = append(opts, hivesim.Params{
+				"EPOCH_INTERVAL": "3s",
+			})
 			return opts, nil
 		},
 	}

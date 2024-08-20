@@ -53,9 +53,10 @@ type HiveConfig struct {
 	ResultsRoot string
 	Loglevel    int
 
-	DockerPull    bool
-	DockerNoCache string
-	DockerOutput  bool
+	DockerPull      bool
+	DockerNoCache   string
+	BuildOutput     bool
+	ContainerOutput bool
 
 	SimPattern     string
 	SimTestPattern string
@@ -102,8 +103,10 @@ func NewHiveFramework(config *HiveConfig) (*HiveFramework, error) {
 		}
 		dockerConfig.NoCachePattern = re
 	}
-	if cfg.DockerOutput {
+	if cfg.ContainerOutput {
 		dockerConfig.ContainerOutput = os.Stderr
+	}
+	if cfg.BuildOutput {
 		dockerConfig.BuildOutput = os.Stderr
 	}
 

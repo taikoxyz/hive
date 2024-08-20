@@ -7,12 +7,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCC(t *testing.T) {
+func TestHiveFramework(t *testing.T) {
 	handler, err := NewHiveFramework(&HiveConfig{
-		DockerPull:     false,
-		BaseDir:        "/Users/huan/projects/taiko/hive",
-		SimPattern:     "taiko",
-		SimTestPattern: "taiko-deneb-testnet/test-deneb-genesis",
+		ContainerOutput: true,
+		DockerPull:      false,
+		BaseDir:         "/Users/huan/projects/taiko/hive",
+		SimPattern:      "taiko",
+		SimTestPattern:  "taiko-deneb-testnet/test-deneb-genesis",
 		Clients: []string{
 			"taiko/geth",
 			"taiko/prysm-bn",

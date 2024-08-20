@@ -108,7 +108,7 @@ func (ec *EthNode) WaitNumber(ctx context.Context, timeout time.Duration, target
 		}
 	}
 
-	if targetNumber > current {
+	if targetNumber >= current {
 		return fmt.Errorf("failed to reach current number %d, current number: %d", targetNumber, current)
 	}
 	return nil
