@@ -9,7 +9,7 @@ export L2_SUGGESTED_FEE_RECIPIENT=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 # get deployed contract address.
 DEPLOYMENT_JSON=$(cat "$TAIKO_MONO_DIR"/packages/protocol/deployments/deploy_l1.json)
 export TAIKO_L1=$(echo "$DEPLOYMENT_JSON" | jq '.taiko' | sed 's/\"//g')
-export TAIKO_TOKEN_ADDRESS=$(echo "$DEPLOYMENT_JSON" | jq '.taiko_token' | sed 's/\"//g')
+export TAIKO_TOKEN=$(echo "$DEPLOYMENT_JSON" | jq '.taiko_token' | sed 's/\"//g')
 export GUARDIAN_PROVER_MINORITY=$(echo "$DEPLOYMENT_JSON" | jq '.guardian_prover_minority' | sed 's/\"//g')
 export GUARDIAN_PROVER_CONTRACT=$(echo "$DEPLOYMENT_JSON" | jq '.guardian_prover' | sed 's/\"//g')
 
@@ -19,9 +19,6 @@ echo "L2_SUGGESTED_FEE_RECIPIENT=$L2_SUGGESTED_FEE_RECIPIENT
 TAIKO_L1=$TAIKO_L1
 TAIKO_L2=$TAIKO_L2
 TAIKO_TOKEN=$TAIKO_TOKEN
-TAIKO_L1_ADDRESS=$TAIKO_L1
-TAIKO_L2_ADDRESS=$TAIKO_L2
-TAIKO_TOKEN_ADDRESS=$TAIKO_TOKEN
 GUARDIAN_PROVER_MINORITY=$GUARDIAN_PROVER_MINORITY
 GUARDIAN_PROVER_CONTRACT=$GUARDIAN_PROVER_CONTRACT
 GUARDIAN_PROVER_MAJORITY=$GUARDIAN_PROVER_CONTRACT
