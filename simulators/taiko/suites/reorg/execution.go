@@ -3,6 +3,7 @@ package suite_reorg
 import (
 	"context"
 	"github.com/ethereum/hive/hivesim"
+	"math/big"
 	tn "taiko/common/testnet"
 	"time"
 )
@@ -19,8 +20,9 @@ func (r ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 		prover   = node.ProverClient
 		l2eth    = node.L2EthClient
 
-		timeout  = time.Second * 60
-		l2Number = uint64(10)
+		timeout            = time.Second * 60
+		l2ReorgStartNumber = r.L2ReorgStartNumber
+		reorgDepth         = r.ReorgDepth
 	)
 	if anvil == nil || driver == nil || proposer == nil || prover == nil || l2eth == nil {
 		t.Fatalf("anvil, driver, proposer, prover or l2eth client is nil!")
@@ -30,18 +32,38 @@ func (r ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 		t.Fatalf("anvil or l2eth node is not running!")
 	}
 
-	if err := l2eth.WaitNumber(ctx, timeout, l2Number); err != nil {
-		t.Fatalf("failed to verify l2eth number, err: %v", err)
+	var (
+		l2Client = l2eth.EthClient()
+	)
+
+	if err := l2eth.WaitLatestNumber(ctx, timeout, l2ReorgStartNumber); err != nil {
+		t.Fatalf("failed to wait %s latest number, err: %v", l2eth.ClientType(), err)
+	}
+
+	l2OriginHeader, err := l2Client.HeaderByNumber(ctx, new(big.Int).SetUint64(l2ReorgStartNumber))
+	if err != nil {
+		t.Fatalf("failed to get %s header by number, err: %v", l2eth.ClientType(), err)
 	}
 
 	// reorg
 	snapshot, number := anvil.SetReorgPoint()
-	err := anvil.WaitNumber(ctx, timeout, number+5)
-	if err != nil {
+	if err := anvil.WaitLatestNumber(ctx, timeout, number+reorgDepth); err != nil {
 		t.Fatalf("failed to wait %s for number, err: %v", anvil.ClientType(), err)
 	}
 	anvil.Reorg(snapshot)
 
-	// TODO
-	time.Sleep(time.Second * 300)
+	// Wait for the reorg to be processed.
+	if err := l2eth.WaitLatestNumber(ctx, timeout, l2ReorgStartNumber); err != nil {
+		t.Fatalf("failed to wait %s latest number, err: %v", l2eth.ClientType(), err)
+	}
+
+	l2ReorgedHeader, err := l2Client.HeaderByNumber(ctx, new(big.Int).SetUint64(l2ReorgStartNumber))
+	if err != nil {
+		t.Fatalf("failed to get %s header by number, err: %v", l2eth.ClientType(), err)
+	}
+
+	// Verify the reorged header hash is equal to the origin header hash.
+	if l2OriginHeader.Hash() != l2ReorgedHeader.Hash() {
+		t.Fatalf("%s header hash %s is not equal to %s reorged header hash %s", l2eth.ClientType(), l2eth.ClientType(), l2OriginHeader.Hash().Hex(), l2ReorgedHeader.Hash().Hex())
+	}
 }

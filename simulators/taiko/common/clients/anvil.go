@@ -67,7 +67,7 @@ func (a *AnvilClient) Reorg(snapshot string) {
 	}
 
 	a.revertSnapshot(info.Snapshot)
-	//a.SetNextBlockTimestamp(info.Header.Time + a.SecondsPerSlot + 1)
+	a.SetNextBlockTimestamp(info.Header.Time + a.SecondsPerSlot + 1)
 
 	for _, block := range blocks {
 		for _, tx := range block.Transactions() {
@@ -77,7 +77,7 @@ func (a *AnvilClient) Reorg(snapshot string) {
 			}
 		}
 		a.MineBlock()
-		time.Sleep(3 * time.Second)
+		time.Sleep(time.Duration(a.SecondsPerSlot) * time.Second)
 	}
 
 	delete(a.reorgCache, snapshot)

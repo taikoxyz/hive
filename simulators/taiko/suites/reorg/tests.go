@@ -24,6 +24,8 @@ var Tests = make([]suites.TestSpec, 0)
 func init() {
 	Tests = append(Tests,
 		ReorgTestSpec{
+			L2ReorgStartNumber: 10,
+			ReorgDepth:         20,
 			BaseTestSpec: suite_base.BaseTestSpec{
 				Name:        "test-deneb-reorg",
 				DisplayName: "Deneb Reorg",
