@@ -1,7 +1,6 @@
 package clients
 
 import (
-	"fmt"
 	"math/big"
 	"strings"
 
@@ -13,10 +12,8 @@ import (
 // - Beacon Client
 // - Validator Client
 type NodeDefinition struct {
-	// L1chain Client Types
-	L1EthClient     map[string]bool `json:"execution_client"`
-	ConsensusClient string          `json:"consensus_client"`
-	ValidatorClient string          `json:"validator_client"`
+	ConsensusClient string `json:"consensus_client"`
+	ValidatorClient string `json:"validator_client"`
 
 	// L2chain client Types
 	L2EthClient    string `json:"taiko_geth_client"`
@@ -38,10 +35,6 @@ type NodeDefinition struct {
 	ExecutionSubnet string `json:"execution_subnet"`
 	ConsensusSubnet string `json:"consensus_subnet"`
 	Subnet          string `json:"subnet"`
-}
-
-func (n *NodeDefinition) String() string {
-	return fmt.Sprintf("%s-%s", n.ConsensusClient, n.L1EthClient)
 }
 
 func (n *NodeDefinition) ValidatorClientName() string {
@@ -79,19 +72,4 @@ func beaconNodeToValidator(name string) string {
 		validator += "_" + branch
 	}
 	return validator
-}
-
-type NodeDefinitions []NodeDefinition
-
-func (all NodeDefinitions) FilterByCL(filters []string) NodeDefinitions {
-	ret := make(NodeDefinitions, 0)
-	for _, n := range all {
-		for _, filter := range filters {
-			if strings.Contains(n.ConsensusClient, filter) {
-				ret = append(ret, n)
-				break
-			}
-		}
-	}
-	return ret
 }

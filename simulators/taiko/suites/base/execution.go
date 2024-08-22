@@ -30,7 +30,7 @@ func (ts BaseTestSpec) verify(ctx context.Context, t *hivesim.T, node *clients.N
 			t.Fatalf("anvil node is not running!")
 		}
 		// Verify l1eth node run successfully.
-		err := anvil.WaitNumber(ctx, timeout, targetNumber)
+		err := anvil.WaitLatestNumber(ctx, timeout, targetNumber)
 		if err != nil {
 			t.Fatalf("failed to verify l1geth number, err: %v", err)
 		}
@@ -41,7 +41,7 @@ func (ts BaseTestSpec) verify(ctx context.Context, t *hivesim.T, node *clients.N
 			t.Fatalf("l1eth node is not running!")
 		}
 		// Verify l1eth node run successfully.
-		err := l1Eth.WaitNumber(ctx, timeout, targetNumber)
+		err := l1Eth.WaitLatestNumber(ctx, timeout, targetNumber)
 		if err != nil {
 			t.Fatalf("failed to verify l1geth number, err: %v", err)
 		}
@@ -53,7 +53,7 @@ func (ts BaseTestSpec) verify(ctx context.Context, t *hivesim.T, node *clients.N
 			t.Fatalf("l2eth node is not running!")
 		}
 		// Verify l2eth node run successfully.
-		err := l2Eth.WaitNumber(ctx, timeout, targetNumber)
+		err := l2Eth.WaitLatestNumber(ctx, timeout, targetNumber)
 		if err != nil {
 			t.Fatalf("failed to verify l2geth number, err: %v", err)
 		}

@@ -86,11 +86,11 @@ func (ec *EthNode) EthIsReady(ctx context.Context, timeout time.Duration) error 
 	}
 }
 
-func (ec *EthNode) WaitNumber(ctx context.Context, timeout time.Duration, targetNumber uint64) error {
+func (ec *EthNode) WaitLatestNumber(ctx context.Context, timeout time.Duration, number uint64) error {
 	ethClient := ec.EthClient()
 
 	current, times := uint64(0), timeout/time.Second
-	for times > 0 && targetNumber >= current {
+	for times > 0 && number >= current {
 		select {
 		case <-time.Tick(time.Second):
 			number, err := ethClient.BlockNumber(ctx)
@@ -108,8 +108,26 @@ func (ec *EthNode) WaitNumber(ctx context.Context, timeout time.Duration, target
 		}
 	}
 
-	if targetNumber >= current {
-		return fmt.Errorf("failed to reach current number %d, current number: %d", targetNumber, current)
+	if number >= current {
+		return fmt.Errorf("failed to reach current number %d, current number: %d", number, current)
 	}
 	return nil
+}
+
+func (ec *EthNode) WaitTargetNumber(ctx context.Context, timeout time.Duration, number uint64) error {
+	client := ec.EthClient()
+	for ; ; <-time.Tick(time.Second) {
+		select {
+		case <-time.After(timeout):
+			return fmt.Errorf("reach timeout but %s is not ready", ec.ClientType())
+		default:
+			num, err := client.BlockNumber(ctx)
+			if err != nil {
+				continue
+			}
+			if num == number {
+				return nil
+			}
+		}
+	}
 }
