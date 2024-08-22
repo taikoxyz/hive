@@ -5,7 +5,6 @@ import (
 	execution_config "taiko/common/config/execution"
 
 	beacon "github.com/protolambda/zrnt/eth2/beacon/common"
-	"taiko/common/clients"
 	"taiko/common/testnet"
 	"taiko/common/utils"
 )
@@ -68,11 +67,6 @@ func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
 		JWTSecret:  "7365637265747365637265747365637265747365637265747365637265747365",
 		FeeReceipt: "a0Ee7A142d267C1f36714E4a8F75612F20a79720",
 	}
-}
-
-func (ts BaseTestSpec) CanRun(clients.NodeDefinitions) bool {
-	// Base test specs can always run
-	return true
 }
 
 func (ts BaseTestSpec) GetName() string {

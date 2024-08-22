@@ -206,6 +206,7 @@ func (p *PreparedTestnet) prepareAnvilNode(
 	}
 
 	return &clients.AnvilClient{
+		SecondsPerSlot: testnet.spec.SecondsPerSlot,
 		EthNode: &clients.EthNode{
 			HiveManagedClient: cm,
 			HttpPort:          clients.AnvilPort,

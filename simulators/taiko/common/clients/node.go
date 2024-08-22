@@ -101,9 +101,9 @@ func (n *Node) Start() error {
 		}
 	}
 
-	// equal to `anvil --block-time secondsPerSlot`
+	// Start mining.
 	if n.AnvilClient != nil {
-		n.AnvilClient.SetIntervalMining(n.BeaconConfig.SecondsPerSlot)
+		n.AnvilClient.StartMining()
 	}
 
 	if n.DriverClient != nil {

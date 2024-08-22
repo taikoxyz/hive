@@ -23,6 +23,10 @@ func setL1Automine(url string, automine bool) error {
 	return client.CallContext(context.Background(), nil, "evm_setAutomine", automine)
 }
 
+func mineBlock(client *rpc.Client) error {
+	return client.CallContext(context.Background(), nil, "evm_mine")
+}
+
 func TestDeployContracts(t *testing.T) {
 	url := "http://localhost:8545"
 	assert.NoError(t, DeployContracts(context.Background(), url))
