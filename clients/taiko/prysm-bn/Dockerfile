@@ -1,5 +1,5 @@
 ARG baseimage=gcr.io/prysmaticlabs/prysm/beacon-chain
-ARG tag=stable
+ARG tag=v5.0.4
 
 FROM $baseimage:$tag AS upstream
 
