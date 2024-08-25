@@ -1,6 +1,7 @@
 package testnet
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/ethereum/hive/hivesim"
@@ -12,7 +13,6 @@ import (
 	cl "taiko/common/config/consensus"
 	consensus_config "taiko/common/config/consensus"
 	el "taiko/common/config/execution"
-	"taiko/common/utils"
 	"taiko/params"
 )
 
@@ -116,7 +116,6 @@ func PrepareTestnet(
 		"HIVE_TAIKO_DEPOSIT_DEPLOY_BLOCK_NUMBER": fmt.Sprintf("%d", executionGenesis.Block.NumberU64()),
 		"HIVE_TAIKO_ETH1_GENESIS_TIME":           fmt.Sprintf("%d", executionGenesis.Genesis.Timestamp),
 		"HIVE_TAIKO_CHAIN_ID":                    fmt.Sprintf("%d", executionGenesis.ChainID()),
-		"HIVE_TAIKO_MIN_SYNC_PEERS":              "0",
 	}
 
 	beaconOpts := hivesim.Bundle(
@@ -174,9 +173,6 @@ func (p *PreparedTestnet) createTestnet(t *hivesim.T) *Testnet {
 		genesisValidatorsRoot: common.Root(genesisValidatorsRoot),
 		spec:                  p.Spec,
 		executionGenesis:      p.ExecutionGenesis,
-
-		Validators:      genesisState.Validators(),
-		ValidatorGroups: make(map[string]*utils.Validators),
 	}
 }
 
@@ -247,7 +243,7 @@ func (p *PreparedTestnet) prepareExecutionNode(
 			"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp,%d/tcp", clients.EthHttpPort, clients.EthWSPort),
 		})
 
-		currentlyRunningEcs := testnet.ExecutionClients().
+		currentlyRunningEcs := testnet.L1EthClients().
 			Running().
 			Subnet(config.Subnet)
 		if len(currentlyRunningEcs) > 0 {
@@ -273,6 +269,7 @@ func (p *PreparedTestnet) prepareExecutionNode(
 // Prepares a beacon client object with all the necessary information
 // to start
 func (p *PreparedTestnet) prepareBeaconNode(
+	ctx context.Context,
 	testnet *Testnet,
 	beaconDef *hivesim.ClientDefinition,
 	config *clients.BeaconClientConfig,
@@ -321,6 +318,15 @@ func (p *PreparedTestnet) prepareBeaconNode(
 		opts = append(opts, hivesim.Params{
 			"HIVE_TAIKO_ETH1_RPC_ADDRS": strings.Join(engineAddrs, ","),
 		})
+
+		currentlyRunningBcs := testnet.BeaconClients().Running()
+		if len(currentlyRunningBcs) > 0 {
+			if bootnodeENRs, err := currentlyRunningBcs.ENRs(ctx); err != nil {
+				return nil, fmt.Errorf("failed to get ENR as bootnode for every beacon node: %v", err)
+			} else if bootnodeENRs != "" {
+				opts = append(opts, hivesim.Params{"HIVE_ETH2_BOOTNODE_ENRS": bootnodeENRs})
+			}
+		}
 
 		return opts, nil
 	}
@@ -393,6 +399,12 @@ func (p *PreparedTestnet) prepareTaikoGethClient(
 		opts = append(opts, hivesim.Params{
 			"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp,%d/tcp,%d/tcp", clients.EthHttpPort, clients.EthWSPort, clients.EthEngineRPC),
 		})
+
+		bootnode, err := testnet.L2EthClients().Running().Enodes()
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, hivesim.Params{"HIVE_BOOTNODE": bootnode})
 
 		return opts, nil
 	}

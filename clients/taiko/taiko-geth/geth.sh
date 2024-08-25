@@ -13,6 +13,7 @@ fi
 
 echo "Starting taiko geth..."
 geth \
+  --bootnodes="$HIVE_BOOTNODE" \
   --taiko \
   --datadir=/geth/data \
   --networkid="$HIVE_NETWORK_ID" \

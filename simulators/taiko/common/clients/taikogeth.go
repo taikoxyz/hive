@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"
 	"math/big"
+	"strings"
 )
 
 // L1Origin represents a L1Origin of a L2 block.
@@ -76,4 +77,33 @@ func (t *TaikoGethClient) L1OriginByID(ctx context.Context, blockID *big.Int) (*
 	}
 
 	return res, nil
+}
+
+type L2EthClients []*TaikoGethClient
+
+func (all L2EthClients) Running() L2EthClients {
+	res := make(L2EthClients, 0)
+	for _, ec := range all {
+		if ec.IsRunning() {
+			res = append(res, ec)
+		}
+	}
+	return res
+}
+
+func (all L2EthClients) Enodes() (string, error) {
+	if len(all) == 0 {
+		return "", nil
+	}
+	enodes := make([]string, 0)
+	for _, en := range all {
+		if en.IsRunning() {
+			enode, err := en.GetEnodeURL()
+			if err != nil {
+				return "", err
+			}
+			enodes = append(enodes, enode)
+		}
+	}
+	return strings.Join(enodes, ","), nil
 }

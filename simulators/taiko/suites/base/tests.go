@@ -37,7 +37,7 @@ func init() {
 	)
 }
 
-func Suite(clients clients.ClientsByRole) hivesim.Suite {
+func Suite(clients clients.ClientGroups) hivesim.Suite {
 	// Load params.yml
 	beaconConfig, err := params.UnmarshalConfig(taparams.ConfigContent, nil)
 	if err != nil {

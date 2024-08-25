@@ -18,7 +18,12 @@ func TestCC(t *testing.T) {
 		{
 			Name:    "go-ethereum",
 			Version: "client-1-version",
-			Meta:    hivesim.ClientMetadata{Roles: []string{"anvil"}},
+			Meta:    hivesim.ClientMetadata{Roles: []string{"eth1"}},
+		},
+		{
+			Name:    "go-ethereum",
+			Version: "client-1-version",
+			Meta:    hivesim.ClientMetadata{Roles: []string{"eth1"}},
 		},
 	}
 

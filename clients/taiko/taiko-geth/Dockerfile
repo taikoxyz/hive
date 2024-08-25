@@ -1,7 +1,7 @@
 ARG baseimage=us-docker.pkg.dev/evmchain/images/taiko-geth
 ARG tag=taiko
 
-FROM $baseimage:$tag as builder
+FROM $baseimage:$tag AS builder
 
 FROM alpine:3.20.2
 COPY --from=builder /usr/local/bin/geth /usr/local/bin/geth
@@ -13,6 +13,7 @@ WORKDIR /geth
 
 # Inject the startup script.
 ADD geth.sh .
+ADD enode.sh .
 
 # Export the usual networking ports to allow outside access to the node
 EXPOSE 8545 8546 8551 30303 30303/udp

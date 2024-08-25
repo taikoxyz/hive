@@ -14,6 +14,7 @@ WORKDIR /geth
 
 COPY common.sh .
 COPY geth.sh .
+COPY enode.sh .
 
 RUN chmod +x /geth/geth.sh
 

@@ -34,6 +34,7 @@ fi
 
 echo "Starting geth..."
 geth \
+  --bootnodes="$HIVE_BOOTNODE" \
   --http \
   --http.api=debug,eth,net,web3,txpool,miner \
   --http.addr=0.0.0.0 \

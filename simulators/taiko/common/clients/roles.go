@@ -13,7 +13,8 @@ var (
 	Driver    Role = "driver"
 	Proposer  Role = "proposer"
 	Prover    Role = "prover"
-	Roles          = map[Role]bool{
+
+	Roles = map[Role]bool{
 		Anvil:     true,
 		Eth1:      true,
 		Beacon:    true,
@@ -25,18 +26,29 @@ var (
 	}
 )
 
-type ClientsByRole map[Role]*hivesim.ClientDefinition
+type ClientGroups []map[Role]*hivesim.ClientDefinition
 
 func GetClientsByRole(
 	available []*hivesim.ClientDefinition,
-) ClientsByRole {
-	var roleNodes = ClientsByRole{}
+) ClientGroups {
+	var (
+		clientGroups ClientGroups
+		group        = make(map[Role]*hivesim.ClientDefinition)
+	)
+
 	for _, client := range available {
 		for _, role := range client.Meta.Roles {
-			if _, ok := Roles[Role(role)]; ok {
-				roleNodes[Role(role)] = client
+			if _, ok := Roles[Role(role)]; !ok {
+				continue
+			}
+			if _, ok := group[Role(role)]; ok {
+				clientGroups = append(clientGroups, group)
+				group = make(map[Role]*hivesim.ClientDefinition)
+			} else {
+				group[Role(role)] = client
 			}
 		}
 	}
-	return roleNodes
+
+	return clientGroups
 }

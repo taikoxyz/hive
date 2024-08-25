@@ -5,7 +5,6 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/prysmaticlabs/prysm/v4/beacon-chain/state"
 	"github.com/prysmaticlabs/prysm/v4/consensus-types/primitives"
-	ethpb "github.com/prysmaticlabs/prysm/v4/proto/prysm/v1alpha1"
 	"net"
 	"taiko/common/clients"
 	consensus_config "taiko/common/config/consensus"
@@ -16,7 +15,6 @@ import (
 	exec_client "github.com/marioevz/eth-clients/clients/execution"
 	"github.com/protolambda/zrnt/eth2/beacon/common"
 	execution_config "taiko/common/config/execution"
-	"taiko/common/utils"
 )
 
 type Testnet struct {
@@ -30,18 +28,6 @@ type Testnet struct {
 	spec *consensus_config.Spec
 	// Execution chain configuration and genesis info
 	executionGenesis *execution_config.ExecutionGenesis
-	// Consensus genesis state
-	//eth2GenesisState common.BeaconState
-
-	// Blobber
-	//blobber *blobber.Blobber
-
-	// Test configuration
-	maxConsecutiveErrorsOnWaits int
-
-	// Validators
-	Validators      []*ethpb.Validator
-	ValidatorGroups map[string]*utils.Validators
 }
 
 type ActiveSpec struct {
@@ -125,7 +111,7 @@ func (t *Testnet) ExecutionGenesis() *core.Genesis {
 func StartTestnet(
 	parentCtx context.Context,
 	t *hivesim.T,
-	clientsByRole clients.ClientsByRole,
+	clientGroups clients.ClientGroups,
 	config *Config,
 	generateState *execution_config.GenesisState,
 ) *Testnet {
@@ -154,108 +140,110 @@ func StartTestnet(
 		simulatorIP = net.ParseIP(simIPStr)
 	}
 
-	nodeIndex := 0
-	testnet.Nodes = []*clients.Node{{
-		BeaconConfig: generateState.BeaconConfig,
-		Genesis:      generateState.Genesis,
-	}}
-	nodeClient := testnet.Nodes[0]
+	for nodeIndex, clientsByRole := range clientGroups {
+		nodeClient := &clients.Node{
+			Index:        nodeIndex,
+			BeaconConfig: generateState.BeaconConfig,
+			Genesis:      generateState.Genesis,
+		}
+		testnet.Nodes = append(testnet.Nodes, nodeClient)
 
-	// Prepare clients for this node
-	var (
-		anvilDef     = clientsByRole[clients.Anvil]
-		executionDef = clientsByRole[clients.Eth1]
-	)
+		// Prepare clients for this node
+		var (
+			anvilDef     = clientsByRole[clients.Anvil]
+			executionDef = clientsByRole[clients.Eth1]
+		)
 
-	if anvilDef != nil && executionDef != nil {
-		t.Fatalf("Node %d has both anvil and execution clients, only one is allowed", nodeIndex)
-	}
+		if anvilDef != nil && executionDef != nil {
+			t.Fatalf("Node %d has both anvil and execution clients, only one is allowed", nodeIndex)
+		}
 
-	// Prepare the client objects with all the information necessary to
-	// eventually start
-	nodeClient.AnvilClient = prep.prepareAnvilNode(
-		config.Network,
-		testnet,
-		anvilDef,
-	)
-	nodeClient.L1EthClient = prep.prepareExecutionNode(
-		testnet,
-		executionDef,
-		config.Eth1Consensus,
-		clients.ExecutionClientConfig{
-			ClientIndex: nodeIndex,
-			JWTSecret:   ethcommon.HexToHash(config.JWTSecret),
-			Network:     config.Network,
-			ProxyConfig: &clients.ExecutionProxyConfig{
-				Host: simulatorIP,
-				Port: exec_client.PortEngineRPC + nodeIndex,
+		// Prepare the client objects with all the information necessary to
+		// eventually start
+		nodeClient.AnvilClient = prep.prepareAnvilNode(
+			config.Network,
+			testnet,
+			anvilDef,
+		)
+		nodeClient.L1EthClient = prep.prepareExecutionNode(
+			testnet,
+			executionDef,
+			config.Eth1Consensus,
+			clients.ExecutionClientConfig{
+				ClientIndex: nodeIndex,
+				JWTSecret:   ethcommon.HexToHash(config.JWTSecret),
+				Network:     config.Network,
+				ProxyConfig: &clients.ExecutionProxyConfig{
+					Host: simulatorIP,
+					Port: exec_client.PortEngineRPC + nodeIndex,
+				},
 			},
-		},
-	)
+		)
 
-	nodeClient.BeaconClient = prep.prepareBeaconNode(
-		testnet,
-		clientsByRole[clients.Beacon],
-		&clients.BeaconClientConfig{
-			ClientIndex:           nodeIndex,
-			Spec:                  testnet.spec,
-			GenesisValidatorsRoot: &testnet.genesisValidatorsRoot,
-			GenesisTime:           &testnet.genesisTime,
-			Network:               config.Network,
-		},
-		nodeClient.L1EthClient,
-	)
+		nodeClient.BeaconClient = prep.prepareBeaconNode(
+			parentCtx,
+			testnet,
+			clientsByRole[clients.Beacon],
+			&clients.BeaconClientConfig{
+				ClientIndex:           nodeIndex,
+				Spec:                  testnet.spec,
+				GenesisValidatorsRoot: &testnet.genesisValidatorsRoot,
+				GenesisTime:           &testnet.genesisTime,
+				Network:               config.Network,
+			},
+			nodeClient.L1EthClient,
+		)
 
-	nodeClient.ValidatorClient = prep.prepareValidatorClient(
-		testnet,
-		clientsByRole[clients.Validator],
-		nodeClient.BeaconClient,
-	)
+		nodeClient.ValidatorClient = prep.prepareValidatorClient(
+			testnet,
+			clientsByRole[clients.Validator],
+			nodeClient.BeaconClient,
+		)
 
-	nodeClient.L2EthClient = prep.prepareTaikoGethClient(
-		config.Network,
-		testnet,
-		clientsByRole[clients.Eth2],
-	)
-	nodeClient.DriverClient = prep.prepareDriverClient(
-		testnet,
-		clientsByRole[clients.Driver],
-		nodeClient.AnvilClient,
-		nodeClient.L1EthClient,
-		nodeClient.BeaconClient,
-		nodeClient.L2EthClient,
-	)
-	nodeClient.ProposerClient = prep.prepareProposerClient(
-		testnet,
-		clientsByRole[clients.Proposer],
-		nodeClient.AnvilClient,
-		nodeClient.L1EthClient,
-		nodeClient.BeaconClient,
-		nodeClient.L2EthClient,
-	)
-	nodeClient.ProverClient = prep.prepareProverClient(
-		testnet,
-		clientsByRole[clients.Prover],
-		nodeClient.AnvilClient,
-		nodeClient.L1EthClient,
-		nodeClient.BeaconClient,
-		nodeClient.L2EthClient,
-	)
+		nodeClient.L2EthClient = prep.prepareTaikoGethClient(
+			config.Network,
+			testnet,
+			clientsByRole[clients.Eth2],
+		)
+		nodeClient.DriverClient = prep.prepareDriverClient(
+			testnet,
+			clientsByRole[clients.Driver],
+			nodeClient.AnvilClient,
+			nodeClient.L1EthClient,
+			nodeClient.BeaconClient,
+			nodeClient.L2EthClient,
+		)
+		nodeClient.ProposerClient = prep.prepareProposerClient(
+			testnet,
+			clientsByRole[clients.Proposer],
+			nodeClient.AnvilClient,
+			nodeClient.L1EthClient,
+			nodeClient.BeaconClient,
+			nodeClient.L2EthClient,
+		)
+		nodeClient.ProverClient = prep.prepareProverClient(
+			testnet,
+			clientsByRole[clients.Prover],
+			nodeClient.AnvilClient,
+			nodeClient.L1EthClient,
+			nodeClient.BeaconClient,
+			nodeClient.L2EthClient,
+		)
 
-	// Add rest of properties
-	nodeClient.Logging = t
-	nodeClient.Index = nodeIndex
+		// Add rest of properties
+		nodeClient.Logging = t
+		nodeClient.Index = nodeIndex
 
-	// Start the node clients if specified so
-	// Connect to the network if specified
-	if err = nodeClient.CreateNetwork(t, config.Network); err != nil {
-		t.Fatalf("FAIL: Unable to connect to network: %v", err)
+		// Start the node clients if specified so
+		// Connect to the network if specified
+		if err = nodeClient.CreateNetwork(t, config.Network); err != nil {
+			t.Fatalf("FAIL: Unable to connect to network: %v", err)
+		}
+		t.Logf("Starting node %d", nodeIndex)
+		if err = nodeClient.Start(); err != nil {
+			t.Fatalf("FAIL: Unable to start node %d: %v", nodeIndex, err)
+		}
 	}
-	t.Logf("Starting node %d", nodeIndex)
-	if err = nodeClient.Start(); err != nil {
-		t.Fatalf("FAIL: Unable to start node %d: %v", nodeIndex, err)
-	}
-
 	return testnet
 }
 

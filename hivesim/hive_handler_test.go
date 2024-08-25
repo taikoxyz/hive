@@ -14,7 +14,7 @@ func TestHiveFramework(t *testing.T) {
 		BaseDir:         "/Users/huan/projects/taiko/hive",
 		SimPattern:      "taiko",
 		SimTestPattern:  "taiko-deneb-testnet/test-deneb-genesis",
-		Clients: []string{
+		ClientGroups: [][]string{{
 			"taiko/geth",
 			"taiko/prysm-bn",
 			"taiko/prysm-vc",
@@ -22,7 +22,7 @@ func TestHiveFramework(t *testing.T) {
 			"taiko/driver",
 			"taiko/proposer",
 			"taiko/prover",
-		},
+		}},
 	})
 	assert.NoError(t, err)
 

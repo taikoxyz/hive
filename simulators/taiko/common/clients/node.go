@@ -203,11 +203,21 @@ func (n *Node) IsRunning() bool {
 type Nodes []*Node
 
 // Return all execution clients, even the ones not currently running
-func (all Nodes) ExecutionClients() ExecutionClients {
+func (all Nodes) L1EthClients() ExecutionClients {
 	en := make(ExecutionClients, 0)
 	for _, n := range all {
 		if n.L1EthClient != nil {
 			en = append(en, n.L1EthClient)
+		}
+	}
+	return en
+}
+
+func (all Nodes) L2EthClients() L2EthClients {
+	en := make(L2EthClients, 0)
+	for _, n := range all {
+		if n.L2EthClient != nil {
+			en = append(en, n.L2EthClient)
 		}
 	}
 	return en

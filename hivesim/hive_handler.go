@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/ethereum/hive/internal/libdocker"
@@ -65,7 +64,8 @@ type HiveConfig struct {
 	SimTimeLimit   time.Duration
 	SimLogLevel    int
 
-	Clients       []string
+	// Each group of clients is a node.
+	ClientGroups  [][]string
 	ClientTimeOut time.Duration
 
 	BaseDir string
@@ -114,7 +114,19 @@ func NewHiveFramework(config *HiveConfig) (*HiveFramework, error) {
 	if err != nil {
 		return nil, err
 	}
-	clients, err := libhive.ParseClientList(&inv, strings.Join(cfg.Clients, ","))
+
+	// Collect all clients from the clients group.
+	if len(cfg.ClientGroups) == 0 {
+		return nil, fmt.Errorf("no clients group provided")
+	}
+	var client string
+	for _, clients := range cfg.ClientGroups {
+		for _, cli := range clients {
+			client += cli + ","
+		}
+	}
+
+	clients, err := libhive.ParseClientList(&inv, client[:len(client)-1])
 	if err != nil {
 		return nil, err
 	}
