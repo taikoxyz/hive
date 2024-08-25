@@ -264,7 +264,7 @@ func (sim *Simulation) ClientEnodeURLNetwork(testSuite SuiteID, test TestID, nod
 		return "", err
 	}
 	if resp.ExitCode != 0 {
-		return "", errors.New("unexpected exit code for enode.sh")
+		return "", fmt.Errorf("unexpected exit code for enode.sh, stdout: %s, stderr: %s, exit_code: %d", resp.Stdout, resp.Stderr, resp.ExitCode)
 	}
 
 	// Check that the container returned a valid enode URL.

@@ -340,7 +340,6 @@ func validateClients(inv *Inventory, list []ClientDesignator) error {
 	}
 
 	// Assign nametags.
-	usednames := make(set[string], len(list))
 	for i := range list {
 		c := &list[i]
 		if occurrences[c.Client] == 1 {
@@ -355,11 +354,6 @@ func validateClients(inv *Inventory, list []ClientDesignator) error {
 				c.Nametag = c.buildString()
 			}
 		}
-		name := c.Name()
-		if usednames.contains(name) {
-			return fmt.Errorf("duplicate client name %q", name)
-		}
-		usednames.add(c.Name())
 	}
 
 	return nil
