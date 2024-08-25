@@ -30,9 +30,8 @@ func init() {
 			`,
 			DenebGenesis: true,
 			GenesisExecutionWithdrawalCredentialsShares: 1,
-			WaitForFinality: true,
-			NodeCount:       1,
-			ValidatorCount:  5,
+			NodeCount:      1,
+			ValidatorCount: 5,
 		},
 	)
 }

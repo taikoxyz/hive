@@ -458,6 +458,9 @@ func (api *simAPI) execInClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	data, _ := json.Marshal(nodeInfo)
+	fmt.Println("hive proxy api", "node_info", string(data))
+
 	// Parse and validate the exec request.
 	commandline, err := parseExecRequest(r.Body)
 	if err != nil {

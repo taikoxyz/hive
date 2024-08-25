@@ -147,6 +147,7 @@ func StartTestnet(
 			Genesis:      generateState.Genesis,
 		}
 		testnet.Nodes = append(testnet.Nodes, nodeClient)
+		firstNode := testnet.Nodes[0]
 
 		// Prepare clients for this node
 		var (
@@ -208,25 +209,27 @@ func StartTestnet(
 		nodeClient.DriverClient = prep.prepareDriverClient(
 			testnet,
 			clientsByRole[clients.Driver],
-			nodeClient.AnvilClient,
-			nodeClient.L1EthClient,
-			nodeClient.BeaconClient,
+			firstNode.AnvilClient,
+			firstNode.L1EthClient,
+			firstNode.BeaconClient,
 			nodeClient.L2EthClient,
 		)
 		nodeClient.ProposerClient = prep.prepareProposerClient(
 			testnet,
 			clientsByRole[clients.Proposer],
-			nodeClient.AnvilClient,
-			nodeClient.L1EthClient,
-			nodeClient.BeaconClient,
+			config.ProposerKeyList[nodeIndex],
+			firstNode.AnvilClient,
+			firstNode.L1EthClient,
+			firstNode.BeaconClient,
 			nodeClient.L2EthClient,
 		)
 		nodeClient.ProverClient = prep.prepareProverClient(
 			testnet,
 			clientsByRole[clients.Prover],
-			nodeClient.AnvilClient,
-			nodeClient.L1EthClient,
-			nodeClient.BeaconClient,
+			config.ProverKeyList[nodeIndex],
+			firstNode.AnvilClient,
+			firstNode.L1EthClient,
+			firstNode.BeaconClient,
 			nodeClient.L2EthClient,
 		)
 

@@ -43,11 +43,14 @@ func GetClientsByRole(
 			}
 			if _, ok := group[Role(role)]; ok {
 				clientGroups = append(clientGroups, group)
-				group = make(map[Role]*hivesim.ClientDefinition)
+				group = map[Role]*hivesim.ClientDefinition{Role(role): client}
 			} else {
 				group[Role(role)] = client
 			}
 		}
+	}
+	if len(group) > 0 {
+		clientGroups = append(clientGroups, group)
 	}
 
 	return clientGroups

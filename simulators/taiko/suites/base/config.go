@@ -4,7 +4,6 @@ import (
 	"fmt"
 	execution_config "taiko/common/config/execution"
 
-	beacon "github.com/protolambda/zrnt/eth2/beacon/common"
 	"taiko/common/testnet"
 	"taiko/common/utils"
 )
@@ -28,14 +27,6 @@ type BaseTestSpec struct {
 	GenesisExecutionWithdrawalCredentialsShares int
 	GenesisExitedShares                         int
 	GenesisSlashedShares                        int
-
-	// Verifications
-	EpochsAfterFork beacon.Epoch
-	WaitForBlobs    bool
-	WaitForFinality bool
-
-	// Extra Gwei
-	ExtraGwei beacon.Gwei
 }
 
 var (
@@ -66,6 +57,20 @@ func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
 		LogLevel:   3,
 		JWTSecret:  "7365637265747365637265747365637265747365637265747365637265747365",
 		FeeReceipt: "a0Ee7A142d267C1f36714E4a8F75612F20a79720",
+		ProposerKeyList: []string{
+			"0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+			"0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d",
+			"0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a",
+			"0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6",
+			"0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a",
+		},
+		ProverKeyList: []string{
+			"0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba",
+			"0x92db14e403b83dfe3df233f83dfa3a0d7096f21ca9b0d6d6b8d88b2b4ec1564e",
+			"0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356",
+			"0xdbda1821b80551c9d65939329250298aa3472ba22feea921c0cf5d620ea67b97",
+			"0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6",
+		},
 	}
 }
 
@@ -111,10 +116,6 @@ func (ts BaseTestSpec) GetDescription() *utils.Description {
 	desc.Add(utils.CategoryVerificationsConsensusClient, `
 	  - For each blob transaction on the execution chain, the blob sidecars are available for the beacon block at the same height
 	  - The beacon block lists the correct commitments for each blob`)
-	if ts.WaitForFinality {
-		desc.Add(utils.CategoryVerificationsConsensusClient, `
-		- After all other verifications are done, the beacon chain is able to finalize the current epoch`)
-	}
 
 	return desc
 }

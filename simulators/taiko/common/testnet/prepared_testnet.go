@@ -108,6 +108,7 @@ func PrepareTestnet(
 		// Add for anvil.
 		hivesim.Params{
 			"HIVE_TAIKO2_BLOCK_TIME": fmt.Sprintf("%d", spec.SecondsPerSlot),
+			"HIVE_CHECK_LIVE_PORT":   fmt.Sprintf("%d", clients.EthHttpPort),
 		},
 	)
 
@@ -124,6 +125,9 @@ func PrepareTestnet(
 		commonParams,
 		beaconParams,
 		networkParams,
+		hivesim.Params{
+			"HIVE_CHECK_LIVE_PORT": fmt.Sprintf("%d", clients.BeaconPort),
+		},
 	)
 
 	validatorParams := hivesim.Params{
@@ -137,8 +141,9 @@ func PrepareTestnet(
 		networkParams,
 	)
 
-	taikoGethOpts := hivesim.Bundle(commonParams, hivesim.Params{
-		"HIVE_LOGLEVEL": fmt.Sprintf("%d", cfg.LogLevel),
+	taikoGethOpts := hivesim.Bundle(commonParams, networkParams, hivesim.Params{
+		"HIVE_LOGLEVEL":        fmt.Sprintf("%d", cfg.LogLevel),
+		"HIVE_CHECK_LIVE_PORT": fmt.Sprintf("%d", clients.EthHttpPort),
 	})
 
 	taikoClientOpts := hivesim.Bundle(
@@ -156,7 +161,7 @@ func PrepareTestnet(
 		beaconOpts:       beaconOpts,
 		validatorOpts:    validatorOpts,
 
-		taikoGethOpts: hivesim.Bundle(taikoGethOpts, networkParams),
+		taikoGethOpts: taikoGethOpts,
 		driverOpts:    taikoClientOpts,
 		proposerOpts:  taikoClientOpts,
 		proverOpts:    taikoClientOpts,
@@ -192,12 +197,13 @@ func (p *PreparedTestnet) prepareAnvilNode(
 		Port:                 clients.AnvilPort,
 	}
 	cm.OptionsGenerator = func() ([]hivesim.StartOption, error) {
-		opts := []hivesim.StartOption{
-			p.executionOpts,
-			hivesim.Params{ // Expose the anvil port to the host.
-				"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp", clients.AnvilPort),
-			},
-		}
+		opts := []hivesim.StartOption{p.executionOpts}
+
+		// Expose the eth1 ports to the host.
+		//opts = append(opts, hivesim.Params{
+		//	"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp", clients.AnvilPort),
+		//})
+
 		return opts, nil
 	}
 
@@ -239,22 +245,10 @@ func (p *PreparedTestnet) prepareExecutionNode(
 		opts = append(opts, consensus.HiveParams(config.ClientIndex))
 
 		// Expose the eth1 ports to the host.
-		opts = append(opts, hivesim.Params{
-			"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp,%d/tcp", clients.EthHttpPort, clients.EthWSPort),
-		})
+		//opts = append(opts, hivesim.Params{
+		//	"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp,%d/tcp", clients.EthHttpPort, clients.EthWSPort),
+		//})
 
-		currentlyRunningEcs := testnet.L1EthClients().
-			Running().
-			Subnet(config.Subnet)
-		if len(currentlyRunningEcs) > 0 {
-			bootnode, err := currentlyRunningEcs.Enodes()
-			if err != nil {
-				return nil, err
-			}
-
-			// Make the client connect to the first eth1 node, as a bootnode for the eth1 net
-			opts = append(opts, hivesim.Params{"HIVE_BOOTNODE": bootnode})
-		}
 		return opts, nil
 	}
 
@@ -303,9 +297,9 @@ func (p *PreparedTestnet) prepareBeaconNode(
 		opts := []hivesim.StartOption{p.beaconOpts}
 
 		// Expose the eth1 ports to the host.
-		opts = append(opts, hivesim.Params{
-			"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp", clients.BeaconPort),
-		})
+		//opts = append(opts, hivesim.Params{
+		//	"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp", clients.BeaconPort),
+		//})
 
 		// Hook up beacon node to (maybe multiple) eth1 nodes
 		var engineAddrs []string
@@ -318,15 +312,6 @@ func (p *PreparedTestnet) prepareBeaconNode(
 		opts = append(opts, hivesim.Params{
 			"HIVE_TAIKO_ETH1_RPC_ADDRS": strings.Join(engineAddrs, ","),
 		})
-
-		currentlyRunningBcs := testnet.BeaconClients().Running()
-		if len(currentlyRunningBcs) > 0 {
-			if bootnodeENRs, err := currentlyRunningBcs.ENRs(ctx); err != nil {
-				return nil, fmt.Errorf("failed to get ENR as bootnode for every beacon node: %v", err)
-			} else if bootnodeENRs != "" {
-				opts = append(opts, hivesim.Params{"HIVE_ETH2_BOOTNODE_ENRS": bootnodeENRs})
-			}
-		}
 
 		return opts, nil
 	}
@@ -396,11 +381,13 @@ func (p *PreparedTestnet) prepareTaikoGethClient(
 		opts := []hivesim.StartOption{p.taikoGethOpts}
 
 		// Expose the eth1 ports to the host.
-		opts = append(opts, hivesim.Params{
-			"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp,%d/tcp,%d/tcp", clients.EthHttpPort, clients.EthWSPort, clients.EthEngineRPC),
-		})
+		//opts = append(opts, hivesim.Params{
+		//	"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp,%d/tcp,%d/tcp", clients.EthHttpPort, clients.EthWSPort, clients.EthEngineRPC),
+		//})
 
-		bootnode, err := testnet.L2EthClients().Running().Enodes()
+		l2Clients := testnet.L2EthClients()
+		fmt.Println("prepare taiko client, l2 clients length", len(l2Clients), len(l2Clients.Running()))
+		bootnode, err := l2Clients.Running().Enodes()
 		if err != nil {
 			return nil, err
 		}
@@ -451,6 +438,7 @@ func (p *PreparedTestnet) prepareDriverClient(
 func (p *PreparedTestnet) prepareProposerClient(
 	testnet *Testnet,
 	proposerDef *hivesim.ClientDefinition,
+	proposerKey string,
 	anvilClient *clients.AnvilClient,
 	l1Client *clients.ExecutionClient,
 	beaconClient *clients.BeaconClient,
@@ -472,7 +460,8 @@ func (p *PreparedTestnet) prepareProposerClient(
 		OptionsGenerator: func() ([]hivesim.StartOption, error) {
 			opts := []hivesim.StartOption{p.proposerOpts, getEnvs(anvilClient, l1Client, beaconClient, l2Client)}
 			opts = append(opts, hivesim.Params{
-				"EPOCH_INTERVAL": "3s",
+				"EPOCH_INTERVAL":       "3s",
+				"L1_PROPOSER_PRIV_KEY": proposerKey,
 			})
 			return opts, nil
 		},
@@ -486,6 +475,7 @@ func (p *PreparedTestnet) prepareProposerClient(
 func (p *PreparedTestnet) prepareProverClient(
 	testnet *Testnet,
 	proverDef *hivesim.ClientDefinition,
+	proverKey string,
 	anvilClient *clients.AnvilClient,
 	l1Client *clients.ExecutionClient,
 	beaconClient *clients.BeaconClient,
@@ -506,6 +496,9 @@ func (p *PreparedTestnet) prepareProverClient(
 		HiveClientDefinition: proverDef,
 		OptionsGenerator: func() ([]hivesim.StartOption, error) {
 			opts := []hivesim.StartOption{p.proverOpts, getEnvs(anvilClient, l1Client, beaconClient, l2Client)}
+
+			opts = append(opts, hivesim.Params{"L1_PROVER_PRIV_KEY": proverKey})
+
 			return opts, nil
 		},
 	}

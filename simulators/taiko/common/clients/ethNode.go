@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
+	"math/big"
 	"time"
 )
 
@@ -121,11 +122,8 @@ func (ec *EthNode) WaitTargetNumber(ctx context.Context, timeout time.Duration, 
 		case <-time.After(timeout):
 			return fmt.Errorf("reach timeout but %s is not ready", ec.ClientType())
 		default:
-			num, err := client.BlockNumber(ctx)
-			if err != nil {
-				continue
-			}
-			if num == number {
+			_, err := client.HeaderByNumber(ctx, new(big.Int).SetUint64(number))
+			if err == nil {
 				return nil
 			}
 		}

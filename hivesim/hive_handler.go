@@ -19,7 +19,6 @@ var (
 		SimLogLevel:    4,
 		ClientTimeOut:  time.Minute * 3,
 		BaseDir:        ".",
-		DockerPull:     true,
 	}
 )
 
@@ -41,9 +40,6 @@ func hiveConfigWithDefault(cfg *HiveConfig) *HiveConfig {
 	}
 	if cfg.BaseDir == "" {
 		cfg.BaseDir = DefaultHiveConfig.BaseDir
-	}
-	if cfg.DockerPull == false {
-		cfg.DockerPull = DefaultHiveConfig.DockerPull
 	}
 	return cfg
 }
