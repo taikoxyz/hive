@@ -5,9 +5,6 @@
 CONTAINER_IP=$(hostname -i | awk '{print $1;}')
 echo "anvil CONTAINER_IP: $CONTAINER_IP"
 
-# Generate the version.txt file.
-RUN anvil --version >/version.txt
-
 if [ -f /hive/input/genesis.json ]; then
   echo genesis.json:
   cat /hive/input/genesis.json
