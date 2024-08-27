@@ -7,13 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//"taiko/prysm-bn",
-//"taiko/prysm-vc",
-//"taiko/taiko-geth",
-//"taiko/driver",
-//"taiko/proposer",
-//"taiko/prover",
-
 func TestHiveFramework(t *testing.T) {
 	handler, err := NewHiveFramework(&HiveConfig{
 		BuildOutput:     true,

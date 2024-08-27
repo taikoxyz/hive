@@ -1,8 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
 	"github.com/ethereum/hive/hivesim"
 	"taiko/common/clients"
 	suite_base "taiko/suites/base"
@@ -17,18 +15,10 @@ func main() {
 		panic(err)
 	}
 
-	// TODO
-	data, _ := json.Marshal(clientTypes)
-	fmt.Println("client types: ", string(data))
-
 	clientsByRole := clients.GetClientsByRole(clientTypes)
 	if clientsByRole == nil {
 		panic("failed to create clients by role")
 	}
-
-	// TODO
-	data, _ = json.Marshal(clientsByRole)
-	fmt.Println("clients by role: ", string(data))
 
 	hivesim.MustRunSuite(sim, suite_base.Suite(clientsByRole))
 	hivesim.MustRunSuite(sim, suite_reorg.Suite(clientsByRole))

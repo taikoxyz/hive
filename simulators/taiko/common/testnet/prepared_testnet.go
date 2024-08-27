@@ -385,9 +385,7 @@ func (p *PreparedTestnet) prepareTaikoGethClient(
 		//	"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp,%d/tcp,%d/tcp", clients.EthHttpPort, clients.EthWSPort, clients.EthEngineRPC),
 		//})
 
-		l2Clients := testnet.L2EthClients()
-		fmt.Println("prepare taiko client, l2 clients length", len(l2Clients), len(l2Clients.Running()))
-		bootnode, err := l2Clients.Running().Enodes()
+		bootnode, err := testnet.L2EthClients().Running().Enodes()
 		if err != nil {
 			return nil, err
 		}
