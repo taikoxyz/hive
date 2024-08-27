@@ -27,6 +27,10 @@ func TestHiveFramework(t *testing.T) {
 				"taiko/taiko-geth",
 				"taiko/driver",
 			},
+			{
+				"taiko/taiko-geth",
+				"taiko/driver",
+			},
 		},
 	})
 	assert.NoError(t, err)
