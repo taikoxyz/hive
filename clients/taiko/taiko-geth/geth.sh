@@ -13,22 +13,22 @@ fi
 
 echo "Starting taiko geth..."
 geth \
+  --bootnodes="$HIVE_BOOTNODE" \
   --taiko \
   --datadir=/geth/data \
   --networkid="$HIVE_NETWORK_ID" \
   --verbosity="$HIVE_LOGLEVEL" \
   --state.scheme=path \
   --http \
-  --http.api=debug,eth,net,web3,txpool,miner,taiko \
+  --http.api=admin,debug,eth,net,web3,txpool,miner,taiko \
   --http.addr=0.0.0.0 \
   --http.vhosts=* \
   --http.corsdomain=* \
   --ws \
-  --ws.api=debug,eth,net,web3,txpool,miner,taiko \
+  --ws.api=admin,debug,eth,net,web3,txpool,miner,taiko \
   --ws.addr=0.0.0.0 \
   --ws.origins=* \
   --authrpc.vhosts=* \
   --authrpc.addr=0.0.0.0 \
   --authrpc.jwtsecret=/geth/jwt.hex \
-  --allow-insecure-unlock \
-  --nodiscover
+  --allow-insecure-unlock

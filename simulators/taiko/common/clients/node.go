@@ -87,13 +87,13 @@ func (n *Node) Start() error {
 	}
 
 	// Deploy contracts if needed
-	if n.DriverClient != nil || n.ProposerClient != nil || n.ProverClient != nil {
+	if n.Index == 0 && (n.DriverClient != nil || n.ProposerClient != nil || n.ProverClient != nil) {
 		if n.AnvilClient != nil {
 			fmt.Printf("Deploying contracts in %s node, url: %s\n", n.AnvilClient.ClientType(), n.AnvilClient.HttpURL())
 			if err := utils.DeployContracts(context.Background(), n.AnvilClient.HttpURL()); err != nil {
 				return err
 			}
-		} else {
+		} else if n.L1EthClient != nil {
 			fmt.Printf("Deploying contracts in %s node, url: %s\n", n.L1EthClient.ClientType(), n.L1EthClient.HttpURL())
 			if err := utils.DeployContracts(context.Background(), n.L1EthClient.HttpURL()); err != nil {
 				return err
@@ -203,11 +203,21 @@ func (n *Node) IsRunning() bool {
 type Nodes []*Node
 
 // Return all execution clients, even the ones not currently running
-func (all Nodes) ExecutionClients() ExecutionClients {
+func (all Nodes) L1EthClients() ExecutionClients {
 	en := make(ExecutionClients, 0)
 	for _, n := range all {
 		if n.L1EthClient != nil {
 			en = append(en, n.L1EthClient)
+		}
+	}
+	return en
+}
+
+func (all Nodes) L2EthClients() L2EthClients {
+	en := make(L2EthClients, 0)
+	for _, n := range all {
+		if n.L2EthClient != nil {
+			en = append(en, n.L2EthClient)
 		}
 	}
 	return en

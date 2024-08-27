@@ -34,13 +34,14 @@ fi
 
 echo "Starting geth..."
 geth \
+  --bootnodes="$HIVE_BOOTNODE" \
   --http \
-  --http.api=debug,eth,net,web3,txpool,miner \
+  --http.api=admin,debug,eth,net,web3,txpool,miner \
   --http.addr=0.0.0.0 \
   --http.vhosts=* \
   --http.corsdomain=* \
   --ws \
-  --ws.api=debug,eth,net,web3,txpool,miner \
+  --ws.api=admin,debug,eth,net,web3,txpool,miner \
   --ws.addr=0.0.0.0 \
   --ws.origins=* \
   --authrpc.vhosts=* \

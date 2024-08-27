@@ -24,7 +24,7 @@ type TestSpec interface {
 // SuiteHydrate Add all tests to the suite
 func SuiteHydrate(
 	suite *hivesim.Suite,
-	clients clients.ClientsByRole,
+	clients clients.ClientGroups,
 	tests []TestSpec,
 	generateState *execution_config.GenesisState,
 ) {

@@ -34,14 +34,13 @@ func init() {
 			`,
 				DenebGenesis: true,
 				GenesisExecutionWithdrawalCredentialsShares: 1,
-				WaitForFinality: true,
-				NodeCount:       1,
-				ValidatorCount:  5,
+				NodeCount:      1,
+				ValidatorCount: 5,
 			},
 		},
 	)
 }
-func Suite(clients clients.ClientsByRole) hivesim.Suite {
+func Suite(clients clients.ClientGroups) hivesim.Suite {
 	// Load params.yml
 	beaconConfig, err := params.UnmarshalConfig(taparams.ConfigContent, nil)
 	if err != nil {

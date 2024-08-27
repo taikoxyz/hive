@@ -2,25 +2,59 @@ package suite_base
 
 import (
 	"context"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/hive/hivesim"
+	"math/big"
+	"sync"
 	"taiko/common/clients"
 	tn "taiko/common/testnet"
 	"time"
 )
 
 func (ts BaseTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Testnet) {
+	wg := sync.WaitGroup{}
+	wg.Add(len(testnet.Nodes))
+	target := uint64(5)
 	for _, node := range testnet.Nodes {
-		ts.verify(ctx, t, node)
+		node := node
+		go func() {
+			defer wg.Done()
+			ts.verify(ctx, t, node, target)
+		}()
+	}
+	wg.Wait()
+
+	var (
+		header *types.Header
+		index  int
+	)
+	for i, node := range testnet.Nodes {
+		if node.L2EthClient == nil {
+			continue
+		}
+		client := node.L2EthClient.EthClient()
+		hd, err := client.HeaderByNumber(ctx, new(big.Int).SetUint64(target))
+		if err != nil {
+			t.Fatalf("failed to get header from [%d]:%s, err: %v", i, node.L1EthClient.ClientType(), err)
+		}
+		if header == nil {
+			header, index = hd, i
+		} else if header.Hash() != hd.Hash() {
+			t.Fatalf("the %d number of %s's hash are different, [%d]:%s != [%d]:%s",
+				target,
+				node.L2EthClient.ClientType(),
+				index, header.Hash().String(),
+				i, hd.Hash().String(),
+			)
+		}
 	}
 }
 
-func (ts BaseTestSpec) verify(ctx context.Context, t *hivesim.T, node *clients.Node) {
+func (ts BaseTestSpec) verify(ctx context.Context, t *hivesim.T, node *clients.Node, targetNumber uint64) {
 	var (
 		anvil = node.AnvilClient
 		l1Eth = node.L1EthClient
 		l2Eth = node.L2EthClient
-
-		targetNumber = uint64(5)
 
 		timeout = time.Second * 60
 	)

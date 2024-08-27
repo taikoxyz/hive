@@ -3,8 +3,8 @@ ARG tag=v1.14.7
 
 FROM $baseimage:$tag AS builder
 
-FROM debian:latest
-
+FROM alpine:3.20.2
+RUN apk add --update bash curl jq
 COPY --from=builder /usr/local/bin/geth /usr/local/bin
 
 # Generate the version.txt file.
