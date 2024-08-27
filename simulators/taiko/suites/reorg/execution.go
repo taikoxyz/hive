@@ -4,16 +4,22 @@ import (
 	"context"
 	"github.com/ethereum/hive/hivesim"
 	"math/big"
+	"taiko/common/clients"
 	tn "taiko/common/testnet"
 	"time"
 )
 
 func (r ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Testnet) {
-	if len(testnet.Nodes) != 1 {
-		t.Fatalf("testnet nodes count is not 1, got: %v", len(testnet.Nodes))
+	if len(testnet.Nodes) == 0 {
+		t.Fatalf("testnet nodes should not empty")
 	}
+	r.reorgAndVerifyFirstCluster(ctx, t, testnet.Nodes[0])
+
+	r.VerifyL2Nodes(ctx, t, r.L2ReorgStartNumber, testnet.Nodes)
+}
+
+func (r ReorgTestSpec) reorgAndVerifyFirstCluster(ctx context.Context, t *hivesim.T, node *clients.Node) {
 	var (
-		node     = testnet.Nodes[0]
 		anvil    = node.AnvilClient
 		driver   = node.DriverClient
 		proposer = node.ProposerClient
@@ -53,7 +59,7 @@ func (r ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 	anvil.Reorg(snapshot)
 
 	// Wait for the reorg to be processed.
-	if err := l2eth.WaitLatestNumber(ctx, timeout, l2ReorgStartNumber); err != nil {
+	if err = l2eth.WaitLatestNumber(ctx, timeout, l2ReorgStartNumber); err != nil {
 		t.Fatalf("failed to wait %s latest number, err: %v", l2eth.ClientType(), err)
 	}
 

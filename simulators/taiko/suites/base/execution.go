@@ -24,30 +24,7 @@ func (ts BaseTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 	}
 	wg.Wait()
 
-	var (
-		header *types.Header
-		index  int
-	)
-	for i, node := range testnet.Nodes {
-		if node.L2EthClient == nil {
-			continue
-		}
-		client := node.L2EthClient.EthClient()
-		hd, err := client.HeaderByNumber(ctx, new(big.Int).SetUint64(target))
-		if err != nil {
-			t.Fatalf("failed to get header from [%d]:%s, err: %v", i, node.L1EthClient.ClientType(), err)
-		}
-		if header == nil {
-			header, index = hd, i
-		} else if header.Hash() != hd.Hash() {
-			t.Fatalf("the %d number of %s's hash are different, [%d]:%s != [%d]:%s",
-				target,
-				node.L2EthClient.ClientType(),
-				index, header.Hash().String(),
-				i, hd.Hash().String(),
-			)
-		}
-	}
+	ts.VerifyL2Nodes(ctx, t, target, testnet.Nodes)
 }
 
 func (ts BaseTestSpec) verify(ctx context.Context, t *hivesim.T, node *clients.Node, targetNumber uint64) {
@@ -92,5 +69,32 @@ func (ts BaseTestSpec) verify(ctx context.Context, t *hivesim.T, node *clients.N
 			t.Fatalf("failed to verify l2geth number, err: %v", err)
 		}
 		t.Logf("%s node is running successfully", l2Eth.ClientType())
+	}
+}
+
+func (ts BaseTestSpec) VerifyL2Nodes(ctx context.Context, t *hivesim.T, target uint64, nodes []*clients.Node) {
+	var (
+		header *types.Header
+		index  int
+	)
+	for i, node := range nodes {
+		if node.L2EthClient == nil {
+			continue
+		}
+		client := node.L2EthClient.EthClient()
+		hd, err := client.HeaderByNumber(ctx, new(big.Int).SetUint64(target))
+		if err != nil {
+			t.Fatalf("failed to get header from [%d]:%s, err: %v", i, node.L1EthClient.ClientType(), err)
+		}
+		if header == nil {
+			header, index = hd, i
+		} else if header.Hash() != hd.Hash() {
+			t.Fatalf("the %d number of %s's hash are different, [%d]:%s != [%d]:%s",
+				target,
+				node.L2EthClient.ClientType(),
+				index, header.Hash().String(),
+				i, hd.Hash().String(),
+			)
+		}
 	}
 }
