@@ -52,6 +52,9 @@ type Config struct {
 
 	JWTSecret  string
 	FeeReceipt string
+
+	// l2 geth syncmode
+	L2SyncMode string
 }
 
 // Choose a configuration value. `b` takes precedence

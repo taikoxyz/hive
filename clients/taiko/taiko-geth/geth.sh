@@ -11,6 +11,25 @@ if [ "$HIVE_TAIKO_JWT_SECRET" != "" ]; then
   echo "$HIVE_TAIKO_JWT_SECRET" >/geth/jwt.hex
 fi
 
+FLAGS="--state.scheme=path"
+# Handle any client mode or operation requests
+if [ "$HIVE_NODETYPE" == "archive" ]; then
+  FLAGS="$FLAGS --syncmode=full --gcmode=archive"
+fi
+if [ "$HIVE_NODETYPE" == "full" ]; then
+  FLAGS="$FLAGS --syncmode=full"
+fi
+if [ "$HIVE_NODETYPE" == "light" ]; then
+  FLAGS="$FLAGS --syncmode=light"
+fi
+if [ "$HIVE_NODETYPE" == "snap" ]; then
+  FLAGS="$FLAGS --syncmode=snap"
+fi
+if [ "$HIVE_NODETYPE" == "" ]; then
+  FLAGS="$FLAGS --syncmode=snap"
+fi
+echo FLAGS: "$FLAGS"
+
 echo "Starting taiko geth..."
 geth \
   --bootnodes="$HIVE_BOOTNODE" \
@@ -18,7 +37,6 @@ geth \
   --datadir=/geth/data \
   --networkid="$HIVE_NETWORK_ID" \
   --verbosity="$HIVE_LOGLEVEL" \
-  --state.scheme=path \
   --http \
   --http.api=admin,debug,eth,net,web3,txpool,miner,taiko \
   --http.addr=0.0.0.0 \
@@ -31,4 +49,5 @@ geth \
   --authrpc.vhosts=* \
   --authrpc.addr=0.0.0.0 \
   --authrpc.jwtsecret=/geth/jwt.hex \
-  --allow-insecure-unlock
+  --allow-insecure-unlock \
+  "$FLAGS"

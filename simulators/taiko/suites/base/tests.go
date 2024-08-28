@@ -12,7 +12,7 @@ import (
 )
 
 var testSuite = hivesim.Suite{
-	Name:        "taiko-deneb-testnet",
+	Name:        "taiko-genesis",
 	DisplayName: "Deneb Testnet",
 	Description: `Collection of test vectors that use a L1EthClient+BeaconNode+ValidatorClient testnet for Cancun+Deneb.`,
 	Location:    "suites/base",
@@ -23,15 +23,18 @@ var Tests = make([]suites.TestSpec, 0)
 func init() {
 	Tests = append(Tests,
 		BaseTestSpec{
-			Name:        "test-deneb-genesis",
-			DisplayName: "Deneb Genesis",
-			Description: `
-			Sanity test to check the beacon clients can start with deneb genesis.
-			`,
-			DenebGenesis: true,
-			GenesisExecutionWithdrawalCredentialsShares: 1,
+			Name:           "l2-full-sync",
+			DisplayName:    "Deneb Genesis",
 			NodeCount:      1,
 			ValidatorCount: 5,
+			L2SyncMode:     "full",
+		},
+		BaseTestSpec{
+			Name:           "l2-snap-sync",
+			DisplayName:    "Deneb Genesis",
+			NodeCount:      1,
+			ValidatorCount: 5,
+			L2SyncMode:     "snap",
 		},
 	)
 }

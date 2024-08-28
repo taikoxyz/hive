@@ -20,13 +20,9 @@ type BaseTestSpec struct {
 
 	// Beacon Chain
 	ValidatorCount uint64
-	DenebGenesis   bool
 
-	// Genesis Validators Configuration
-	// (One every Nth validator, 1 means all validators, 2 means half, etc...)
-	GenesisExecutionWithdrawalCredentialsShares int
-	GenesisExitedShares                         int
-	GenesisSlashedShares                        int
+	// l2 geth syncmode
+	L2SyncMode string
 }
 
 var (
@@ -57,6 +53,7 @@ func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
 		LogLevel:   3,
 		JWTSecret:  "7365637265747365637265747365637265747365637265747365637265747365",
 		FeeReceipt: "a0Ee7A142d267C1f36714E4a8F75612F20a79720",
+		L2SyncMode: ts.L2SyncMode,
 		ProposerKeyList: []string{
 			"0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
 			"0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d",
@@ -88,26 +85,11 @@ func (ts BaseTestSpec) GetDescription() *utils.Description {
 	// Add the testnet config description
 	desc.Add(utils.CategoryTestnetConfiguration, fmt.Sprintf(`
 	  - Node Count: %d
-	  - Validating Node Count: %d
 	  - Validator Key Count: %d
 	  - Validator Key per Node: %d`,
 		ts.GetNodeCount(),
-		ts.GetValidatingNodeCount(),
 		ts.GetValidatorCount(),
 		ts.GetValidatorCount()/uint64(ts.GetValidatingNodeCount()),
-	))
-	if ts.DenebGenesis {
-		desc.Add(utils.CategoryTestnetConfiguration, "\n- Genesis Fork: Deneb")
-	} else {
-		desc.Add(utils.CategoryTestnetConfiguration, "\n- Genesis Fork: Capella")
-	}
-	execCredentialCount := ts.GetExecutionWithdrawalCredentialCount()
-	blsCredentialCount := ts.GetValidatorCount() - execCredentialCount
-	desc.Add(utils.CategoryTestnetConfiguration, fmt.Sprintf(`
-	  - Execution Withdrawal Credentials Count: %d
-	  - BLS Withdrawal Credentials Count: %d`,
-		execCredentialCount,
-		blsCredentialCount,
 	))
 
 	// Add the verifications description
@@ -125,11 +107,4 @@ func (ts BaseTestSpec) GetValidatorCount() uint64 {
 		return ts.ValidatorCount
 	}
 	return DEFAULT_VALIDATOR_COUNT
-}
-
-func (ts BaseTestSpec) GetExecutionWithdrawalCredentialCount() uint64 {
-	if ts.GenesisExecutionWithdrawalCredentialsShares != 0 {
-		return ts.GetValidatorCount() / uint64(ts.GenesisExecutionWithdrawalCredentialsShares)
-	}
-	return 0
 }

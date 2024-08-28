@@ -13,7 +13,7 @@ import (
 )
 
 var testSuite = hivesim.Suite{
-	Name:        "taiko-deneb-reorg",
+	Name:        "taiko-reorg",
 	DisplayName: "Deneb reorg",
 	Description: "",
 	Location:    "suites/reorg",
@@ -24,18 +24,23 @@ var Tests = make([]suites.TestSpec, 0)
 func init() {
 	Tests = append(Tests,
 		ReorgTestSpec{
-			L2ReorgStartNumber: 10,
-			ReorgDepth:         10,
+			L2ReorgStartNumber: 5,
+			ReorgDepth:         5,
 			BaseTestSpec: suite_base.BaseTestSpec{
-				Name:        "test-deneb-reorg",
-				DisplayName: "Deneb Reorg",
-				Description: `
-			Reorg l1eth and test taiko-client work normally.
-			`,
-				DenebGenesis: true,
-				GenesisExecutionWithdrawalCredentialsShares: 1,
+				Name:           "l2-full-sync",
 				NodeCount:      1,
 				ValidatorCount: 5,
+				L2SyncMode:     "full",
+			},
+		},
+		ReorgTestSpec{
+			L2ReorgStartNumber: 5,
+			ReorgDepth:         5,
+			BaseTestSpec: suite_base.BaseTestSpec{
+				Name:           "l2-snap-sync",
+				NodeCount:      1,
+				ValidatorCount: 5,
+				L2SyncMode:     "snap",
 			},
 		},
 	)

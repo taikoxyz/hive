@@ -142,6 +142,7 @@ func PrepareTestnet(
 	)
 
 	taikoGethOpts := hivesim.Bundle(commonParams, networkParams, hivesim.Params{
+		"HIVE_NODETYPE":        cfg.L2SyncMode,
 		"HIVE_LOGLEVEL":        fmt.Sprintf("%d", cfg.LogLevel),
 		"HIVE_CHECK_LIVE_PORT": fmt.Sprintf("%d", clients.EthHttpPort),
 	})
