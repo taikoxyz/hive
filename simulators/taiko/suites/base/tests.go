@@ -23,18 +23,12 @@ var Tests = make([]suites.TestSpec, 0)
 func init() {
 	Tests = append(Tests,
 		BaseTestSpec{
-			Name:           "l2-full-sync",
-			DisplayName:    "Deneb Genesis",
-			NodeCount:      1,
-			ValidatorCount: 5,
-			L2SyncMode:     "full",
+			Name:       "l2-full-sync",
+			L2SyncMode: "full",
 		},
 		BaseTestSpec{
-			Name:           "l2-snap-sync",
-			DisplayName:    "Deneb Genesis",
-			NodeCount:      1,
-			ValidatorCount: 5,
-			L2SyncMode:     "snap",
+			Name:       "l2-snap-sync",
+			L2SyncMode: "snap",
 		},
 	)
 }

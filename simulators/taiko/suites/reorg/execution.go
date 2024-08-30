@@ -4,18 +4,22 @@ import (
 	"context"
 	"github.com/ethereum/hive/hivesim"
 	"math/big"
+	"math/rand/v2"
 	"taiko/common/clients"
 	tn "taiko/common/testnet"
 	"time"
 )
 
 func (r ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Testnet) {
-	if len(testnet.Nodes) == 0 {
-		t.Fatalf("testnet nodes should not empty")
+	for i, node := range testnet.Nodes {
+		if err := node.Start(); err != nil {
+			t.Fatalf("ReorgTestSpec failed to start node[%d], err: %v", i, err)
+		}
 	}
+
 	r.reorgAndVerifyFirstCluster(ctx, t, testnet.Nodes[0])
 
-	r.VerifyL2Nodes(ctx, t, r.L2ReorgStartNumber, testnet.Nodes)
+	r.VerifyL2Nodes(ctx, t, r.L2TargetNumber, testnet.Nodes)
 }
 
 func (r ReorgTestSpec) reorgAndVerifyFirstCluster(ctx context.Context, t *hivesim.T, node *clients.Node) {
@@ -27,9 +31,14 @@ func (r ReorgTestSpec) reorgAndVerifyFirstCluster(ctx context.Context, t *hivesi
 		l2eth    = node.L2EthClient
 
 		timeout            = time.Second * 60
-		l2ReorgStartNumber = r.L2ReorgStartNumber
+		l2ReorgStartNumber = r.L2TargetNumber
 		reorgDepth         = r.ReorgDepth
 	)
+	if reorgDepth == 0 {
+		// random [5, 100) value
+		reorgDepth = rand.Uint64N(100-10) + 10
+	}
+
 	if anvil == nil || driver == nil || proposer == nil || prover == nil || l2eth == nil {
 		t.Fatalf("anvil, driver, proposer, prover or l2eth client is nil!")
 	}

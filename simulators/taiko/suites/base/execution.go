@@ -5,64 +5,72 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/hive/hivesim"
 	"math/big"
-	"sync"
+	"math/rand/v2"
 	"taiko/common/clients"
 	tn "taiko/common/testnet"
 	"time"
 )
 
 func (ts BaseTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Testnet) {
-	wg := sync.WaitGroup{}
-	wg.Add(len(testnet.Nodes))
-	target := uint64(5)
-	for _, node := range testnet.Nodes {
-		node := node
-		go func() {
-			defer wg.Done()
-			ts.verify(ctx, t, node, target)
-		}()
+	var (
+		nodes  = testnet.Nodes
+		target = ts.L2TargetNumber
+	)
+	if target == 0 {
+		target = rand.Uint64N(50-10) + 10
 	}
-	wg.Wait()
+	t.Logf("BaseTestSpec target number: %d, sync module: %s", target, ts.L2SyncMode)
 
-	ts.VerifyL2Nodes(ctx, t, target, testnet.Nodes)
+	if err := nodes[0].Start(); err != nil {
+		t.Fatalf("BaseTestSpec failed to start 0 node: %v", err)
+	}
+	for i, node := range nodes[1:] {
+		if err := node.L2EthClient.Start(); err != nil {
+			t.Fatalf("BaseTestSpec failed to start %d node: %v", i, err)
+		}
+	}
+	waitL2LatestNumber(ctx, t, target, nodes[0].L2EthClient)
+
+	// Start the other cluster's l2eth and driver nodes.
+	for i, node := range nodes[1:] {
+		if err := node.DriverClient.Start(); err != nil {
+			t.Fatalf("BaseTestSpec failed to start %d node: %v", i, err)
+		}
+	}
+
+	// Verify snap sync.
+	for _, node := range nodes[1:] {
+		if node.L2EthClient == nil || node.DriverClient == nil {
+			continue
+		}
+
+		waitL2LatestNumber(ctx, t, target+1, node.L2EthClient)
+
+		l1Origin, err := node.L2EthClient.L1OriginByID(ctx, new(big.Int).SetUint64(target+1))
+		if err != nil {
+			t.Fatalf("unexpect error when get l1origin, number: %d, err: %v", target+1, err)
+		}
+		if l1Origin == nil {
+			t.Fatalf("l1Origin should not be null, number: %d", target+1)
+		}
+
+		l1Origin, err = node.L2EthClient.L1OriginByID(ctx, new(big.Int).SetUint64(target-1))
+		if err == nil || err.Error() != "not found" {
+			t.Fatalf("unexpect error when get l1origin, number: %d, err: %v", target-1, err)
+		}
+		if l1Origin != nil {
+			t.Fatalf("l1Origin should be null, number: %d", target-1)
+		}
+	}
+
+	// Verify all l2eth nodes.
+	ts.VerifyL2Nodes(ctx, t, target, nodes)
 }
 
-func (ts BaseTestSpec) verify(ctx context.Context, t *hivesim.T, node *clients.Node, targetNumber uint64) {
-	var (
-		anvil = node.AnvilClient
-		l1Eth = node.L1EthClient
-		l2Eth = node.L2EthClient
+func waitL2LatestNumber(ctx context.Context, t *hivesim.T, targetNumber uint64, l2Eth *clients.TaikoGethClient) {
+	var timeout = time.Second * 60
 
-		timeout = time.Second * 60
-	)
-
-	if anvil != nil {
-		if !anvil.IsRunning() {
-			t.Fatalf("anvil node is not running!")
-		}
-		// Verify l1eth node run successfully.
-		err := anvil.WaitLatestNumber(ctx, timeout, targetNumber)
-		if err != nil {
-			t.Fatalf("failed to verify l1geth number, err: %v", err)
-		}
-		t.Logf("%s node is running successfully", anvil.ClientType())
-	}
-	if l1Eth != nil {
-		if !l1Eth.IsRunning() {
-			t.Fatalf("l1eth node is not running!")
-		}
-		// Verify l1eth node run successfully.
-		err := l1Eth.WaitLatestNumber(ctx, timeout, targetNumber)
-		if err != nil {
-			t.Fatalf("failed to verify l1geth number, err: %v", err)
-		}
-		t.Logf("%s node is running successfully", l1Eth.ClientType())
-	}
-
-	if l2Eth != nil {
-		if !l2Eth.IsRunning() {
-			t.Fatalf("l2eth node is not running!")
-		}
+	if l2Eth != nil && l2Eth.IsRunning() {
 		// Verify l2eth node run successfully.
 		err := l2Eth.WaitLatestNumber(ctx, timeout, targetNumber)
 		if err != nil {
@@ -78,10 +86,15 @@ func (ts BaseTestSpec) VerifyL2Nodes(ctx context.Context, t *hivesim.T, target u
 		index  int
 	)
 	for i, node := range nodes {
-		if node.L2EthClient == nil {
+		l2client := node.L2EthClient
+		if l2client == nil || !l2client.IsRunning() {
+			t.Logf("L2EthClient[%d] client is empty(%v)", i, l2client == nil)
 			continue
 		}
-		client := node.L2EthClient.EthClient()
+
+		waitL2LatestNumber(ctx, t, target, l2client)
+
+		client := l2client.EthClient()
 		hd, err := client.HeaderByNumber(ctx, new(big.Int).SetUint64(target))
 		if err != nil {
 			t.Fatalf("failed to get header from [%d]:%s, err: %v", i, node.L1EthClient.ClientType(), err)
@@ -91,7 +104,7 @@ func (ts BaseTestSpec) VerifyL2Nodes(ctx context.Context, t *hivesim.T, target u
 		} else if header.Hash() != hd.Hash() {
 			t.Fatalf("the %d number of %s's hash are different, [%d]:%s != [%d]:%s",
 				target,
-				node.L2EthClient.ClientType(),
+				l2client.ClientType(),
 				index, header.Hash().String(),
 				i, hd.Hash().String(),
 			)

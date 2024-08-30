@@ -21,6 +21,9 @@ type BaseTestSpec struct {
 	// Beacon Chain
 	ValidatorCount uint64
 
+	// L2 eth target number
+	L2TargetNumber uint64
+
 	// l2 geth syncmode
 	L2SyncMode string
 }
