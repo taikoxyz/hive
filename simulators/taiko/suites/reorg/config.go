@@ -6,8 +6,7 @@ import (
 )
 
 type ReorgTestSpec struct {
-	L2ReorgStartNumber uint64
-	ReorgDepth         uint64
+	ReorgDepth uint64
 	suite_base.BaseTestSpec
 }
 

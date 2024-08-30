@@ -8,7 +8,6 @@ import (
 	"taiko/common/config/execution"
 	"taiko/common/testnet"
 	"taiko/common/utils"
-	"time"
 )
 
 var Deneb string = "deneb"
@@ -41,17 +40,15 @@ func SuiteHydrate(
 				// Create the testnet
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
+
 				testnet := testnet.StartTestnet(ctx, t, clients, test.GetTestnetConfig(), generateState)
 				if testnet == nil {
 					t.Fatalf("failed to start testnet")
 				}
 				defer testnet.Stop()
 
-				timeoutCtx, cancel := context.WithTimeout(ctx, time.Second*200)
-				defer cancel()
-
 				// Verify nodes.
-				test.Verify(timeoutCtx, t, testnet)
+				test.Verify(ctx, t, testnet)
 			},
 		})
 	}

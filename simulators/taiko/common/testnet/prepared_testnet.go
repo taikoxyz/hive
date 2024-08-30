@@ -403,13 +403,17 @@ func (p *PreparedTestnet) prepareTaikoGethClient(
 }
 
 func (p *PreparedTestnet) prepareDriverClient(
+	index int,
 	testnet *Testnet,
 	driverDef *hivesim.ClientDefinition,
-	anvilClient *clients.AnvilClient,
-	l1Client *clients.ExecutionClient,
-	beaconClient *clients.BeaconClient,
+	firstNode *clients.Node,
 	l2Client *clients.TaikoGethClient,
 ) *clients.DriverClient {
+	var (
+		anvilClient  = firstNode.AnvilClient
+		l1Client     = firstNode.L1EthClient
+		beaconClient = firstNode.BeaconClient
+	)
 	if driverDef == nil ||
 		(l1Client == nil && anvilClient == nil || l1Client != nil && anvilClient != nil) ||
 		l2Client == nil {
@@ -425,7 +429,14 @@ func (p *PreparedTestnet) prepareDriverClient(
 	}
 
 	cm.OptionsGenerator = func() ([]hivesim.StartOption, error) {
-		opts := []hivesim.StartOption{p.driverOpts, getEnvs(anvilClient, l1Client, beaconClient, l2Client)}
+		envs := getEnvs(anvilClient, l1Client, beaconClient, l2Client)
+		opts := []hivesim.StartOption{p.driverOpts, envs}
+		if index > 0 {
+			opts = append(opts, hivesim.Params{
+				"P2P_SYNC":                 "true",
+				"P2P_CHECK_POINT_SYNC_URL": firstNode.L2EthClient.HttpURL(),
+			})
+		}
 		return opts, nil
 	}
 
@@ -459,7 +470,7 @@ func (p *PreparedTestnet) prepareProposerClient(
 		OptionsGenerator: func() ([]hivesim.StartOption, error) {
 			opts := []hivesim.StartOption{p.proposerOpts, getEnvs(anvilClient, l1Client, beaconClient, l2Client)}
 			opts = append(opts, hivesim.Params{
-				"EPOCH_INTERVAL":       "3s",
+				"EPOCH_INTERVAL":       "1s",
 				"L1_PROPOSER_PRIV_KEY": proposerKey,
 			})
 			return opts, nil

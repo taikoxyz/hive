@@ -106,6 +106,7 @@ func (n *Node) Start() error {
 		n.AnvilClient.StartMining()
 	}
 
+	// Only start the first cluster's driver.
 	if n.DriverClient != nil {
 		if err := n.DriverClient.Start(); err != nil {
 			return err
@@ -141,42 +142,42 @@ func (n *Node) CreateNetwork(t *hivesim.T, network string) error {
 }
 
 func (n *Node) Shutdown() error {
-	if n.ProverClient != nil {
+	if n.ProverClient != nil && n.ProverClient.IsRunning() {
 		if err := n.ProverClient.Shutdown(); err != nil {
 			return err
 		}
 	}
-	if n.ProposerClient != nil {
+	if n.ProposerClient != nil && n.ProposerClient.IsRunning() {
 		if err := n.ProposerClient.Shutdown(); err != nil {
 			return err
 		}
 	}
-	if n.DriverClient != nil {
+	if n.DriverClient != nil && n.DriverClient.IsRunning() {
 		if err := n.DriverClient.Shutdown(); err != nil {
 			return err
 		}
 	}
-	if n.L2EthClient != nil {
+	if n.L2EthClient != nil && n.L2EthClient.IsRunning() {
 		if err := n.L2EthClient.Shutdown(); err != nil {
 			return err
 		}
 	}
-	if n.ValidatorClient != nil {
+	if n.ValidatorClient != nil && n.ValidatorClient.IsRunning() {
 		if err := n.ValidatorClient.Shutdown(); err != nil {
 			return err
 		}
 	}
-	if n.BeaconClient != nil {
+	if n.BeaconClient != nil && n.BeaconClient.IsRunning() {
 		if err := n.BeaconClient.Shutdown(); err != nil {
 			return err
 		}
 	}
-	if n.L1EthClient != nil {
+	if n.L1EthClient != nil && n.L1EthClient.IsRunning() {
 		if err := n.L1EthClient.Shutdown(); err != nil {
 			return err
 		}
 	}
-	if n.AnvilClient != nil {
+	if n.AnvilClient != nil && n.AnvilClient.IsRunning() {
 		if err := n.AnvilClient.Shutdown(); err != nil {
 			return err
 		}

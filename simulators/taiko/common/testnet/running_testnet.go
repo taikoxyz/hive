@@ -207,11 +207,10 @@ func StartTestnet(
 			clientsByRole[clients.Eth2],
 		)
 		nodeClient.DriverClient = prep.prepareDriverClient(
+			nodeIndex,
 			testnet,
 			clientsByRole[clients.Driver],
-			firstNode.AnvilClient,
-			firstNode.L1EthClient,
-			firstNode.BeaconClient,
+			firstNode,
 			nodeClient.L2EthClient,
 		)
 		nodeClient.ProposerClient = prep.prepareProposerClient(
@@ -242,10 +241,7 @@ func StartTestnet(
 		if err = nodeClient.CreateNetwork(t, config.Network); err != nil {
 			t.Fatalf("FAIL: Unable to connect to network: %v", err)
 		}
-		t.Logf("Starting node %d", nodeIndex)
-		if err = nodeClient.Start(); err != nil {
-			t.Fatalf("FAIL: Unable to start node %d: %v", nodeIndex, err)
-		}
+		t.Logf("node %d is ready to use!", nodeIndex)
 	}
 	return testnet
 }

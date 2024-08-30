@@ -2,7 +2,6 @@ package hivesim
 
 import (
 	"context"
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -26,30 +25,26 @@ func TestHiveHandler(t *testing.T) {
 		},
 	}
 
-	// Single cluster test.
-	t.Run("taiko-deneb-testnet/test-deneb-genesis/clusters(1)", func(t *testing.T) {
-		testDenebGenesis(t, [][]string{clientGroups[0]})
+	// Multi clusters test.
+	t.Run("taiko-genesis/l2-snap-sync/clusters(3)", func(t *testing.T) {
+		testDenebGenesis(t, "taiko-genesis/l2-snap-sync", clientGroups)
 	})
-	t.Run("taiko-deneb-reorg/test-deneb-reorg/clusters(1)", func(t *testing.T) {
-		testDenebReorg(t, [][]string{clientGroups[0]})
+	t.Run("taiko-genesis/l2-full-sync/clusters(3)", func(t *testing.T) {
+		testDenebGenesis(t, "taiko-genesis/l2-full-sync", clientGroups)
 	})
 
-	// Multi clusters test.
-	t.Run(fmt.Sprintf("taiko-deneb-testnet/test-deneb-genesis/clusters(%d)", len(clientGroups)), func(t *testing.T) {
-		testDenebGenesis(t, clientGroups)
-	})
-	t.Run("taiko-deneb-reorg/test-deneb-reorg/clusters(3)", func(t *testing.T) {
-		testDenebReorg(t, clientGroups)
+	t.Run("taiko-reorg/taiko-reorg/clusters(3)", func(t *testing.T) {
+		testDenebReorg(t, "taiko-reorg/taiko-reorg", clientGroups)
 	})
 }
 
-func testDenebGenesis(t *testing.T, clientGroups [][]string) {
+func testDenebGenesis(t *testing.T, pattern string, clientGroups [][]string) {
 	handler, err := NewHiveFramework(&HiveConfig{
 		BuildOutput:     false,
 		ContainerOutput: true,
 		BaseDir:         "/Users/huan/projects/taiko/hive",
 		SimPattern:      "taiko",
-		SimTestPattern:  "taiko-deneb-testnet/test-deneb-genesis",
+		SimTestPattern:  pattern,
 		ClientGroups:    clientGroups,
 	})
 	assert.NoError(t, err)
@@ -59,13 +54,13 @@ func testDenebGenesis(t *testing.T, clientGroups [][]string) {
 	assert.Equal(t, 0, failedCount)
 }
 
-func testDenebReorg(t *testing.T, clientGroups [][]string) {
+func testDenebReorg(t *testing.T, pattern string, clientGroups [][]string) {
 	handler, err := NewHiveFramework(&HiveConfig{
-		BuildOutput:     false,
+		BuildOutput:     true,
 		ContainerOutput: true,
 		BaseDir:         "/Users/huan/projects/taiko/hive",
 		SimPattern:      "taiko",
-		SimTestPattern:  "taiko-deneb-reorg/test-deneb-reorg",
+		SimTestPattern:  pattern,
 		ClientGroups:    clientGroups,
 	})
 	assert.NoError(t, err)
