@@ -22,4 +22,5 @@ fi
 
 # Run driver
 echo "Starting driver..."
-exec taiko-client driver
+exec taiko-client driver \
+  --verbosity 4

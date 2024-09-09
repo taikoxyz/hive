@@ -3,6 +3,7 @@ package clients
 import (
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/ethereum/hive/hivesim"
 	"github.com/marioevz/eth-clients/clients"
@@ -68,6 +69,23 @@ func (h *HiveManagedClient) AddStartOption(opts ...interface{}) {
 		if o, ok := o.(hivesim.StartOption); ok {
 			h.extraStartOptions = append(h.extraStartOptions, o)
 		}
+	}
+}
+
+func (h *HiveManagedClient) PauseClient() {
+	h.Logf("Pausing %s client", h.ClientType())
+	err := h.Sim.PauseClient(h.SuiteID, h.TestID, h.simClient.Container)
+	if err != nil {
+		h.Fatalf("Error pausing %s client: %v", h.ClientType(), err)
+	}
+	time.Sleep(time.Second)
+}
+
+func (h *HiveManagedClient) UnpauseClient() {
+	h.Logf("Unpausing %s client", h.ClientType())
+	err := h.Sim.UnpauseClient(h.SuiteID, h.TestID, h.simClient.Container)
+	if err != nil {
+		h.Fatalf("Error unpausing %s client: %v", h.ClientType(), err)
 	}
 }
 

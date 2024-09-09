@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/hive/hivesim"
 	"github.com/marioevz/eth-clients/clients"
+	"github.com/pkg/errors"
 	"github.com/prysmaticlabs/prysm/v4/config/params"
 	"strings"
 	"taiko/common/utils"
@@ -61,7 +62,7 @@ func (n *Node) Start() error {
 	n.Logf("Starting validator client bundle %d", n.Index)
 	if n.AnvilClient != nil {
 		if err := n.AnvilClient.Start(); err != nil {
-			return err
+			return errors.Wrap(err, n.AnvilClient.ClientType())
 		}
 	}
 	if n.L1EthClient != nil {
@@ -82,7 +83,7 @@ func (n *Node) Start() error {
 
 	if n.L2EthClient != nil {
 		if err := n.L2EthClient.Start(); err != nil {
-			return err
+			return errors.Wrap(err, n.L2EthClient.ClientType())
 		}
 	}
 
@@ -91,12 +92,15 @@ func (n *Node) Start() error {
 		if n.AnvilClient != nil {
 			fmt.Printf("Deploying contracts in %s node, url: %s\n", n.AnvilClient.ClientType(), n.AnvilClient.HttpURL())
 			if err := utils.DeployContracts(context.Background(), n.AnvilClient.HttpURL()); err != nil {
-				return err
+				return errors.Wrap(err, fmt.Sprintf("%s: failed to deploy contracts", n.AnvilClient.ClientType()))
+			}
+			if err := n.AnvilClient.FillTiers(context.Background()); err != nil {
+				return errors.Wrap(err, fmt.Sprintf("%s: failed to watch ProposerEvent", n.AnvilClient.ClientType()))
 			}
 		} else if n.L1EthClient != nil {
 			fmt.Printf("Deploying contracts in %s node, url: %s\n", n.L1EthClient.ClientType(), n.L1EthClient.HttpURL())
 			if err := utils.DeployContracts(context.Background(), n.L1EthClient.HttpURL()); err != nil {
-				return err
+				return errors.Wrap(err, fmt.Sprintf("%s: failed to deploy contracts", n.L1EthClient.ClientType()))
 			}
 		}
 	}
@@ -109,17 +113,17 @@ func (n *Node) Start() error {
 	// Only start the first cluster's driver.
 	if n.DriverClient != nil {
 		if err := n.DriverClient.Start(); err != nil {
-			return err
+			return errors.Wrap(err, n.DriverClient.ClientType())
 		}
 	}
 	if n.ProposerClient != nil {
 		if err := n.ProposerClient.Start(); err != nil {
-			return err
+			return errors.Wrap(err, n.ProposerClient.ClientType())
 		}
 	}
 	if n.ProverClient != nil {
 		if err := n.ProverClient.Start(); err != nil {
-			return err
+			return errors.Wrap(err, n.ProverClient.ClientType())
 		}
 	}
 	return nil

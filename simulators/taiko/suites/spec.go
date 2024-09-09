@@ -7,7 +7,6 @@ import (
 	"taiko/common/clients"
 	"taiko/common/config/execution"
 	"taiko/common/testnet"
-	"taiko/common/utils"
 )
 
 var Deneb string = "deneb"
@@ -16,7 +15,6 @@ type TestSpec interface {
 	GetName() string
 	GetTestnetConfig() *testnet.Config
 	GetDisplayName() string
-	GetDescription() *utils.Description
 	Verify(ctx context.Context, t *hivesim.T, testnet *testnet.Testnet)
 }
 
@@ -32,7 +30,6 @@ func SuiteHydrate(
 		suite.Add(hivesim.TestSpec{
 			Name:        fmt.Sprintf("%s/%s", suite.Name, test.GetName()),
 			DisplayName: test.GetDisplayName(),
-			Description: test.GetDescription().Format(),
 			Run: func(t *hivesim.T) {
 				t.Logf("Starting test: %s", test.GetName())
 				defer t.Logf("Finished test: %s", test.GetName())
@@ -49,6 +46,8 @@ func SuiteHydrate(
 
 				// Verify nodes.
 				test.Verify(ctx, t, testnet)
+
+				//time.Sleep(time.Second * 6000)
 			},
 		})
 	}

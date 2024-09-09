@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"math/big"
 	"os"
+	"taiko/bindings/proverset"
 	"taiko/bindings/taikotoken"
 	"taiko/params"
 )
@@ -69,7 +70,7 @@ func DeployContracts(ctx context.Context, url string) error {
 	}
 
 	// init contracts.
-	envs := params.EnvParams.Copy()
+	envs := params.EnvParams()
 	envs["L1_HTTP"] = url
 	return initTaikoContract(envs)
 }
@@ -91,12 +92,17 @@ func initTaikoContract(params map[string]string) error {
 		return err
 	}
 
-	taikoToken, err := taikotoken.NewTaikoToken(common.HexToAddress(os.Getenv("TAIKO_TOKEN_ADDRESS")), l1client)
+	taikoToken, err := taikotoken.NewTaikoToken(common.HexToAddress(os.Getenv("TAIKO_TOKEN")), l1client)
 	if err != nil {
 		return err
 	}
 
 	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIV_KEY")))
+	if err != nil {
+		return err
+	}
+
+	l1ProposerPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIV_KEY")))
 	if err != nil {
 		return err
 	}
@@ -108,74 +114,93 @@ func initTaikoContract(params map[string]string) error {
 	allow := new(big.Int).Exp(big.NewInt(1_000_000_100), new(big.Int).SetUint64(uint64(decimal)), nil)
 	fmt.Println(decimal, allow.String())
 
-	allowance, err := taikoToken.Allowance(
-		nil,
-		crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey),
-		common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")),
-	)
+	ownerPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_CONTRACT_OWNER_PRIVATE_KEY")))
 	if err != nil {
 		return err
 	}
 
-	if allowance.Cmp(common.Big0) == 0 {
-		ownerPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_CONTRACT_OWNER_PRIVATE_KEY")))
+	// Transfer some tokens to provers.
+	balance, err := taikoToken.BalanceOf(nil, crypto.PubkeyToAddress(ownerPrivKey.PublicKey))
+	if err != nil {
+		return err
+	}
+	if balance.Cmp(common.Big0) <= 0 {
+		return errors.New("balance is less than or equal to 0")
+	}
+
+	opts, err := bind.NewKeyedTransactorWithChainID(ownerPrivKey, l1ChainID)
+	if err != nil {
+		return err
+	}
+
+	proverBalance := new(big.Int).Div(balance, common.Big32)
+	if proverBalance.Cmp(common.Big0) <= 0 {
+		return errors.New("prover balance is less than or equal to 0")
+	}
+
+	if os.Getenv("IS_GUARDIAN") == "true" {
+		_, err = taikoToken.Transfer(opts, crypto.PubkeyToAddress(l1ProposerPrivKey.PublicKey), proverBalance)
 		if err != nil {
 			return err
 		}
-
-		// Transfer some tokens to provers.
-		balance, err := taikoToken.BalanceOf(nil, crypto.PubkeyToAddress(ownerPrivKey.PublicKey))
-		if err != nil {
+		if err = transferTaikoToken(taikoToken, opts, "GUARDIAN_PROVER_MINORITY", proverBalance); err != nil {
 			return err
 		}
-		if balance.Cmp(common.Big0) <= 0 {
-			return errors.New("balance is less than or equal to 0")
-		}
-
-		opts, err := bind.NewKeyedTransactorWithChainID(ownerPrivKey, l1ChainID)
-		if err != nil {
+		if err = transferTaikoToken(taikoToken, opts, "GUARDIAN_PROVER_CONTRACT", proverBalance); err != nil {
 			return err
 		}
-
-		proverBalance := new(big.Int).Div(balance, common.Big3)
-		if proverBalance.Cmp(common.Big0) <= 0 {
-			return errors.New("prover balance is less than or equal to 0")
-		}
-
-		_, err = taikoToken.Transfer(opts, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey), proverBalance)
-		if err != nil {
+	} else {
+		if err = transferTaikoToken(taikoToken, opts, "PROVER_SET", proverBalance); err != nil {
 			return err
 		}
-
-		_, err = taikoToken.Transfer(
-			opts,
-			common.HexToAddress(os.Getenv("GUARDIAN_PROVER_MINORITY")),
-			new(big.Int).Div(proverBalance, common.Big2),
-		)
-		if err != nil {
+		if err = enableProver(l1client, opts, crypto.PubkeyToAddress(l1ProposerPrivKey.PublicKey), true); err != nil {
 			return err
 		}
-
-		_, err = taikoToken.Transfer(
-			opts,
-			common.HexToAddress(os.Getenv("GUARDIAN_PROVER_CONTRACT")),
-			new(big.Int).Div(proverBalance, common.Big2),
-		)
-		if err != nil {
-			return err
-		}
-
-		if err = setAllowance(l1client, l1ProverPrivKey, taikoToken); err != nil {
-			return err
-		}
-		if err = setAllowance(l1client, ownerPrivKey, taikoToken); err != nil {
+		if err = enableProver(l1client, opts, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey), true); err != nil {
 			return err
 		}
 	}
+
+	if err = setAllowance(l1client, l1ProverPrivKey, taikoToken); err != nil {
+		return err
+	}
+	if err = setAllowance(l1client, ownerPrivKey, taikoToken); err != nil {
+		return err
+	}
+
 	return nil
 }
 
+func transferTaikoToken(taikoToken *taikotoken.TaikoToken, auth *bind.TransactOpts, env string, balance *big.Int) error {
+	if os.Getenv(env) == "" {
+		return fmt.Errorf("%s varibale is empty", env)
+	}
+	_, err := taikoToken.Transfer(
+		auth,
+		common.HexToAddress(os.Getenv(env)),
+		balance,
+	)
+	return err
+}
+
+func enableProver(client *ethclient.Client, auth *bind.TransactOpts, _prover common.Address, _isProver bool) error {
+	proverSet := os.Getenv("PROVER_SET")
+	if proverSet == "" {
+		return fmt.Errorf("PROVER_SET variable is empty")
+	}
+	prover, err := proverset.NewProverSet(common.HexToAddress(proverSet), client)
+	if err != nil {
+		return err
+	}
+	_, err = prover.EnableProver(auth, _prover, _isProver)
+	return err
+}
+
 func setAllowance(client *ethclient.Client, key *ecdsa.PrivateKey, taikoToken *taikotoken.TaikoToken) error {
+	taikoL1 := os.Getenv("TAIKO_L1")
+	if taikoL1 == "" {
+		return fmt.Errorf("TAIKO_L1 variable is empty")
+	}
 	decimal, err := taikoToken.Decimals(nil)
 	if err != nil {
 		return err
@@ -193,7 +218,7 @@ func setAllowance(client *ethclient.Client, key *ecdsa.PrivateKey, taikoToken *t
 		return err
 	}
 
-	tx, err := taikoToken.Approve(auth, common.HexToAddress(os.Getenv("TAIKO_L1_ADDRESS")), bigInt)
+	tx, err := taikoToken.Approve(auth, common.HexToAddress(taikoL1), bigInt)
 	if err != nil {
 		return err
 	}
@@ -205,4 +230,12 @@ func setAllowance(client *ethclient.Client, key *ecdsa.PrivateKey, taikoToken *t
 		return fmt.Errorf("approve failed, tx hash: %s", tx.Hash().String())
 	}
 	return nil
+}
+
+// StringToBytes32 converts the given string to [32]byte.
+func StringToBytes32(str string) [32]byte {
+	var b [32]byte
+	copy(b[:], []byte(str))
+
+	return b
 }

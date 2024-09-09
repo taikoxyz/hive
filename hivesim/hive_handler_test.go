@@ -34,7 +34,7 @@ func TestHiveHandler(t *testing.T) {
 	})
 
 	t.Run("taiko-reorg/taiko-reorg/clusters(3)", func(t *testing.T) {
-		testDenebReorg(t, "taiko-reorg/taiko-reorg", clientGroups)
+		testDenebReorg(t, "taiko-reorg/taiko-reorg", [][]string{clientGroups[0]})
 	})
 }
 

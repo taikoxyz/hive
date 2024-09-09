@@ -47,14 +47,20 @@ type Config struct {
 	// 0=silent, 1=error, 2=warn, 3=info, 4=debug, 5=detail
 	LogLevel int
 
-	ProposerKeyList []string
-	ProverKeyList   []string
-
 	JWTSecret  string
 	FeeReceipt string
 
 	// l2 geth syncmode
 	L2SyncMode string
+
+	// driver variables, false: beacon sync, true: blob sync
+	BeaconSync bool
+
+	// prover prover type
+	IsGuardian bool
+
+	// open debug flag
+	Debug bool
 }
 
 // Choose a configuration value. `b` takes precedence

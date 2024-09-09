@@ -54,12 +54,15 @@ func (ts BaseTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 			t.Fatalf("l1Origin should not be null, number: %d", target+1)
 		}
 
-		l1Origin, err = node.L2EthClient.L1OriginByID(ctx, new(big.Int).SetUint64(target-1))
-		if err == nil || err.Error() != "not found" {
-			t.Fatalf("unexpect error when get l1origin, number: %d, err: %v", target-1, err)
-		}
-		if l1Origin != nil {
-			t.Fatalf("l1Origin should be null, number: %d", target-1)
+		for num := target; num > 0; num-- {
+			l1Origin, err := node.L2EthClient.L1OriginByID(ctx, new(big.Int).SetUint64(num))
+			if err == nil || err.Error() != "not found" {
+				t.Fatalf("unexpect error when get l1origin, number: %d, err: %v", num, err)
+			}
+			if l1Origin != nil {
+				t.Fatalf("l1Origin should be null, number: %d", num)
+			}
+			//time.Sleep(time.Millisecond * 100)
 		}
 	}
 

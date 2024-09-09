@@ -23,18 +23,18 @@ var ConfigContent []byte
 var GenesisContent []byte
 
 var (
-	EnvParams   = hivesim.Params{}
+	envParams   = hivesim.Params{}
 	ContractTxs = make([]*types.Transaction, 0)
 )
 
 func init() {
 	// Load env params.
-	envParams, err := godotenv.UnmarshalBytes(envContent)
+	vals, err := godotenv.UnmarshalBytes(envContent)
 	if err != nil {
 		panic(err)
 	}
-	for k, v := range envParams {
-		EnvParams[k] = v
+	for k, v := range vals {
+		envParams[k] = v
 	}
 
 	// Load taiko contract txs.
@@ -47,4 +47,12 @@ func init() {
 		}
 		ContractTxs = append(ContractTxs, &tx)
 	}
+}
+
+func EnvParams() hivesim.Params {
+	return envParams.Copy()
+}
+
+func SetEnvParams(key, value string) {
+	envParams[key] = value
 }
