@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # start and stop docker compose
 docker compose -f docker/docker-compose.yml up -d --wait
