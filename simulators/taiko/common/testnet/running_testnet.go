@@ -28,6 +28,9 @@ type Testnet struct {
 	spec *consensus_config.Spec
 	// Execution chain configuration and genesis info
 	executionGenesis *execution_config.ExecutionGenesis
+
+	// debug flag
+	Debug bool
 }
 
 type ActiveSpec struct {
@@ -120,7 +123,7 @@ func StartTestnet(
 		t.Fatalf("FAIL: Unable to prepare testnet: %v", err)
 	}
 	var (
-		testnet     = prep.createTestnet(t)
+		testnet     = prep.createTestnet(t, config)
 		genesisTime = testnet.GenesisTimeUnix()
 	)
 	t.Logf(
@@ -210,13 +213,15 @@ func StartTestnet(
 			nodeIndex,
 			testnet,
 			clientsByRole[clients.Driver],
+			&clients.TaikoClientConfig{
+				BeaconSync: config.BeaconSync,
+			},
 			firstNode,
 			nodeClient.L2EthClient,
 		)
 		nodeClient.ProposerClient = prep.prepareProposerClient(
 			testnet,
 			clientsByRole[clients.Proposer],
-			config.ProposerKeyList[nodeIndex],
 			firstNode.AnvilClient,
 			firstNode.L1EthClient,
 			firstNode.BeaconClient,
@@ -225,7 +230,6 @@ func StartTestnet(
 		nodeClient.ProverClient = prep.prepareProverClient(
 			testnet,
 			clientsByRole[clients.Prover],
-			config.ProverKeyList[nodeIndex],
 			firstNode.AnvilClient,
 			firstNode.L1EthClient,
 			firstNode.BeaconClient,

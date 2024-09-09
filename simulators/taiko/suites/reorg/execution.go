@@ -38,8 +38,9 @@ func (r ReorgTestSpec) reorgAndVerifyFirstCluster(ctx context.Context, t *hivesi
 		// random [5, 100) value
 		reorgDepth = rand.Uint64N(100-10) + 10
 	}
+	t.Logf("%s: start reorgAndVerifyFirstCluster, target number: %d, reorg depth: %d", r.Name, l2ReorgStartNumber, reorgDepth)
 
-	if anvil == nil || driver == nil || proposer == nil || prover == nil || l2eth == nil {
+	if anvil == nil || driver == nil || proposer == nil || /*prover == nil ||*/ l2eth == nil {
 		t.Fatalf("anvil, driver, proposer, prover or l2eth client is nil!")
 	}
 
@@ -47,32 +48,44 @@ func (r ReorgTestSpec) reorgAndVerifyFirstCluster(ctx context.Context, t *hivesi
 		t.Fatalf("anvil or l2eth node is not running!")
 	}
 
-	var (
-		l2Client = l2eth.EthClient()
-	)
-
 	if err := l2eth.WaitLatestNumber(ctx, timeout, l2ReorgStartNumber); err != nil {
-		t.Fatalf("failed to wait %s latest number, err: %v", l2eth.ClientType(), err)
+		t.Fatalf("%s: failed to wait latest number, err: %v", l2eth.ClientType(), err)
 	}
 
-	l2OriginHeader, err := l2Client.HeaderByNumber(ctx, new(big.Int).SetUint64(l2ReorgStartNumber))
+	// Wait until taiko-geth touch verified number.
+	l1Number, l2LatestVerifiedNumber, err := anvil.WaitVerifiedNumber(ctx, timeout)
+	if err != nil {
+		t.Fatalf("failed to wait %s for verified number, err: %v", anvil.ClientType(), err)
+	}
+
+	if err := l2eth.WaitLatestNumber(ctx, timeout, l2LatestVerifiedNumber+reorgDepth); err != nil {
+		t.Fatalf("%s: failed to wait latest number, err: %v", l2eth.ClientType(), err)
+	}
+
+	l2OriginHeader, err := l2eth.EthClient().HeaderByNumber(ctx, new(big.Int).SetUint64(l2LatestVerifiedNumber))
 	if err != nil {
 		t.Fatalf("failed to get %s header by number, err: %v", l2eth.ClientType(), err)
 	}
 
-	// reorg
-	snapshot, number := anvil.SetReorgPoint()
-	if err := anvil.WaitLatestNumber(ctx, timeout, number+reorgDepth); err != nil {
-		t.Fatalf("failed to wait %s for number, err: %v", anvil.ClientType(), err)
-	}
-	anvil.Reorg(snapshot)
+	// pause driver, proposer, prover
+	driver.PauseClient()
+	proposer.PauseClient()
+	prover.PauseClient()
+
+	// Reorg l1 eth chain.
+	anvil.Reorg(l1Number)
+
+	// unpause driver, proposer, prover
+	driver.UnpauseClient()
+	proposer.UnpauseClient()
+	prover.UnpauseClient()
 
 	// Wait for the reorg to be processed.
-	if err = l2eth.WaitLatestNumber(ctx, timeout, l2ReorgStartNumber); err != nil {
+	if err = l2eth.WaitLatestNumber(ctx, timeout, l2ReorgStartNumber+reorgDepth); err != nil {
 		t.Fatalf("failed to wait %s latest number, err: %v", l2eth.ClientType(), err)
 	}
 
-	l2ReorgedHeader, err := l2Client.HeaderByNumber(ctx, new(big.Int).SetUint64(l2ReorgStartNumber))
+	l2ReorgedHeader, err := l2eth.EthClient().HeaderByNumber(ctx, new(big.Int).SetUint64(l2LatestVerifiedNumber))
 	if err != nil {
 		t.Fatalf("failed to get %s header by number, err: %v", l2eth.ClientType(), err)
 	}

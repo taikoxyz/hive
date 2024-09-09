@@ -78,7 +78,7 @@ func (ec *EthNode) EthIsReady(ctx context.Context, timeout time.Duration) error 
 		case <-time.After(timeout):
 			return fmt.Errorf("reach timeout but %s is not ready", ec.ClientType())
 		default:
-			_, err := ethClient.BlockNumber(ctx)
+			_, err := ethClient.ChainID(ctx)
 			if err != nil {
 				continue
 			}
@@ -88,6 +88,7 @@ func (ec *EthNode) EthIsReady(ctx context.Context, timeout time.Duration) error 
 }
 
 func (ec *EthNode) WaitLatestNumber(ctx context.Context, timeout time.Duration, number uint64) error {
+	ec.Logf("%s: wait latest number %d", ec.ClientType(), number)
 	client := ec.EthClient()
 	current, times := uint64(0), timeout/time.Second
 	for times > 0 && number >= current {
