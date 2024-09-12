@@ -9,7 +9,7 @@ import (
 func TestHiveHandler(t *testing.T) {
 	clientGroups := [][]string{
 		{
-			"taiko/anvil",
+			"anvil",
 			"taiko/taiko-geth",
 			"taiko/driver",
 			"taiko/proposer",
@@ -36,6 +36,50 @@ func TestHiveHandler(t *testing.T) {
 	t.Run("taiko-reorg/taiko-reorg/clusters(3)", func(t *testing.T) {
 		testDenebReorg(t, "taiko-reorg/taiko-reorg", [][]string{clientGroups[0]})
 	})
+
+	t.Run("taiko-blob/blob-l1-beacon", func(t *testing.T) {
+		testBlobScan(t, "taiko-blob/blob-l1-beacon", []string{
+			"geth",
+			"prysm/prysm-bn",
+			"prysm/prysm-vc",
+			"taiko/taiko-geth",
+			"taiko/driver",
+			"taiko/proposer",
+			"taiko/prover",
+			"storage/redis",
+			"storage/postgres",
+			"blobscan/blobscan-api",
+			"blobscan/blobscan-indexer",
+		})
+	})
+
+	t.Run("taiko-blob/blob-server", func(t *testing.T) {
+		testBlobScan(t, "taiko-blob/blob-server", []string{
+			"geth",
+			"prysm/prysm-bn",
+			"prysm/prysm-vc",
+			"taiko/taiko-geth",
+			"taiko/driver",
+			"taiko/proposer",
+			"taiko/prover",
+		})
+	})
+}
+
+func testBlobScan(t *testing.T, pattern string, clients []string) {
+	handler, err := NewHiveFramework(&HiveConfig{
+		BuildOutput:     false,
+		ContainerOutput: true,
+		BaseDir:         "/Users/huan/projects/taiko/hive",
+		SimPattern:      "taiko",
+		SimTestPattern:  pattern,
+		ClientGroups:    [][]string{clients},
+	})
+	assert.NoError(t, err)
+
+	failedCount, err := handler.Run(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, 0, failedCount)
 }
 
 func testDenebGenesis(t *testing.T, pattern string, clientGroups [][]string) {

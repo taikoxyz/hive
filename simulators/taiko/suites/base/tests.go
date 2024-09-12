@@ -25,10 +25,12 @@ func init() {
 		BaseTestSpec{
 			Name:       "l2-full-sync",
 			L2SyncMode: "full",
+			BeaconSync: true,
 		},
 		BaseTestSpec{
 			Name:       "l2-snap-sync",
 			L2SyncMode: "snap",
+			BeaconSync: true,
 		},
 	)
 }

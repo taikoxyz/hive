@@ -2,7 +2,6 @@ package clients
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	api "github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
@@ -14,9 +13,7 @@ import (
 	"math/big"
 	"net"
 	"strings"
-	"sync"
 	"taiko/common/utils"
-	"time"
 )
 
 type ExecutionProxyConfig struct {
@@ -34,9 +31,7 @@ type ExecutionClientConfig struct {
 
 type ExecutionClient struct {
 	*EthNode
-	Config ExecutionClientConfig
 
-	proxy     *execution.Proxy
 	latestfcu *api.ForkchoiceStateV1
 
 	engineClient *rpc.Client
@@ -47,144 +42,6 @@ type ExecutionClient struct {
 
 func (ec *ExecutionClient) EngineURL() string {
 	return fmt.Sprintf("http://%v:%d", ec.NetworkIP(), EthEngineRPC)
-}
-
-func (ec *ExecutionClient) GetLatestForkchoiceUpdated(
-	ctx context.Context,
-) (*api.ForkchoiceStateV1, error) {
-	if ec.latestfcu != nil {
-		return ec.latestfcu, nil
-	}
-	// Try to reconstruct by querying it from the client
-	forkchoiceState := &api.ForkchoiceStateV1{}
-	errs := make(chan error, 3)
-	var wg sync.WaitGroup
-
-	type labelBlockHashTask struct {
-		label string
-		dest  *common.Hash
-	}
-
-	for _, t := range []*labelBlockHashTask{
-		{
-			label: "latest",
-			dest:  &forkchoiceState.HeadBlockHash,
-		},
-		{
-			label: "safe",
-			dest:  &forkchoiceState.SafeBlockHash,
-		},
-		{
-			label: "finalized",
-			dest:  &forkchoiceState.FinalizedBlockHash,
-		},
-	} {
-		wg.Add(1)
-		t := t
-		go func(t *labelBlockHashTask) {
-			defer wg.Done()
-			if res, err := ec.HeaderByLabel(
-				ctx,
-				t.label,
-			); err != nil {
-				ec.Logf(
-					"Error trying to fetch label %s from client: %v",
-					t.label,
-					err,
-				)
-			} else if err == nil && res != nil && res.Number != nil {
-				*t.dest = res.Hash()
-			}
-		}(t)
-	}
-	wg.Wait()
-
-	select {
-	case err := <-errs:
-		return nil, err
-	default:
-	}
-
-	return forkchoiceState, nil
-}
-
-func (ec *ExecutionClient) EngineForkchoiceUpdated(
-	parentCtx context.Context,
-	fcState *api.ForkchoiceStateV1,
-	pAttributes *api.PayloadAttributes,
-	version int,
-) (*api.ForkChoiceResponse, error) {
-	var result api.ForkChoiceResponse
-	request := fmt.Sprintf("engine_forkchoiceUpdatedV%d", version)
-	ctx, cancel := context.WithTimeout(parentCtx, time.Second*10)
-	defer cancel()
-	err := ec.engineClient.CallContext(
-		ctx,
-		&result,
-		request,
-		fcState,
-		pAttributes,
-	)
-	return &result, err
-}
-
-func (ec *ExecutionClient) EngineGetPayload(
-	parentCtx context.Context,
-	payloadID *api.PayloadID,
-	version int,
-) (*api.ExecutableData, *big.Int, *api.BlobsBundleV1, *bool, error) {
-	var (
-		rpcString = fmt.Sprintf("engine_getPayloadV%d", version)
-	)
-	ctx, cancel := context.WithTimeout(parentCtx, time.Second*10)
-	defer cancel()
-	if version >= 2 {
-		var response api.ExecutionPayloadEnvelope
-		err := ec.engineClient.CallContext(
-			ctx,
-			&response,
-			rpcString,
-			payloadID,
-		)
-		return response.ExecutionPayload, response.BlockValue, response.BlobsBundle, &response.Override, err
-	} else {
-		var executableData api.ExecutableData
-		err := ec.engineClient.CallContext(ctx, &executableData, rpcString, payloadID)
-		return &executableData, common.Big0, nil, nil, err
-	}
-}
-
-func (ec *ExecutionClient) EngineNewPayload(
-	parentCtx context.Context,
-	payload *api.ExecutableData,
-	version int,
-) (*api.PayloadStatusV1, error) {
-	var result api.PayloadStatusV1
-	request := fmt.Sprintf("engine_newPayloadV%d", version)
-	ctx, cancel := context.WithTimeout(parentCtx, time.Second*10)
-	defer cancel()
-	err := ec.engineClient.CallContext(ctx, &result, request, payload)
-	return &result, err
-}
-
-// Eth RPC
-// Helper structs to fetch the TotalDifficulty
-type TD struct {
-	TotalDifficulty *hexutil.Big `json:"totalDifficulty"`
-}
-type TotalDifficultyHeader struct {
-	types.Header
-	TD
-}
-
-func (tdh *TotalDifficultyHeader) UnmarshalJSON(data []byte) error {
-	if err := json.Unmarshal(data, &tdh.Header); err != nil {
-		return err
-	}
-	if err := json.Unmarshal(data, &tdh.TD); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (ec *ExecutionClient) HeaderByHash(
@@ -267,20 +124,6 @@ func (all ExecutionClients) Running() ExecutionClients {
 	res := make(ExecutionClients, 0)
 	for _, ec := range all {
 		if ec.IsRunning() {
-			res = append(res, ec)
-		}
-	}
-	return res
-}
-
-// Return subset of clients that are part of an specific subnet
-func (all ExecutionClients) Subnet(subnet string) ExecutionClients {
-	if subnet == "" {
-		return all
-	}
-	res := make(ExecutionClients, 0)
-	for _, ec := range all {
-		if ec.Config.Subnet == subnet {
 			res = append(res, ec)
 		}
 	}

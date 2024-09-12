@@ -13,8 +13,8 @@ import (
 )
 
 var testSuite = hivesim.Suite{
-	Name:        "driver-blob-session-timeout",
-	DisplayName: "driver blob session timeout",
+	Name:        "taiko-blob",
+	DisplayName: "driver blob client test",
 	Location:    "suites/blob",
 }
 
@@ -25,19 +25,13 @@ func init() {
 		BlobTestSpec{
 			TestL1Beacon: true,
 			BaseTestSpec: suite_base.BaseTestSpec{
-				Name: "driver-l1-beacon",
-			},
-		},
-		BlobTestSpec{
-			TestBlobSocial: true,
-			BaseTestSpec: suite_base.BaseTestSpec{
-				Name: "driver-blob-social",
+				Name: "blob-l1-beacon",
 			},
 		},
 		BlobTestSpec{
 			TestBlobServer: true,
 			BaseTestSpec: suite_base.BaseTestSpec{
-				Name: "driver-blob-server",
+				Name: "blob-server",
 			},
 		})
 }

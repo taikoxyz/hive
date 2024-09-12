@@ -13,8 +13,5 @@ type ReorgTestSpec struct {
 func (r ReorgTestSpec) GetTestnetConfig() *testnet.Config {
 	cfg := r.BaseTestSpec.GetTestnetConfig()
 	cfg.Network = "taiko_reorg_test"
-	// reorg test use blob sync.
-	cfg.BeaconSync = false
-
 	return cfg
 }

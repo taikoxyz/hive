@@ -1,14 +1,12 @@
 package testnet
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/ethereum/hive/hivesim"
 	exec_client "github.com/marioevz/eth-clients/clients/execution"
 	"github.com/protolambda/zrnt/eth2/beacon/common"
 	"math/big"
-	"strings"
 	"taiko/common/clients"
 	cl "taiko/common/config/consensus"
 	consensus_config "taiko/common/config/consensus"
@@ -33,6 +31,7 @@ type PreparedTestnet struct {
 	executionOpts hivesim.StartOption
 	validatorOpts hivesim.StartOption
 	beaconOpts    hivesim.StartOption
+	blobOpts      hivesim.StartOption
 
 	// L2chain configuration to apply to every node of the given type
 	taikoGethOpts hivesim.StartOption
@@ -148,13 +147,13 @@ func PrepareTestnet(
 	})
 
 	taikoClientOpts := hivesim.Bundle(
-		params.EnvParams(),
 		commonParams,
 		networkParams,
 	)
 
 	return &PreparedTestnet{
 		Spec:             spec,
+		blobOpts:         networkParams,
 		ExecutionGenesis: executionGenesis,
 		executionOpts:    executionOpts,
 		beaconOpts:       beaconOpts,
@@ -182,18 +181,18 @@ func (p *PreparedTestnet) createTestnet(t *hivesim.T, config *Config) *Testnet {
 }
 
 func (p *PreparedTestnet) prepareAnvilNode(
-	network string,
 	testnet *Testnet,
+	cfg *Config,
 	anvilDef *hivesim.ClientDefinition,
-) *clients.AnvilClient {
+) {
 	if anvilDef == nil {
-		return nil
+		return
 	}
 	testnet.Logf("Preparing anvil node: %s (%s)", anvilDef.Name, anvilDef.Version)
 	cm := &clients.HiveManagedClient{
 		T:                    testnet.T,
 		HiveClientDefinition: anvilDef,
-		Network:              network,
+		Network:              cfg.Network,
 		Port:                 clients.AnvilPort,
 	}
 	cm.OptionsGenerator = func() ([]hivesim.StartOption, error) {
@@ -209,7 +208,7 @@ func (p *PreparedTestnet) prepareAnvilNode(
 		return opts, nil
 	}
 
-	return &clients.AnvilClient{
+	testnet.Nodes[0].AnvilClient = &clients.AnvilClient{
 		SecondsPerSlot: testnet.spec.SecondsPerSlot,
 		EthNode: &clients.EthNode{
 			HiveManagedClient: cm,
@@ -222,20 +221,21 @@ func (p *PreparedTestnet) prepareAnvilNode(
 // Prepares an execution client object with all the necessary information
 // to start
 func (p *PreparedTestnet) prepareExecutionNode(
+	index int,
 	testnet *Testnet,
+	cfg *Config,
 	eth1Def *hivesim.ClientDefinition,
 	consensus el.ExecutionConsensus,
-	config clients.ExecutionClientConfig,
-) *clients.ExecutionClient {
+) {
 	if eth1Def == nil {
-		return nil
+		return
 	}
 	testnet.Logf("Preparing execution node: %s (%s)", eth1Def.Name, eth1Def.Version)
 
 	cm := &clients.HiveManagedClient{
 		T:                    testnet.T,
 		HiveClientDefinition: eth1Def,
-		Network:              config.Network,
+		Network:              cfg.Network,
 		Port:                 clients.EthEngineRPC,
 	}
 
@@ -244,7 +244,7 @@ func (p *PreparedTestnet) prepareExecutionNode(
 	// execution clients on the network at startup.
 	cm.OptionsGenerator = func() ([]hivesim.StartOption, error) {
 		opts := []hivesim.StartOption{p.executionOpts}
-		opts = append(opts, consensus.HiveParams(config.ClientIndex))
+		opts = append(opts, consensus.HiveParams(index))
 
 		// Expose the eth1 ports to the host.
 		if testnet.Debug {
@@ -256,42 +256,31 @@ func (p *PreparedTestnet) prepareExecutionNode(
 		return opts, nil
 	}
 
-	return &clients.ExecutionClient{
+	testnet.Nodes[0].L1EthClient = &clients.ExecutionClient{
 		EthNode: &clients.EthNode{
 			HiveManagedClient: cm,
 		},
-		Config: config,
 	}
 }
 
 // Prepares a beacon client object with all the necessary information
 // to start
 func (p *PreparedTestnet) prepareBeaconNode(
-	ctx context.Context,
 	testnet *Testnet,
+	cfg *Config,
 	beaconDef *hivesim.ClientDefinition,
-	config *clients.BeaconClientConfig,
-	eth1Endpoints ...*clients.ExecutionClient,
-) *clients.BeaconClient {
+) {
 	if beaconDef == nil {
-		return nil
+		return
 	}
 
 	testnet.Logf("Preparing beacon node: %s (%s)", beaconDef.Name, beaconDef.Version)
 
-	if len(eth1Endpoints) == 0 {
-		panic(fmt.Errorf("at least 1 execution endpoint is required"))
-	}
-
 	cm := &clients.HiveManagedClient{
 		T:                    testnet.T,
+		Network:              cfg.Network,
 		HiveClientDefinition: beaconDef,
 		Port:                 int64(clients.BeaconPort),
-	}
-
-	cl := &clients.BeaconClient{
-		HiveManagedClient: cm,
-		Config:            config,
 	}
 
 	// This method will return the options used to run the client.
@@ -307,22 +296,16 @@ func (p *PreparedTestnet) prepareBeaconNode(
 			})
 		}
 
-		// Hook up beacon node to (maybe multiple) eth1 nodes
-		var engineAddrs []string
-		for _, en := range eth1Endpoints {
-			if !en.IsRunning() {
-				return nil, fmt.Errorf("attempted to start beacon node when the execution client is not yet running")
-			}
-			engineAddrs = append(engineAddrs, en.EngineURL())
-		}
 		opts = append(opts, hivesim.Params{
-			"HIVE_TAIKO_ETH1_RPC_ADDRS": strings.Join(engineAddrs, ","),
+			"HIVE_TAIKO_ETH1_RPC_ADDRS": testnet.Nodes[0].L1EthClient.EngineURL(),
 		})
 
 		return opts, nil
 	}
 
-	return cl
+	testnet.Nodes[0].BeaconClient = &clients.BeaconClient{
+		HiveManagedClient: cm,
+	}
 }
 
 // Prepares a validator client object with all the necessary information
@@ -330,11 +313,17 @@ func (p *PreparedTestnet) prepareBeaconNode(
 func (p *PreparedTestnet) prepareValidatorClient(
 	testnet *Testnet,
 	validatorDef *hivesim.ClientDefinition,
-	bn *clients.BeaconClient,
-) *clients.ValidatorClient {
+) {
+
+	var (
+		firstNode = testnet.Nodes[0]
+		bn        = firstNode.BeaconClient
+	)
+
 	if validatorDef == nil {
-		return nil
+		return
 	}
+
 	testnet.Logf(
 		"Preparing validator client: %s (%s)",
 		validatorDef.Name,
@@ -361,26 +350,27 @@ func (p *PreparedTestnet) prepareValidatorClient(
 		return opts, nil
 	}
 
-	return &clients.ValidatorClient{
+	firstNode.ValidatorClient = &clients.ValidatorClient{
 		HiveManagedClient: cm,
 	}
 }
 
 func (p *PreparedTestnet) prepareTaikoGethClient(
-	network string,
+	index int,
 	testnet *Testnet,
+	cfg *Config,
 	eth2Def *hivesim.ClientDefinition,
-) *clients.TaikoGethClient {
+) {
 	if eth2Def == nil {
 		testnet.Logf("No eth2 client definition provided")
-		return nil
+		return
 	}
 	testnet.Logf("Preparing TaikoGeth client: %s (%s)", eth2Def.Name, eth2Def.Version)
 
 	cm := &clients.HiveManagedClient{
 		T:                    testnet.T,
 		HiveClientDefinition: eth2Def,
-		Network:              network,
+		Network:              cfg.Network,
 		Port:                 exec_client.PortEngineRPC,
 	}
 	cm.OptionsGenerator = func() ([]hivesim.StartOption, error) {
@@ -402,7 +392,7 @@ func (p *PreparedTestnet) prepareTaikoGethClient(
 		return opts, nil
 	}
 
-	return &clients.TaikoGethClient{
+	testnet.Nodes[index].L2EthClient = &clients.TaikoGethClient{
 		EthNode: &clients.EthNode{
 			HiveManagedClient: cm,
 		},
@@ -412,24 +402,16 @@ func (p *PreparedTestnet) prepareTaikoGethClient(
 func (p *PreparedTestnet) prepareDriverClient(
 	index int,
 	testnet *Testnet,
+	cfg *Config,
 	driverDef *hivesim.ClientDefinition,
-	cfg *clients.TaikoClientConfig,
-	firstNode *clients.Node,
-	l2Client *clients.TaikoGethClient,
-) *clients.DriverClient {
+) {
+	if driverDef == nil {
+		return
+	}
 	var (
-		anvilClient  = firstNode.AnvilClient
-		l1Client     = firstNode.L1EthClient
-		beaconClient = firstNode.BeaconClient
+		firstNode = testnet.Nodes[0]
+		node      = testnet.Nodes[index]
 	)
-	if driverDef == nil ||
-		(l1Client == nil && anvilClient == nil || l1Client != nil && anvilClient != nil) ||
-		l2Client == nil {
-		return nil
-	}
-	if l1Client != nil && beaconClient == nil || l1Client == nil && beaconClient != nil {
-		testnet.Fatalf("driver failed to prepare, l1Client and beaconClient must be both nil or both not nil")
-	}
 	testnet.Logf("Preparing driver client: %s (%s)", driverDef.Name, driverDef.Version)
 	cm := &clients.HiveManagedClient{
 		T:                    testnet.T,
@@ -437,8 +419,7 @@ func (p *PreparedTestnet) prepareDriverClient(
 	}
 
 	cm.OptionsGenerator = func() ([]hivesim.StartOption, error) {
-		envs := getAPIEnvs(anvilClient, l1Client, beaconClient, l2Client)
-		opts := []hivesim.StartOption{p.driverOpts, envs}
+		opts := []hivesim.StartOption{p.driverOpts, getAPIEnvs(firstNode, node)}
 		if index > 0 && cfg.BeaconSync {
 			opts = append(opts, hivesim.Params{
 				"P2P_SYNC":                 "true",
@@ -446,37 +427,26 @@ func (p *PreparedTestnet) prepareDriverClient(
 			})
 		}
 
-		// If blob tx is enabled, set blob server url.
-		if envs["L1_BLOB_ALLOWED"] == "true" {
-			opts = append(opts, hivesim.Params{
-				"BLOB_SOCIAL_SCAN_ENDPOINT": beaconClient.BeaconURL(),
-				"BLOB_SERVER":               beaconClient.BeaconURL(),
-			})
-		}
-
 		return opts, nil
 	}
 
-	return &clients.DriverClient{
+	node.DriverClient = &clients.DriverClient{
 		HiveManagedClient: cm,
 	}
 }
 
 func (p *PreparedTestnet) prepareProposerClient(
+	index int,
 	testnet *Testnet,
 	proposerDef *hivesim.ClientDefinition,
-	anvilClient *clients.AnvilClient,
-	l1Client *clients.ExecutionClient,
-	beaconClient *clients.BeaconClient,
-	l2Client *clients.TaikoGethClient,
-) *clients.ProposerClient {
-	if proposerDef == nil ||
-		(l1Client == nil && anvilClient == nil || l1Client != nil && anvilClient != nil) ||
-		l2Client == nil {
-		return nil
-	}
-	if l1Client != nil && beaconClient == nil || l1Client == nil && beaconClient != nil {
-		testnet.Fatalf("proposer failed to prepare, l1Client and beaconClient must be both nil or both not nil")
+) {
+	var (
+		firstNode = testnet.Nodes[0]
+		node      = testnet.Nodes[index]
+	)
+
+	if proposerDef == nil {
+		return
 	}
 	testnet.Logf("Preparing proposer client: %s (%s)", proposerDef.Name, proposerDef.Version)
 
@@ -484,34 +454,27 @@ func (p *PreparedTestnet) prepareProposerClient(
 		T:                    testnet.T,
 		HiveClientDefinition: proposerDef,
 		OptionsGenerator: func() ([]hivesim.StartOption, error) {
-			opts := []hivesim.StartOption{p.proposerOpts, getAPIEnvs(anvilClient, l1Client, beaconClient, l2Client)}
-			opts = append(opts, hivesim.Params{
-				"EPOCH_INTERVAL": "1s",
-			})
+			opts := []hivesim.StartOption{p.proposerOpts, getAPIEnvs(firstNode, node)}
 			return opts, nil
 		},
 	}
 
-	return &clients.ProposerClient{
+	node.ProposerClient = &clients.ProposerClient{
 		HiveManagedClient: cm,
 	}
 }
 
 func (p *PreparedTestnet) prepareProverClient(
+	index int,
 	testnet *Testnet,
 	proverDef *hivesim.ClientDefinition,
-	anvilClient *clients.AnvilClient,
-	l1Client *clients.ExecutionClient,
-	beaconClient *clients.BeaconClient,
-	l2Client *clients.TaikoGethClient,
-) *clients.ProverClient {
-	if proverDef == nil ||
-		(l1Client == nil && anvilClient == nil || l1Client != nil && anvilClient != nil) ||
-		l2Client == nil {
-		return nil
-	}
-	if l1Client != nil && beaconClient == nil || l1Client == nil && beaconClient != nil {
-		testnet.Fatalf("prover failed to prepare, l1Client and beaconClient must be both nil or both not nil")
+) {
+	var (
+		firstNode = testnet.Nodes[0]
+		node      = testnet.Nodes[index]
+	)
+	if proverDef == nil {
+		return
 	}
 	testnet.Logf("Preparing prover client: %s (%s)", proverDef.Name, proverDef.Version)
 
@@ -519,23 +482,122 @@ func (p *PreparedTestnet) prepareProverClient(
 		T:                    testnet.T,
 		HiveClientDefinition: proverDef,
 		OptionsGenerator: func() ([]hivesim.StartOption, error) {
-			opts := []hivesim.StartOption{p.proverOpts, getAPIEnvs(anvilClient, l1Client, beaconClient, l2Client)}
+			opts := []hivesim.StartOption{p.proverOpts, getAPIEnvs(firstNode, node)}
 			return opts, nil
 		},
 	}
 
-	return &clients.ProverClient{
+	node.ProverClient = &clients.ProverClient{
 		HiveManagedClient: cm,
 	}
 }
 
+func (p *PreparedTestnet) prepareBlobScanClient(
+	index int,
+	testnet *Testnet,
+	config *Config,
+	clientsByRole map[clients.Role]*hivesim.ClientDefinition,
+) {
+	if clientsByRole[clients.BlobApi] == nil || params.ParamByKey("TEST_BLOB_SERVER") != "true" {
+		return
+	}
+
+	firstNode := testnet.Nodes[0]
+
+	redis := &clients.HiveManagedClient{
+		T:                    testnet.T,
+		Network:              config.Network,
+		HiveClientDefinition: clientsByRole[clients.Redis],
+		OptionsGenerator: func() ([]hivesim.StartOption, error) {
+			opts := []hivesim.StartOption{p.blobOpts}
+			// Expose the eth1 ports to the host.
+			if testnet.Debug {
+				opts = append(opts, hivesim.Params{
+					"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("6379/tcp"),
+				})
+			}
+			return opts, nil
+		},
+	}
+	mysql := &clients.HiveManagedClient{
+		T:                    testnet.T,
+		Network:              config.Network,
+		HiveClientDefinition: clientsByRole[clients.Postgres],
+		OptionsGenerator: func() ([]hivesim.StartOption, error) {
+			opts := []hivesim.StartOption{p.blobOpts}
+
+			// Expose the eth1 ports to the host.
+			if testnet.Debug {
+				opts = append(opts, hivesim.Params{
+					"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("5432/tcp"),
+				})
+			}
+
+			return opts, nil
+		},
+	}
+	blobApi := &clients.HiveManagedClient{
+		T:                    testnet.T,
+		Network:              config.Network,
+		HiveClientDefinition: clientsByRole[clients.BlobApi],
+		OptionsGenerator: func() ([]hivesim.StartOption, error) {
+			opts := []hivesim.StartOption{p.blobOpts}
+			opts = append(opts, hivesim.Params{
+				"CHAIN_ID":                 fmt.Sprintf("%d", testnet.executionGenesis.ChainID()),
+				"DATABASE_URL":             firstNode.BlobScanClient.PostgresURL(),
+				"REDIS_URI":                firstNode.BlobScanClient.RedisURL(),
+				"SECRET_KEY":               "supersecret",
+				"POSTGRES_STORAGE_ENABLED": "true",
+				"NETWORK_NAME":             "devnet",
+			})
+
+			// Expose the eth1 ports to the host.
+			if testnet.Debug {
+				opts = append(opts, hivesim.Params{
+					"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("3001/tcp"),
+				})
+			}
+
+			return opts, nil
+		},
+	}
+	blobIndexer := &clients.HiveManagedClient{
+		T:                    testnet.T,
+		Network:              config.Network,
+		HiveClientDefinition: clientsByRole[clients.BlobIndexer],
+		OptionsGenerator: func() ([]hivesim.StartOption, error) {
+			opts := []hivesim.StartOption{p.blobOpts}
+			opts = append(opts, hivesim.Params{
+				"SECRET_KEY":              "supersecret",
+				"BLOBSCAN_API_ENDPOINT":   firstNode.BlobScanClient.BlobAPIURL(),
+				"BEACON_NODE_ENDPOINT":    firstNode.BeaconClient.BeaconURL(),
+				"EXECUTION_NODE_ENDPOINT": firstNode.L1EthClient.HttpURL(),
+				"NETWORK_NAME":            "devnet",
+			})
+			return opts, nil
+		},
+	}
+
+	testnet.Nodes[index].BlobScanClient = &clients.BlobScanClient{
+		Redis:       redis,
+		Mysql:       mysql,
+		BlobApi:     blobApi,
+		BlobIndexer: blobIndexer,
+	}
+}
+
 func getAPIEnvs(
-	anvilClient *clients.AnvilClient,
-	l1Client *clients.ExecutionClient,
-	beaconClient *clients.BeaconClient,
-	l2Client *clients.TaikoGethClient,
+	firstNode, node *clients.Node,
 ) hivesim.Params {
-	envs := hivesim.Params{}
+	var (
+		anvilClient  = firstNode.AnvilClient
+		l1Client     = firstNode.L1EthClient
+		beaconClient = firstNode.BeaconClient
+		blobClient   = firstNode.BlobScanClient
+		l2Client     = node.L2EthClient
+	)
+
+	envs := params.EnvParams()
 	envs["L2_AUTH"] = l2Client.EngineURL()
 	envs["L2_HTTP"] = l2Client.HttpURL()
 	envs["L2_WS"] = l2Client.WSURL()
@@ -543,12 +605,19 @@ func getAPIEnvs(
 		envs["L1_HTTP"] = anvilClient.HttpURL()
 		envs["L1_WS"] = anvilClient.WSURL()
 		envs["L1_BEACON"] = anvilClient.HttpURL()
-		envs["RUN_TESTS"] = "true"
 	}
 	if l1Client != nil {
 		envs["L1_HTTP"] = l1Client.HttpURL()
 		envs["L1_WS"] = l1Client.WSURL()
 		envs["L1_BEACON"] = beaconClient.BeaconURL()
+	}
+
+	// This variables are set for blob tests.
+	if envs["TEST_L1_BEACON"] == "true" {
+		delete(envs, "RUN_TESTS")
+	} else if envs["TEST_BLOB_SERVER"] == "true" {
+		delete(envs, "L1_BEACON")
+		envs["BLOB_SERVER"] = blobClient.BlobAPIURL()
 	}
 
 	return envs

@@ -2,7 +2,6 @@ package clients
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/protolambda/eth2api"
 	"github.com/protolambda/eth2api/client/beaconapi"
@@ -10,9 +9,7 @@ import (
 	"github.com/protolambda/zrnt/eth2/beacon/common"
 	"github.com/protolambda/zrnt/eth2/beacon/deneb"
 	"github.com/protolambda/ztyp/tree"
-	"net/http"
 	"strings"
-	"sync"
 	"taiko/common/config/consensus"
 	"taiko/common/utils"
 	"time"
@@ -31,55 +28,11 @@ type BeaconClientConfig struct {
 
 type BeaconClient struct {
 	*HiveManagedClient
-	Config *BeaconClientConfig
-
 	api *eth2api.Eth2HttpClient
 }
 
 func (bn *BeaconClient) BeaconURL() string {
 	return fmt.Sprintf("http://%s:%d", bn.NetworkIP(), BeaconPort)
-}
-
-func (bn *BeaconClient) Init(ctx context.Context) error {
-	if bn.api == nil {
-		bn.api = &eth2api.Eth2HttpClient{
-			Addr:  bn.GetAddress(),
-			Cli:   &http.Client{},
-			Codec: eth2api.JSONCodec{},
-		}
-	}
-
-	var wg sync.WaitGroup
-	var errs = make(chan error, 2)
-
-	if bn.Config.GenesisTime == nil || bn.Config.GenesisValidatorsRoot == nil {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for {
-				if gen, err := bn.GenesisConfig(ctx); err == nil &&
-					gen != nil {
-					bn.Config.GenesisTime = &gen.GenesisTime
-					bn.Config.GenesisValidatorsRoot = &gen.GenesisValidatorsRoot
-					return
-				}
-				select {
-				case <-ctx.Done():
-					errs <- ctx.Err()
-					return
-				case <-time.After(time.Second):
-				}
-			}
-		}()
-	}
-	wg.Wait()
-
-	select {
-	case err := <-errs:
-		return err
-	default:
-		return nil
-	}
 }
 
 func (bn *BeaconClient) ENR(parentCtx context.Context) (string, error) {
@@ -115,19 +68,6 @@ func (bn *BeaconClient) P2PAddr(parentCtx context.Context) (string, error) {
 			out.PeerID,
 		), nil
 	}
-}
-
-func (bn *BeaconClient) BeaconAPIURL() (string, error) {
-	if bn.api == nil {
-		return "", fmt.Errorf("api not initialized")
-	}
-	return bn.api.Addr, nil
-}
-
-func (bn *BeaconClient) EnodeURL() (string, error) {
-	return "", errors.New(
-		"beacon node does not have an discv4 Enode URL, use ENR or multi-address instead",
-	)
 }
 
 func (bn *BeaconClient) ClientName() string {
@@ -278,20 +218,6 @@ func (all BeaconClients) Running() BeaconClients {
 	for _, bc := range all {
 		if bc.IsRunning() {
 			res = append(res, bc)
-		}
-	}
-	return res
-}
-
-// Return subset of clients that are part of an specific subnet
-func (all BeaconClients) Subnet(subnet string) BeaconClients {
-	if subnet == "" {
-		return all
-	}
-	res := make(BeaconClients, 0)
-	for _, bn := range all {
-		if bn.Config.Subnet == subnet {
-			res = append(res, bn)
 		}
 	}
 	return res

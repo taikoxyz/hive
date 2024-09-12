@@ -47,6 +47,8 @@ type Node struct {
 	ProposerClient *ProposerClient
 	ProverClient   *ProverClient
 
+	BlobScanClient *BlobScanClient
+
 	BeaconConfig *params.BeaconChainConfig
 	Genesis      *core.Genesis
 }
@@ -77,6 +79,11 @@ func (n *Node) Start() error {
 	}
 	if n.ValidatorClient != nil {
 		if err := n.ValidatorClient.Start(); err != nil {
+			return err
+		}
+	}
+	if n.BlobScanClient != nil {
+		if err := n.BlobScanClient.Start(); err != nil {
 			return err
 		}
 	}
@@ -183,6 +190,11 @@ func (n *Node) Shutdown() error {
 	}
 	if n.AnvilClient != nil && n.AnvilClient.IsRunning() {
 		if err := n.AnvilClient.Shutdown(); err != nil {
+			return err
+		}
+	}
+	if n.BlobScanClient != nil && n.BlobScanClient.IsRunning() {
+		if err := n.BlobScanClient.Shutdown(); err != nil {
 			return err
 		}
 	}

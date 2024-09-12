@@ -15,7 +15,6 @@ import (
 var testSuite = hivesim.Suite{
 	Name:        "taiko-reorg",
 	DisplayName: "Deneb reorg",
-	Description: "",
 	Location:    "suites/reorg",
 }
 
@@ -29,7 +28,6 @@ func init() {
 				Name:           "taiko-reorg",
 				L2SyncMode:     "full",
 				L2TargetNumber: 20,
-				Debug:          true,
 			},
 		},
 	)

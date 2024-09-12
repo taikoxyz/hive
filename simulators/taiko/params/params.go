@@ -49,6 +49,10 @@ func init() {
 	}
 }
 
+func ParamByKey(key string) string {
+	return envParams[key]
+}
+
 func EnvParams() hivesim.Params {
 	return envParams.Copy()
 }

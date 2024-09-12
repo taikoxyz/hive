@@ -4,7 +4,7 @@
 
 # taiko-client's necessary common envs.
 check_env "L1_WS"
-check_env "L1_BEACON"
+#check_env "L1_BEACON"
 check_env "L2_WS"
 check_env "L2_AUTH"
 check_env "TAIKO_L1_ADDRESS"

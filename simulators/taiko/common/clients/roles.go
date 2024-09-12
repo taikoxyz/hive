@@ -5,24 +5,32 @@ import "github.com/ethereum/hive/hivesim"
 type Role string
 
 var (
-	Anvil     Role = "anvil"
-	Eth1      Role = "eth1"
-	Beacon    Role = "beacon"
-	Validator Role = "validator"
-	Eth2      Role = "taiko-geth"
-	Driver    Role = "driver"
-	Proposer  Role = "proposer"
-	Prover    Role = "prover"
+	Anvil       Role = "anvil"
+	Eth1        Role = "eth1"
+	Beacon      Role = "beacon"
+	Validator   Role = "validator"
+	Eth2        Role = "taiko-geth"
+	Driver      Role = "driver"
+	Proposer    Role = "proposer"
+	Prover      Role = "prover"
+	Redis       Role = "redis"
+	Postgres    Role = "postgres"
+	BlobApi     Role = "blobscan-api"
+	BlobIndexer Role = "blobscan-indexer"
 
 	Roles = map[Role]bool{
-		Anvil:     true,
-		Eth1:      true,
-		Beacon:    true,
-		Validator: true,
-		Eth2:      true,
-		Driver:    true,
-		Proposer:  true,
-		Prover:    true,
+		Anvil:       true,
+		Eth1:        true,
+		Beacon:      true,
+		Validator:   true,
+		Eth2:        true,
+		Driver:      true,
+		Proposer:    true,
+		Prover:      true,
+		Redis:       true,
+		Postgres:    true,
+		BlobApi:     true,
+		BlobIndexer: true,
 	}
 )
 

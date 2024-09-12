@@ -8,11 +8,11 @@ import (
 	tn "taiko/common/testnet"
 	"taiko/params"
 	suite_base "taiko/suites/base"
+	"time"
 )
 
 type BlobTestSpec struct {
 	TestL1Beacon   bool
-	TestBlobSocial bool
 	TestBlobServer bool
 	suite_base.BaseTestSpec
 }
@@ -20,21 +20,28 @@ type BlobTestSpec struct {
 func (r BlobTestSpec) GetTestnetConfig() *testnet.Config {
 	cfg := r.BaseTestSpec.GetTestnetConfig()
 
-	params.SetEnvParams("TEST_L1_BEACON", fmt.Sprintf("%v", r.TestL1Beacon))
-	params.SetEnvParams("TEST_BLOB_SOCIAL", fmt.Sprintf("%v", r.TestBlobSocial))
-	params.SetEnvParams("TEST_BLOB_SERVER", fmt.Sprintf("%v", r.TestBlobServer))
-
-	params.SetEnvParams("RUN_TESTS", "")
 	// enable blob tx.
 	params.SetEnvParams("L1_BLOB_ALLOWED", "true")
-	// set a mock beacon api url.
-	params.SetEnvParams("L1_BEACON", "mock_url")
-	params.SetEnvParams("BLOB_SOCIAL_SCAN_ENDPOINT", "mock_url")
-	params.SetEnvParams("BLOB_SERVER", "mock_url")
+
+	params.SetEnvParams("TEST_L1_BEACON", fmt.Sprintf("%v", r.TestL1Beacon))
+	params.SetEnvParams("TEST_BLOB_SERVER", fmt.Sprintf("%v", r.TestBlobServer))
 
 	return cfg
 }
 
 func (r BlobTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Testnet) {
+	node := testnet.Nodes[0]
+	if err := node.Start(); err != nil {
+		t.Fatalf("%s: failed to start the first node, err: %v", r.Name, err)
+	}
 
+	var (
+		l2eth        = node.L2EthClient
+		timeout      = time.Second * 60
+		targetNumber = uint64(10)
+	)
+
+	if err := l2eth.WaitLatestNumber(ctx, timeout, targetNumber); err != nil {
+		t.Fatalf("%s: can't wait %s touch target height, err: %v", r.Name, l2eth.ClientType(), err)
+	}
 }
