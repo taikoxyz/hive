@@ -1,8 +1,10 @@
 package suite_base
 
 import (
+	"fmt"
 	execution_config "taiko/common/config/execution"
 	"taiko/common/testnet"
+	"taiko/params"
 )
 
 type BaseTestSpec struct {
@@ -23,6 +25,18 @@ type BaseTestSpec struct {
 }
 
 func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
+	params.SetEnvParams("IS_GUARDIAN", fmt.Sprintf("%v", ts.IsGuardian))
+	if !ts.IsGuardian {
+		params.SetEnvParams("GUARDIAN_PROVER_MINORITY", "")
+		params.SetEnvParams("GUARDIAN_PROVER_MAJORITY", "")
+		params.SetEnvParams("GUARDIAN_PROVER_CONTRACT", "")
+	}
+
+	syncMode := "snap"
+	if ts.L2SyncMode != "" {
+		syncMode = ts.L2SyncMode
+	}
+
 	return &testnet.Config{
 		Eth1Consensus: execution_config.ExecutionCliqueConsensus{
 			CliquePrivateKey: "2e0834786285daccd064ca17f1654f67b4aef298acbb82cef9ec422fb4975622",
@@ -32,9 +46,8 @@ func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
 		LogLevel:   3,
 		JWTSecret:  "c49690b5a9bc72c7b451b48c5fee2b542e66559d840a133d090769abc56e39e7",
 		FeeReceipt: "a0Ee7A142d267C1f36714E4a8F75612F20a79720",
-		L2SyncMode: ts.L2SyncMode,
+		L2SyncMode: syncMode,
 		BeaconSync: true,
-		IsGuardian: ts.IsGuardian,
 		Debug:      ts.Debug,
 	}
 }

@@ -56,9 +56,6 @@ type Config struct {
 	// driver variables, false: beacon sync, true: blob sync
 	BeaconSync bool
 
-	// prover prover type
-	IsGuardian bool
-
 	// open debug flag
 	Debug bool
 }

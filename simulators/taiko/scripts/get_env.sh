@@ -23,6 +23,7 @@ L2_WS=ws://localhost:8546
 L2_AUTH=http://localhost:8551
 RUN_TESTS=true
 MODE_CONTESTER=true
+TX_RECEIPT_QUERY_INTERVAL=1s
 VERBOSITY=3
 RAIKO_HOST=empty_content
 PROVER_DUMMY=true

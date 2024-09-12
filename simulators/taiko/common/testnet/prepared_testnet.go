@@ -147,19 +147,10 @@ func PrepareTestnet(
 		"HIVE_CHECK_LIVE_PORT": fmt.Sprintf("%d", clients.EthHttpPort),
 	})
 
-	params.SetEnvParams("IS_GUARDIAN", fmt.Sprintf("%v", cfg.IsGuardian))
-	if !cfg.IsGuardian {
-		params.SetEnvParams("GUARDIAN_PROVER_MINORITY", "")
-		params.SetEnvParams("GUARDIAN_PROVER_MAJORITY", "")
-		params.SetEnvParams("GUARDIAN_PROVER_CONTRACT", "")
-	}
 	taikoClientOpts := hivesim.Bundle(
 		params.EnvParams(),
 		commonParams,
 		networkParams,
-		hivesim.Params{
-			"TX_RECEIPT_QUERY_INTERVAL": "1s",
-		},
 	)
 
 	return &PreparedTestnet{
@@ -454,6 +445,15 @@ func (p *PreparedTestnet) prepareDriverClient(
 				"P2P_CHECK_POINT_SYNC_URL": firstNode.L2EthClient.HttpURL(),
 			})
 		}
+
+		// If blob tx is enabled, set blob server url.
+		if envs["L1_BLOB_ALLOWED"] == "true" {
+			opts = append(opts, hivesim.Params{
+				"BLOB_SOCIAL_SCAN_ENDPOINT": beaconClient.BeaconURL(),
+				"BLOB_SERVER":               beaconClient.BeaconURL(),
+			})
+		}
+
 		return opts, nil
 	}
 

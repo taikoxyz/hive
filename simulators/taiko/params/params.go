@@ -54,5 +54,9 @@ func EnvParams() hivesim.Params {
 }
 
 func SetEnvParams(key, value string) {
-	envParams[key] = value
+	if value == "" {
+		delete(envParams, key)
+	} else {
+		envParams[key] = value
+	}
 }
