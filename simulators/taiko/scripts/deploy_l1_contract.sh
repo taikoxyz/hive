@@ -39,11 +39,12 @@ export L2_GENESIS_HASH=$(
 echo "L2_GENESIS_HASH: $L2_GENESIS_HASH"
 
 echo "Start deploying taiko contracts on l1 chain..."
-cd "$TAIKO_MONO_DIR"/packages/protocol && forge script script/DeployOnL1.s.sol:DeployOnL1 \
+cd "$TAIKO_MONO_DIR"/packages/protocol && forge script script/layer1/DeployProtocolOnL1.s.sol:DeployProtocolOnL1 \
   --fork-url "$L1_PROBE_URL" \
   --broadcast \
   --ffi \
   -vvvv \
+  --evm-version cancun \
   --private-key $PRIVATE_KEY \
   --block-gas-limit 100000000
 
