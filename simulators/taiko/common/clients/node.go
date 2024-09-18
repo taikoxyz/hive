@@ -98,7 +98,7 @@ func (n *Node) Start() error {
 	if n.Index == 0 && (n.DriverClient != nil || n.ProposerClient != nil || n.ProverClient != nil) {
 		if n.AnvilClient != nil {
 			fmt.Printf("Deploying contracts in %s node, url: %s\n", n.AnvilClient.ClientType(), n.AnvilClient.HttpURL())
-			if err := utils.DeployContracts(context.Background(), n.AnvilClient.HttpURL()); err != nil {
+			if err := utils.DeployContracts(context.Background(), n.AnvilClient.HttpURL(), n.L2EthClient.HttpURL()); err != nil {
 				return errors.Wrap(err, fmt.Sprintf("%s: failed to deploy contracts", n.AnvilClient.ClientType()))
 			}
 			if err := n.AnvilClient.FillTiers(context.Background()); err != nil {
@@ -106,7 +106,7 @@ func (n *Node) Start() error {
 			}
 		} else if n.L1EthClient != nil {
 			fmt.Printf("Deploying contracts in %s node, url: %s\n", n.L1EthClient.ClientType(), n.L1EthClient.HttpURL())
-			if err := utils.DeployContracts(context.Background(), n.L1EthClient.HttpURL()); err != nil {
+			if err := utils.DeployContracts(context.Background(), n.L1EthClient.HttpURL(), n.L2EthClient.HttpURL()); err != nil {
 				return errors.Wrap(err, fmt.Sprintf("%s: failed to deploy contracts", n.L1EthClient.ClientType()))
 			}
 		}

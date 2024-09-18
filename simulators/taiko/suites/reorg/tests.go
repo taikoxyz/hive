@@ -23,11 +23,11 @@ var Tests = make([]suites.TestSpec, 0)
 func init() {
 	Tests = append(Tests,
 		ReorgTestSpec{
-			ReorgDepth: 10,
 			BaseTestSpec: suite_base.BaseTestSpec{
-				Name:           "taiko-reorg",
-				L2SyncMode:     "full",
-				L2TargetNumber: 20,
+				Name:       "taiko-reorg",
+				L2SyncMode: "full",
+				//L2TargetNumber: 25,
+				//Debug:          true,
 			},
 		},
 	)

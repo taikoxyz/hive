@@ -6,19 +6,30 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stretchr/testify/assert"
-	"taiko/bindings/guardianprover"
 	"taiko/bindings/libproving"
 	"taiko/bindings/taikol1"
 	"taiko/params"
 	"testing"
 )
 
-var client *ethclient.Client
+var (
+	client   *ethclient.Client
+	taikoL1  *taikol1.TaikoL1
+	proverL1 *libproving.LibProving
+)
 
 func init() {
 	url := "ws://localhost:8545"
 	var err error
 	client, err = ethclient.Dial(url)
+	if err != nil {
+		panic(err)
+	}
+	taikoL1, err = taikol1.NewTaikoL1(common.HexToAddress(params.EnvParams()["TAIKO_L1"]), client)
+	if err != nil {
+		panic(err)
+	}
+	proverL1, err = libproving.NewLibProving(common.HexToAddress(params.EnvParams()["TAIKO_L1"]), client)
 	if err != nil {
 		panic(err)
 	}
@@ -54,64 +65,67 @@ func mineBlock(client *rpc.Client) error {
 	return client.CallContext(context.Background(), nil, "evm_mine")
 }
 
-func TestDeployContracts(t *testing.T) {
-	url := "http://localhost:8545"
-	assert.NoError(t, DeployContracts(context.Background(), url))
-	assert.NoError(t, setIntervalMining(url, 3))
-}
-
 func TestCC1(t *testing.T) {
-	taikoL1, err := taikol1.NewTaikoL1(common.HexToAddress(params.EnvParams()["TAIKO_L1"]), client)
-	assert.NoError(t, err)
+	result, _ := taikoL1.State(nil)
+	_ = result
 
-	id, err := taikoL1.GetTransitionId(nil)
-	assert.NoError(t, err)
+	cfg, _ := taikoL1.GetConfig(nil)
+	_ = cfg
+	t.Log("OntakeForkHeight: ", cfg.OntakeForkHeight)
 
-	t.Log(id)
+	for num := result.SlotB.LastVerifiedBlockId; num < result.SlotB.NumBlocks; num++ {
+		blk, err := taikoL1.GetBlock(nil, num)
+		if err != nil {
+			t.Log(err.Error())
+			break
+		} else {
+			t.Log(blk.BlockId)
+		}
+	}
 }
 
 func TestCC(t *testing.T) {
-	proving, err := libproving.NewLibProving(common.HexToAddress(params.EnvParams()["TAIKO_L1"]), client)
-	assert.NoError(t, err)
-
-	iter2, err := proving.FilterTransitionProvedV2(nil, nil)
-	assert.NoError(t, err)
-
-	t.Log(iter2.Next())
+	tIter, _ := taikoL1.FilterBlockProposed(nil, nil, nil)
+	tIterV2, _ := taikoL1.FilterBlockProposedV2(nil, nil)
+	for tIter.Next() {
+		t.Logf("v1 blockId: %d", tIter.Event.BlockId.Uint64())
+		//data, _ := json.Marshal(tIter.Event.Meta)
+		//t.Log("v1 content: ", string(data))
+		t.Log("v1 L1Hash", common.BytesToHash(tIter.Event.Meta.L1Hash[:]))
+		t.Log("---------------------------------------------------------------------------------------------------")
+	}
+	for tIterV2.Next() {
+		t.Logf("v2 blockId: %d", tIterV2.Event.BlockId.Uint64())
+		//data, _ := json.Marshal(tIterV2.Event.Meta)
+		//t.Log("v2 content: ", string(data))
+		t.Log("v2 AnchorBlockHash: ", common.BytesToHash(tIterV2.Event.Meta.AnchorBlockHash[:]))
+		t.Log("---------------------------------------------------------------------------------------------------")
+	}
 }
 
-func TestTaikoL1(t *testing.T) {
-	tl1, err := taikol1.NewTaikoL1(common.HexToAddress(params.EnvParams()["PROVER_SET"]), client)
-	assert.NoError(t, err)
-	out, err := tl1.GetTransitionId(nil)
-	assert.NoError(t, err)
-	t.Log(out)
-
-	iter, err := tl1.FilterTransitionProved(nil, nil)
-	assert.NoError(t, err)
-	t.Log(iter.Next())
-
-	iter2, err := tl1.FilterTransitionProvedV2(nil, nil)
-	assert.NoError(t, err)
-	t.Log(iter2.Next())
-
-	prover, err := guardianprover.NewGuardianProver(common.HexToAddress(params.EnvParams()["GUARDIAN_PROVER_MINORITY"]), client)
-	assert.NoError(t, err)
-
-	minGuardians, err := prover.MinGuardians(nil)
-	assert.NoError(t, err)
-	t.Log("minGuardians: ", minGuardians)
-
-	sink := make(chan *guardianprover.GuardianProverApproved, 3)
-	sub, err := prover.WatchApproved(nil, sink, nil)
-	assert.NoError(t, err)
-
-	for {
-		select {
-		case result := <-sink:
-			t.Log("approvalBits: ", result.ApprovalBits, result.MinGuardiansReached)
-		case <-sub.Err():
-			break
-		}
+func TestCC22(t *testing.T) {
+	pIter, _ := proverL1.FilterLibProvingData(nil, nil)
+	pIterV2, _ := proverL1.FilterLibProvingDataV2(nil, nil)
+	for pIter.Next() {
+		//metaHash1 := common.BytesToHash(pIter.Event.MetaHash1[:])
+		//metaHash2 := common.BytesToHash(pIter.Event.MetaHash2[:])
+		//if metaHash1 != metaHash2 {
+		t.Logf("v1 blockId: %d", pIter.Event.BlockId.Uint64())
+		//data, _ := json.Marshal(pIter.Event.Meta)
+		//t.Logf("v1 content: %s", string(data))
+		t.Log("v1 L1Hash", common.BytesToHash(pIter.Event.Meta.L1Hash[:]))
+		t.Log("---------------------------------------------------------------------------------------------------")
+		//}
+	}
+	for pIterV2.Next() {
+		//metaHash1 := common.BytesToHash(pIterV2.Event.MetaHash1[:])
+		//metaHash2 := common.BytesToHash(pIterV2.Event.MetaHash2[:])
+		//if metaHash1 != metaHash2 {
+		t.Logf("v2 blockId: %d", pIterV2.Event.BlockId.Uint64())
+		//data, _ := json.Marshal(pIterV2.Event.Meta)
+		//t.Logf("v2 content: %s", string(data))
+		t.Log("v2 AnchorBlockHash: ", common.BytesToHash(pIterV2.Event.Meta.AnchorBlockHash[:]))
+		t.Log("---------------------------------------------------------------------------------------------------")
+		//}
 	}
 }

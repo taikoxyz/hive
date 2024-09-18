@@ -13,7 +13,7 @@ func TestAnvil(t *testing.T) {
 	assert.NoError(t, err)
 	anvil := &AnvilClient{
 		SecondsPerSlot: 3,
-		reorgCache:     make(map[string]*L1BlockInfo),
+		reorgCache:     make(map[uint64]*L1BlockInfo),
 		EthNode: &EthNode{
 			client: rpcCli,
 		},

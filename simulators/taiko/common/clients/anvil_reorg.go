@@ -3,20 +3,20 @@ package clients
 import (
 	"context"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"math/big"
 	"time"
 )
 
-func (a *AnvilClient) SetReorgPoint() uint64 {
-	client := a.EthClient()
+func (a *AnvilClient) SetReorgPoint(ctx context.Context, l2cli *ethclient.Client) {
 
 	a.reorgCache = make(map[uint64]*L1BlockInfo)
 	a.reorgCh = make(chan struct{})
 
-	number, err := client.BlockNumber(context.Background())
-	if err != nil {
-		a.Fatalf("failed to get %s latest number, err: %v", a.ClientType(), err)
-	}
+	var (
+		l1Number uint64
+		l1Cli    = a.EthClient()
+	)
 	go func() {
 		tick := time.NewTicker(time.Second)
 		defer tick.Stop()
@@ -25,67 +25,71 @@ func (a *AnvilClient) SetReorgPoint() uint64 {
 			case <-a.reorgCh:
 				return
 			case <-tick.C:
-				header, err := client.HeaderByNumber(context.Background(), nil)
+				l2Num, err := l2cli.BlockNumber(ctx)
 				if err != nil {
-					a.Fatalf("failed to get %s latest header, err: %v", a.ClientType(), err)
+					a.Fatalf("failed to get l2node latest number, err: %v", err)
 				}
-				if num := header.Number.Uint64(); num > number {
-					number = num
-					a.reorgCache[number] = &L1BlockInfo{
+
+				l1Num, err := l1Cli.BlockNumber(ctx)
+				if err != nil {
+					a.Fatalf("failed to get %s latest number, err: %v", a.ClientType(), err)
+				}
+				if l1Num > l1Number {
+					l1Number = l1Num
+					a.reorgCache[l1Num] = &L1BlockInfo{
+						L2Number: l2Num,
 						Snapshot: a.SetSnapshot(),
-						Header:   header,
 					}
 				}
 			}
 		}
 	}()
-
-	return number
 }
 
-func (a *AnvilClient) Reorg(number uint64) {
+func (a *AnvilClient) Reorg(l2Number uint64) {
 	close(a.reorgCh)
-	info, ok := a.reorgCache[number]
-	if !ok {
-		return
-	}
 	a.StopMining()
 	defer a.StartMining()
 
-	a.Logf("reorg %s to the number %d", a.ClientType(), info.Header.Number.Uint64())
-
 	var (
-		ctx    = context.Background()
-		client = a.EthClient()
+		ctx      = context.Background()
+		client   = a.EthClient()
+		l1Number uint64
+		snapshot string
 	)
 
-	curNumber, err := client.BlockNumber(context.Background())
-	if err != nil {
-		a.Fatalf("failed to get %s latest header, err: %v", a.ClientType(), err)
+	for num, info := range a.reorgCache {
+		if info.L2Number == l2Number {
+			if l1Number == 0 || num < l1Number {
+				l1Number = num
+				snapshot = info.Snapshot
+			}
+		}
 	}
+
 	blocks := make([]*types.Block, 0)
-	for num := info.Header.Number.Uint64() + 1; num <= curNumber; num++ {
-		block, err := client.BlockByNumber(context.Background(), new(big.Int).SetUint64(num))
+	for num := l1Number + 1; true; num++ {
+		block, err := client.BlockByNumber(ctx, new(big.Int).SetUint64(num))
 		if err != nil {
-			a.Fatalf("failed to get block %d, err: %v", num, err)
+			break
 		}
 		blocks = append(blocks, block)
 	}
 
-	a.RevertSnapshot(info.Snapshot)
+	a.RevertSnapshot(snapshot)
+	//a.SetNextBlockTimestamp(info.Header.Time + a.SecondsPerSlot + 1)
+	//a.SetNextBlockTimestamp(blocks[0].Time() + 1)
 
-	for i, block := range blocks {
+	for _, block := range blocks {
 		for _, tx := range block.Transactions() {
-			err = client.SendTransaction(ctx, tx)
-			if err != nil {
+			if err := client.SendTransaction(ctx, tx); err != nil {
 				a.Fatalf("failed to send tx %s, err: %v", tx.Hash().Hex(), err)
 			}
 		}
-		if i == 0 {
-			a.SetNextBlockTimestamp(block.Time() + 1)
-		} else {
-			a.SetNextBlockTimestamp(block.Time())
-		}
+		//if err := a.WaitLatestNumber(ctx, time.Second*60, block.NumberU64()); err != nil {
+		//	a.Fatalf("reorg failed to wait latest number, err: %v", err)
+		//}
+		//time.Sleep(time.Duration(a.SecondsPerSlot) * time.Second)
 		a.MineBlock()
 	}
 

@@ -11,48 +11,6 @@ import (
 	"taiko/params"
 )
 
-func (a *AnvilClient) HandleProposedEvent(start uint64) chan struct{} {
-	a.Logf("%s: start watch proposed event, start number: %d", a.ClientType(), start)
-	stopCh := make(chan struct{})
-
-	a.proposedEvents = make([]*BlockProposed, 0)
-
-	go func() {
-		sink := make(chan *taikol1.TaikoL1BlockProposed, 10)
-		sub, err := a.taikoL1.WatchBlockProposed(&bind.WatchOpts{Start: &start}, sink, nil, nil)
-		if err != nil {
-			a.Fatalf("%s, failed to watch BlockProposed event, err: %v", a.ClientType(), err)
-		}
-		defer sub.Unsubscribe()
-
-		sink2 := make(chan *taikol1.TaikoL1BlockProposedV2, 10)
-		sub2, err := a.taikoL1.WatchBlockProposedV2(&bind.WatchOpts{Start: &start}, sink2, nil)
-		if err != nil {
-			a.Fatalf("%s, failed to watch BlockProposed event, err: %v", a.ClientType(), err)
-		}
-		defer sub2.Unsubscribe()
-
-		for {
-			select {
-			case <-stopCh:
-				return
-			case blockProposed := <-sink:
-				a.proposedEvents = append(a.proposedEvents, &BlockProposed{
-					BlockId: blockProposed.BlockId.Uint64(),
-					MinTier: blockProposed.Meta.MinTier,
-				})
-			case blockProposed := <-sink2:
-				a.proposedEvents = append(a.proposedEvents, &BlockProposed{
-					BlockId: blockProposed.BlockId.Uint64(),
-					MinTier: blockProposed.Meta.MinTier,
-				})
-			}
-		}
-	}()
-
-	return stopCh
-}
-
 func (a *AnvilClient) depProposerEvent() {
 	var pv1 *BlockProposed
 	if len(a.proposedEvents) == 0 {

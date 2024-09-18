@@ -2,7 +2,6 @@ package clients
 
 import (
 	"errors"
-	"github.com/ethereum/go-ethereum/core/types"
 	"taiko/bindings/devnettierprovider"
 	"taiko/bindings/taikol1"
 )
@@ -16,7 +15,7 @@ var (
 )
 
 type L1BlockInfo struct {
-	Header   *types.Header
+	L2Number uint64
 	Snapshot string
 }
 

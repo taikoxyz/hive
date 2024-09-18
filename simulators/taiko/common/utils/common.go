@@ -2,7 +2,6 @@ package utils
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -13,17 +12,22 @@ import (
 	"math/big"
 	"os"
 	"taiko/bindings/proverset"
+	"taiko/bindings/taikol1"
 	"taiko/bindings/taikotoken"
 	"taiko/params"
 )
 
-func DeployContracts(ctx context.Context, url string) error {
-	client, err := ethclient.DialContext(ctx, url)
+func DeployContracts(ctx context.Context, l1Url, l2Url string) error {
+	l1cli, err := ethclient.DialContext(ctx, l1Url)
+	if err != nil {
+		return err
+	}
+	chainID, err := l1cli.ChainID(ctx)
 	if err != nil {
 		return err
 	}
 
-	chainID, err := client.ChainID(ctx)
+	l2cli, err := ethclient.DialContext(ctx, l2Url)
 	if err != nil {
 		return err
 	}
@@ -44,7 +48,7 @@ func DeployContracts(ctx context.Context, url string) error {
 			return err
 		}
 
-		if err := client.SendTransaction(ctx, signedTx); err != nil {
+		if err := l1cli.SendTransaction(ctx, signedTx); err != nil {
 			return err
 		}
 		fmt.Println("successfully send tx, hash: ", signedTx.Hash().String())
@@ -54,12 +58,12 @@ func DeployContracts(ctx context.Context, url string) error {
 	// Wait the latest tx mined.
 	for _, tx := range signedTxs {
 		if tx.To() == nil {
-			_, err := bind.WaitDeployed(context.Background(), client, tx)
+			_, err := bind.WaitDeployed(context.Background(), l1cli, tx)
 			if err != nil {
 				return fmt.Errorf("failed to wait deployed: %v", err)
 			}
 		} else {
-			receipt, err := bind.WaitMined(context.Background(), client, tx)
+			receipt, err := bind.WaitMined(context.Background(), l1cli, tx)
 			if err != nil {
 				return fmt.Errorf("failed to wait mined, hash: %s, err: %v", tx.Hash().String(), err)
 			}
@@ -71,39 +75,65 @@ func DeployContracts(ctx context.Context, url string) error {
 
 	// init contracts.
 	envs := params.EnvParams()
-	envs["L1_HTTP"] = url
-	return initTaikoContract(envs)
-}
-
-// InitTaikoContract init taiko contracts.
-func initTaikoContract(params map[string]string) error {
-	for k, v := range params {
+	envs["L1_HTTP"] = l1Url
+	envs["L2_HTTP"] = l2Url
+	for k, v := range envs {
 		if err := os.Setenv(k, v); err != nil {
 			return err
 		}
 	}
-	l1client, err := ethclient.Dial(os.Getenv("L1_HTTP"))
+
+	return initTaikoContract(l1cli, l2cli)
+}
+
+func initL2Genesis(l1cli, l2cli *ethclient.Client, ownerAuth *bind.TransactOpts) error {
+	taikoL1, err := taikol1.NewTaikoL1(common.HexToAddress(os.Getenv("TAIKO_L1")), l1cli)
+	if err != nil {
+		return err
+	}
+	genesisHeader, err := l2cli.HeaderByNumber(context.Background(), big.NewInt(0))
 	if err != nil {
 		return err
 	}
 
-	l1ChainID, err := l1client.ChainID(context.Background())
+	cfg, err := taikoL1.GetConfig(nil)
+	if err != nil {
+		return err
+	}
+	fmt.Println("block ring buffer: ", cfg.BlockRingBufferSize)
+
+	_, err = taikoL1.InitL2Genesis(ownerAuth, genesisHeader.Hash())
+	return err
+}
+
+// InitTaikoContract init taiko contracts.
+func initTaikoContract(l1cli, l2cli *ethclient.Client) error {
+	l1ChainID, err := l1cli.ChainID(context.Background())
 	if err != nil {
 		return err
 	}
 
-	taikoToken, err := taikotoken.NewTaikoToken(common.HexToAddress(os.Getenv("TAIKO_TOKEN")), l1client)
+	taikoToken, err := taikotoken.NewTaikoToken(common.HexToAddress(os.Getenv("TAIKO_TOKEN")), l1cli)
 	if err != nil {
 		return err
 	}
 
-	l1ProverPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROVER_PRIV_KEY")))
+	proverAuth, err := getAuth("L1_PROVER_PRIV_KEY", l1ChainID)
 	if err != nil {
 		return err
 	}
 
-	l1ProposerPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIV_KEY")))
+	proposerAuth, err := getAuth("L1_PROPOSER_PRIV_KEY", l1ChainID)
 	if err != nil {
+		return err
+	}
+
+	ownerAuth, err := getAuth("L1_CONTRACT_OWNER_PRIVATE_KEY", l1ChainID)
+	if err != nil {
+		return err
+	}
+
+	if err = initL2Genesis(l1cli, l2cli, ownerAuth); err != nil {
 		return err
 	}
 
@@ -114,23 +144,13 @@ func initTaikoContract(params map[string]string) error {
 	allow := new(big.Int).Exp(big.NewInt(1_000_000_100), new(big.Int).SetUint64(uint64(decimal)), nil)
 	fmt.Println(decimal, allow.String())
 
-	ownerPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_CONTRACT_OWNER_PRIVATE_KEY")))
-	if err != nil {
-		return err
-	}
-
 	// Transfer some tokens to provers.
-	balance, err := taikoToken.BalanceOf(nil, crypto.PubkeyToAddress(ownerPrivKey.PublicKey))
+	balance, err := taikoToken.BalanceOf(nil, ownerAuth.From)
 	if err != nil {
 		return err
 	}
 	if balance.Cmp(common.Big0) <= 0 {
 		return errors.New("balance is less than or equal to 0")
-	}
-
-	opts, err := bind.NewKeyedTransactorWithChainID(ownerPrivKey, l1ChainID)
-	if err != nil {
-		return err
 	}
 
 	proverBalance := new(big.Int).Div(balance, common.Big32)
@@ -139,32 +159,32 @@ func initTaikoContract(params map[string]string) error {
 	}
 
 	if os.Getenv("IS_GUARDIAN") == "true" {
-		_, err = taikoToken.Transfer(opts, crypto.PubkeyToAddress(l1ProposerPrivKey.PublicKey), proverBalance)
+		_, err = taikoToken.Transfer(ownerAuth, proposerAuth.From, proverBalance)
 		if err != nil {
 			return err
 		}
-		if err = transferTaikoToken(taikoToken, opts, "GUARDIAN_PROVER_MINORITY", proverBalance); err != nil {
+		if err = transferTaikoToken(taikoToken, ownerAuth, "GUARDIAN_PROVER_MINORITY", proverBalance); err != nil {
 			return err
 		}
-		if err = transferTaikoToken(taikoToken, opts, "GUARDIAN_PROVER_CONTRACT", proverBalance); err != nil {
+		if err = transferTaikoToken(taikoToken, ownerAuth, "GUARDIAN_PROVER_CONTRACT", proverBalance); err != nil {
 			return err
 		}
 	} else {
-		if err = transferTaikoToken(taikoToken, opts, "PROVER_SET", proverBalance); err != nil {
+		if err = transferTaikoToken(taikoToken, ownerAuth, "PROVER_SET", proverBalance); err != nil {
 			return err
 		}
-		if err = enableProver(l1client, opts, crypto.PubkeyToAddress(l1ProposerPrivKey.PublicKey), true); err != nil {
+		if err = enableProver(l1cli, ownerAuth, proposerAuth.From, true); err != nil {
 			return err
 		}
-		if err = enableProver(l1client, opts, crypto.PubkeyToAddress(l1ProverPrivKey.PublicKey), true); err != nil {
+		if err = enableProver(l1cli, ownerAuth, proverAuth.From, true); err != nil {
 			return err
 		}
 	}
 
-	if err = setAllowance(l1client, l1ProverPrivKey, taikoToken); err != nil {
+	if err = setAllowance(l1cli, proverAuth, taikoToken); err != nil {
 		return err
 	}
-	if err = setAllowance(l1client, ownerPrivKey, taikoToken); err != nil {
+	if err = setAllowance(l1cli, ownerAuth, taikoToken); err != nil {
 		return err
 	}
 
@@ -196,7 +216,7 @@ func enableProver(client *ethclient.Client, auth *bind.TransactOpts, _prover com
 	return err
 }
 
-func setAllowance(client *ethclient.Client, key *ecdsa.PrivateKey, taikoToken *taikotoken.TaikoToken) error {
+func setAllowance(client *ethclient.Client, auth *bind.TransactOpts, taikoToken *taikotoken.TaikoToken) error {
 	taikoL1 := os.Getenv("TAIKO_L1")
 	if taikoL1 == "" {
 		return fmt.Errorf("TAIKO_L1 variable is empty")
@@ -207,16 +227,6 @@ func setAllowance(client *ethclient.Client, key *ecdsa.PrivateKey, taikoToken *t
 	}
 
 	var bigInt = new(big.Int).Exp(big.NewInt(1_000_000_000), new(big.Int).SetUint64(uint64(decimal)), nil)
-
-	chainID, err := client.ChainID(context.Background())
-	if err != nil {
-		return err
-	}
-
-	auth, err := bind.NewKeyedTransactorWithChainID(key, chainID)
-	if err != nil {
-		return err
-	}
 
 	tx, err := taikoToken.Approve(auth, common.HexToAddress(taikoL1), bigInt)
 	if err != nil {
@@ -230,6 +240,14 @@ func setAllowance(client *ethclient.Client, key *ecdsa.PrivateKey, taikoToken *t
 		return fmt.Errorf("approve failed, tx hash: %s", tx.Hash().String())
 	}
 	return nil
+}
+
+func getAuth(key string, chainID *big.Int) (*bind.TransactOpts, error) {
+	ownerPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv(key)))
+	if err != nil {
+		return nil, err
+	}
+	return bind.NewKeyedTransactorWithChainID(ownerPrivKey, chainID)
 }
 
 // StringToBytes32 converts the given string to [32]byte.

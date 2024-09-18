@@ -25,6 +25,7 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/tyler-smith/go-bip39 v1.1.0
 	github.com/wealdtech/go-eth2-util v1.8.0
+	go4.org v0.0.0-20180809161055-417644f6feb5
 	golang.org/x/exp v0.0.0-20240213143201-ec583247a57a
 )
 

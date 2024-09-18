@@ -2,6 +2,7 @@ package clients
 
 import (
 	"context"
+	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"taiko/bindings/taikol1"
 	"time"
@@ -74,76 +75,25 @@ func (a *AnvilClient) GetTaikoDataSlotB(ctx context.Context) *taikol1.TaikoDataS
 	return &slotB
 }
 
-func (a *AnvilClient) WaitVerifiedNumber(ctx context.Context, timeout time.Duration) (uint64, uint64, error) {
-
-	// record reorg point
-	snapshotNumber := a.SetReorgPoint()
-
-	stopCh := a.HandleProposedEvent(0)
-	defer close(stopCh)
-
-	a.Logf("%s: wait latest l2 blockVerified, l1 snapshot number: %d", a.ClientType(), snapshotNumber)
-
-	subCtx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
-	verifiedCh := make(chan *taikol1.TaikoL1BlockVerified, 10)
-	verifiedChV2 := make(chan *taikol1.TaikoL1BlockVerifiedV2, 10)
-	sub, err := a.taikoL1.WatchBlockVerified(&bind.WatchOpts{Context: subCtx}, verifiedCh, nil, nil)
-	if err != nil {
-		return 0, 0, err
-	}
-	defer sub.Unsubscribe()
-	sub2, err := a.taikoL1.WatchBlockVerifiedV2(&bind.WatchOpts{Context: subCtx}, verifiedChV2, nil, nil)
-	if err != nil {
-		return 0, 0, err
-	}
-	defer sub2.Unsubscribe()
-
-	tick := time.NewTicker(time.Second)
-	var (
-		number           uint64
-		l1Number         uint64
-		latestVerifiedId uint64
-	)
-	for latestVerifiedId == 0 || len(verifiedCh) != 0 || len(verifiedChV2) != 0 {
+func (a *AnvilClient) WaitLatestVerifiedNumber(ctx context.Context, timeout time.Duration, verifiedNumber uint64) error {
+	a.Logf("%s: wait latest verified number %d", a.ClientType(), verifiedNumber)
+	current, times := uint64(0), timeout/time.Second
+	for times > 0 && verifiedNumber >= current {
 		select {
-		case <-ctx.Done():
-			return 0, 0, ctx.Err()
-
-		case <-tick.C:
-			if l1Number < snapshotNumber {
-				num, err := a.EthClient().BlockNumber(ctx)
-				if err != nil {
-					a.Fatalf("%s: failed to get latest number, err: %v", a.ClientType(), err)
-				}
-				if num >= number {
-					number = num
-					a.depProposerEvent()
-				}
-			}
-
-		case result := <-verifiedCh:
-			verifiedBlockId := result.BlockId.Uint64()
-			a.Logf("%s: get taiko data SlotB, last verifiedBlockId: %d", a.ClientType(), verifiedBlockId)
-			if result.Raw.BlockNumber >= snapshotNumber {
-				l1Number, latestVerifiedId = result.Raw.BlockNumber, verifiedBlockId
-				time.Sleep(time.Millisecond * 200)
+		case <-time.Tick(time.Second):
+			slotB := a.GetTaikoDataSlotB(ctx)
+			if number := slotB.LastVerifiedBlockId; number >= current {
+				current = number + 1
+				times = timeout / time.Second
 				break
-			}
-
-		case result := <-verifiedChV2:
-			verifiedBlockId := result.BlockId.Uint64()
-			a.Logf("%s: get taiko data SlotB, last verifiedBlockId: %d", a.ClientType(), verifiedBlockId)
-			if result.Raw.BlockNumber >= snapshotNumber {
-				l1Number, latestVerifiedId = result.Raw.BlockNumber, verifiedBlockId
-				time.Sleep(time.Millisecond * 200)
-				break
+			} else {
+				times--
 			}
 		}
 	}
 
-	a.Logf("%s: verified channel length: %d, %d", a.ClientType(), len(verifiedCh), len(verifiedChV2))
-
-	return l1Number, latestVerifiedId, nil
+	if verifiedNumber >= current {
+		return fmt.Errorf("%s failed to reach current number %d, current number: %d", a.ClientType(), verifiedNumber, current)
+	}
+	return nil
 }

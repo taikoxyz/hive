@@ -33,7 +33,7 @@ func TestHiveHandler(t *testing.T) {
 		testDenebGenesis(t, "taiko-genesis/l2-full-sync", clientGroups)
 	})
 
-	t.Run("taiko-reorg/taiko-reorg/clusters(3)", func(t *testing.T) {
+	t.Run("taiko-reorg/taiko-reorg", func(t *testing.T) {
 		testDenebReorg(t, "taiko-reorg/taiko-reorg", [][]string{clientGroups[0]})
 	})
 
