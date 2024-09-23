@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func (a *AnvilClient) SetReorgPoint(ctx context.Context, l2cli *ethclient.Client) {
+func (a *AnvilClient) StartRecordReorgPoints(ctx context.Context, l2cli *ethclient.Client) {
 
 	a.reorgCache = make(map[uint64]*L1BlockInfo)
 	a.reorgCh = make(chan struct{})

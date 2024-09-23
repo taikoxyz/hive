@@ -419,7 +419,7 @@ func (p *PreparedTestnet) prepareDriverClient(
 	}
 
 	cm.OptionsGenerator = func() ([]hivesim.StartOption, error) {
-		opts := []hivesim.StartOption{p.driverOpts, getAPIEnvs(firstNode, node)}
+		opts := []hivesim.StartOption{p.driverOpts, getTaikoClientEnvs(firstNode, node)}
 		if index > 0 && cfg.BeaconSync {
 			opts = append(opts, hivesim.Params{
 				"P2P_SYNC":                 "true",
@@ -454,7 +454,7 @@ func (p *PreparedTestnet) prepareProposerClient(
 		T:                    testnet.T,
 		HiveClientDefinition: proposerDef,
 		OptionsGenerator: func() ([]hivesim.StartOption, error) {
-			opts := []hivesim.StartOption{p.proposerOpts, getAPIEnvs(firstNode, node)}
+			opts := []hivesim.StartOption{p.proposerOpts, getTaikoClientEnvs(firstNode, node)}
 			return opts, nil
 		},
 	}
@@ -482,7 +482,7 @@ func (p *PreparedTestnet) prepareProverClient(
 		T:                    testnet.T,
 		HiveClientDefinition: proverDef,
 		OptionsGenerator: func() ([]hivesim.StartOption, error) {
-			opts := []hivesim.StartOption{p.proverOpts, getAPIEnvs(firstNode, node)}
+			opts := []hivesim.StartOption{p.proverOpts, getTaikoClientEnvs(firstNode, node)}
 			return opts, nil
 		},
 	}
@@ -586,7 +586,7 @@ func (p *PreparedTestnet) prepareBlobScanClient(
 	}
 }
 
-func getAPIEnvs(
+func getTaikoClientEnvs(
 	firstNode, node *clients.Node,
 ) hivesim.Params {
 	var (
