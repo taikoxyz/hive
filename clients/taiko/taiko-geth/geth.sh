@@ -11,22 +11,19 @@ if [ "$HIVE_TAIKO_JWT_SECRET" != "" ]; then
   echo "$HIVE_TAIKO_JWT_SECRET" >/geth/jwt.hex
 fi
 
-FLAGS="--state.scheme=path"
+FLAGS="--syncmode=snap"
 # Handle any client mode or operation requests
 if [ "$HIVE_NODETYPE" == "archive" ]; then
-  FLAGS="$FLAGS --syncmode=full --gcmode=archive"
+  FLAGS="--syncmode=full --gcmode=archive"
 fi
 if [ "$HIVE_NODETYPE" == "full" ]; then
-  FLAGS="$FLAGS --syncmode=full"
+  FLAGS="--syncmode=full"
 fi
 if [ "$HIVE_NODETYPE" == "light" ]; then
-  FLAGS="$FLAGS --syncmode=light"
+  FLAGS="--syncmode=light"
 fi
 if [ "$HIVE_NODETYPE" == "snap" ]; then
-  FLAGS="$FLAGS --syncmode=snap"
-fi
-if [ "$HIVE_NODETYPE" == "" ]; then
-  FLAGS="$FLAGS --syncmode=snap"
+  FLAGS="--syncmode=snap"
 fi
 echo FLAGS: "$FLAGS"
 
@@ -50,4 +47,5 @@ geth \
   --authrpc.addr=0.0.0.0 \
   --authrpc.jwtsecret=/geth/jwt.hex \
   --allow-insecure-unlock \
+  --state.scheme=path \
   "$FLAGS"
