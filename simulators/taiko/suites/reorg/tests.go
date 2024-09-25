@@ -28,13 +28,6 @@ func init() {
 				L2SyncMode: "full",
 			},
 		},
-		ReorgTestSpec{
-			BaseTestSpec: suite_base.BaseTestSpec{
-				Name:       "taiko-reorg_debug",
-				L2SyncMode: "full",
-				Debug:      true,
-			},
-		},
 	)
 }
 func Suite(clients clients.ClientGroups) hivesim.Suite {

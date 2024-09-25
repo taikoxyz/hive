@@ -16,6 +16,7 @@ type TestSpec interface {
 	GetTestnetConfig() *testnet.Config
 	GetDisplayName() string
 	Verify(ctx context.Context, t *hivesim.T, testnet *testnet.Testnet)
+	DebugTestSpec() TestSpec
 }
 
 // SuiteHydrate Add all tests to the suite
@@ -25,6 +26,13 @@ func SuiteHydrate(
 	tests []TestSpec,
 	generateState *execution_config.GenesisState,
 ) {
+
+	// Add debug tests.
+	length := len(tests)
+	for i := 0; i < length; i++ {
+		tests = append(tests, tests[i].DebugTestSpec())
+	}
+
 	for _, test := range tests {
 		test := test
 		suite.Add(hivesim.TestSpec{

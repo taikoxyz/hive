@@ -5,6 +5,7 @@ import (
 	execution_config "taiko/common/config/execution"
 	"taiko/common/testnet"
 	"taiko/params"
+	"taiko/suites"
 )
 
 type BaseTestSpec struct {
@@ -23,7 +24,7 @@ type BaseTestSpec struct {
 	IsGuardian bool
 	BeaconSync bool
 
-	Debug bool
+	debug bool
 }
 
 func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
@@ -50,7 +51,7 @@ func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
 		FeeReceipt: "a0Ee7A142d267C1f36714E4a8F75612F20a79720",
 		L2SyncMode: syncMode,
 		BeaconSync: ts.BeaconSync,
-		Debug:      ts.Debug,
+		Debug:      ts.debug,
 	}
 }
 
@@ -58,6 +59,23 @@ func (ts BaseTestSpec) GetName() string {
 	return ts.Name
 }
 
+func (ts BaseTestSpec) IsDebug() bool {
+	return ts.debug
+}
+
 func (ts BaseTestSpec) GetDisplayName() string {
 	return ts.DisplayName
+}
+
+func (ts BaseTestSpec) DebugTestSpec() suites.TestSpec {
+	return BaseTestSpec{
+		ts.Name + "_debug",
+		ts.DisplayName,
+		ts.Description,
+		ts.L2TargetNumber,
+		ts.L2SyncMode,
+		ts.IsGuardian,
+		ts.BeaconSync,
+		true,
+	}
 }

@@ -43,7 +43,7 @@ func (ts BaseTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 	}
 
 	// For debug
-	if ts.Debug {
+	if ts.IsDebug() {
 		time.Sleep(time.Minute * 60)
 	}
 

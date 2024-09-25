@@ -16,7 +16,7 @@ func (r ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 	}
 
 	// For debug
-	if r.Debug {
+	if r.IsDebug() {
 		time.Sleep(time.Minute * 60)
 	}
 
