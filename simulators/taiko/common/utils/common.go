@@ -96,11 +96,7 @@ func initL2Genesis(l1cli, l2cli *ethclient.Client, ownerAuth *bind.TransactOpts)
 		return err
 	}
 
-	cfg, err := taikoL1.GetConfig(nil)
-	if err != nil {
-		return err
-	}
-	fmt.Println("block ring buffer: ", cfg.BlockRingBufferSize)
+	fmt.Println("l2genesis hash: ", genesisHeader.Hash().String())
 
 	_, err = taikoL1.InitL2Genesis(ownerAuth, genesisHeader.Hash())
 	return err

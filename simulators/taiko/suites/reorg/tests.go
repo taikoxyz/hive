@@ -26,8 +26,13 @@ func init() {
 			BaseTestSpec: suite_base.BaseTestSpec{
 				Name:       "taiko-reorg",
 				L2SyncMode: "full",
-				//L2TargetNumber: 25,
-				//Debug:          true,
+			},
+		},
+		ReorgTestSpec{
+			BaseTestSpec: suite_base.BaseTestSpec{
+				Name:       "taiko-reorg_debug",
+				L2SyncMode: "full",
+				Debug:      true,
 			},
 		},
 	)

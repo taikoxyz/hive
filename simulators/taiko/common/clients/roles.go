@@ -10,6 +10,7 @@ var (
 	Beacon      Role = "beacon"
 	Validator   Role = "validator"
 	Eth2        Role = "taiko-geth"
+	Reth        Role = "taiko-reth"
 	Driver      Role = "driver"
 	Proposer    Role = "proposer"
 	Prover      Role = "prover"
@@ -24,6 +25,7 @@ var (
 		Beacon:      true,
 		Validator:   true,
 		Eth2:        true,
+		Reth:        true,
 		Driver:      true,
 		Proposer:    true,
 		Prover:      true,

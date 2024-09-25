@@ -19,12 +19,15 @@ func (ts BaseTestSpec) fullSyncVerify(ctx context.Context, t *hivesim.T, testnet
 	for _, node := range nodes[1:] {
 		waitL2LatestNumber(ctx, t, target, node.L2EthClient)
 
-		l1Origin, err := node.L2EthClient.L1OriginByID(ctx, new(big.Int).SetUint64(latestVerified+1))
-		if err != nil {
-			t.Fatalf("unexpect error when get l1origin, number: %d, err: %v", latestVerified+1, err)
-		}
-		if l1Origin == nil {
-			t.Fatalf("l1Origin should not be null, number: %d", latestVerified+1)
+		// verify to all the unverified blocks.
+		for num := latestVerified + 1; num <= target; num++ {
+			l1Origin, err := node.L2EthClient.L1OriginByID(ctx, new(big.Int).SetUint64(latestVerified+1))
+			if err != nil {
+				t.Fatalf("unexpect error when get l1origin, number: %d, err: %v", latestVerified+1, err)
+			}
+			if l1Origin == nil {
+				t.Fatalf("l1Origin should not be null, number: %d", latestVerified+1)
+			}
 		}
 
 		for num := latestVerified; num > 0; num-- {

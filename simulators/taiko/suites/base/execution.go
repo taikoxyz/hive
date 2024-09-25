@@ -42,6 +42,11 @@ func (ts BaseTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 		}
 	}
 
+	// For debug
+	if ts.Debug {
+		time.Sleep(time.Minute * 60)
+	}
+
 	if ts.L2SyncMode == "full" {
 		ts.fullSyncVerify(ctx, t, testnet, target)
 	} else {
@@ -86,8 +91,6 @@ func (ts BaseTestSpec) verifyL2Nodes(ctx context.Context, t *hivesim.T, latestVe
 
 	for i, node := range nodes[1:] {
 		l2client := node.L2EthClient
-
-		waitL2LatestNumber(ctx, t, target, l2client)
 
 		client := l2client.EthClient()
 		hd, err := client.HeaderByNumber(ctx, new(big.Int).SetUint64(target))

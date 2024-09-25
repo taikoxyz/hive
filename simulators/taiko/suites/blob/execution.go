@@ -35,6 +35,11 @@ func (r BlobTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Test
 		t.Fatalf("%s: failed to start the first node, err: %v", r.Name, err)
 	}
 
+	// For debug
+	if r.Debug {
+		time.Sleep(time.Minute * 60)
+	}
+
 	var (
 		l2eth        = node.L2EthClient
 		timeout      = time.Second * 60

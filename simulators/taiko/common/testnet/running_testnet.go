@@ -156,7 +156,12 @@ func StartTestnet(
 		prep.prepareValidatorClient(testnet, clientsByRole[clients.Validator])
 		prep.prepareBlobScanClient(index, testnet, config, clientsByRole)
 
-		prep.prepareTaikoGethClient(index, testnet, config, clientsByRole[clients.Eth2])
+		// taiko-geth or taiko-reth
+		taikoGeth := clientsByRole[clients.Eth2]
+		if taikoGeth == nil {
+			taikoGeth = clientsByRole[clients.Reth]
+		}
+		prep.prepareTaikoGethClient(index, testnet, config, taikoGeth)
 		prep.prepareDriverClient(index, testnet, config, clientsByRole[clients.Driver])
 		prep.prepareProposerClient(index, testnet, clientsByRole[clients.Proposer])
 		prep.prepareProverClient(index, testnet, clientsByRole[clients.Prover])

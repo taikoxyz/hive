@@ -6,7 +6,64 @@ import (
 	"testing"
 )
 
-func TestHiveHandler(t *testing.T) {
+func TestTaikoRethHandler(t *testing.T) {
+	clientGroups := [][]string{
+		{
+			"anvil",
+			"taiko/taiko-reth",
+			"taiko/driver",
+			"taiko/proposer",
+			"taiko/prover",
+		},
+		{
+			"taiko/taiko-reth",
+			"taiko/driver",
+		},
+		{
+			"taiko/taiko-reth",
+			"taiko/driver",
+		},
+	}
+
+	// Multi clusters test.
+	t.Run("taiko-genesis/l2-full-sync/clusters(3)", func(t *testing.T) {
+		testDenebGenesis(t, "taiko-genesis/l2-full-sync", clientGroups)
+	})
+
+	t.Run("taiko-reorg/taiko-reorg", func(t *testing.T) {
+		testDenebReorg(t, "taiko-reorg/taiko-reorg", [][]string{clientGroups[0]})
+	})
+
+	t.Run("taiko-blob/blob-l1-beacon", func(t *testing.T) {
+		testBlobScan(t, "taiko-blob/blob-l1-beacon", []string{
+			"geth",
+			"prysm/prysm-bn",
+			"prysm/prysm-vc",
+			"taiko/taiko-reth",
+			"taiko/driver",
+			"taiko/proposer",
+			"taiko/prover",
+			"storage/redis",
+			"storage/postgres",
+			"blobscan/blobscan-api",
+			"blobscan/blobscan-indexer",
+		})
+	})
+
+	t.Run("taiko-blob/blob-server", func(t *testing.T) {
+		testBlobScan(t, "taiko-blob/blob-server", []string{
+			"geth",
+			"prysm/prysm-bn",
+			"prysm/prysm-vc",
+			"taiko/taiko-reth",
+			"taiko/driver",
+			"taiko/proposer",
+			"taiko/prover",
+		})
+	})
+}
+
+func TestTaikoGethHandler(t *testing.T) {
 	clientGroups := [][]string{
 		{
 			"anvil",
