@@ -69,7 +69,7 @@ func (ts BaseTestSpec) GetDisplayName() string {
 
 func (ts BaseTestSpec) DebugTestSpec() suites.TestSpec {
 	return BaseTestSpec{
-		ts.Name + "_debug",
+		"debug",
 		ts.DisplayName,
 		ts.Description,
 		ts.L2TargetNumber,

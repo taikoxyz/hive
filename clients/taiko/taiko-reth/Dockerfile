@@ -3,6 +3,8 @@ ARG tag=v1.0.0
 
 FROM $baseimage:$tag AS builder
 
+RUN apt-get update && apt-get install -y curl jq && apt-get autoclean
+
 # Generate the version.txt file.
 RUN taiko-reth --version | head -1 | head -1 > /version.txt
 

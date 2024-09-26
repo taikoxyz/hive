@@ -27,11 +27,8 @@ func SuiteHydrate(
 	generateState *execution_config.GenesisState,
 ) {
 
-	// Add debug tests.
-	length := len(tests)
-	for i := 0; i < length; i++ {
-		tests = append(tests, tests[i].DebugTestSpec())
-	}
+	// Add one more test for debug.
+	tests = append(tests, tests[0].DebugTestSpec())
 
 	for _, test := range tests {
 		test := test
