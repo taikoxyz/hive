@@ -2,7 +2,6 @@ package suites
 
 import (
 	"context"
-	"fmt"
 	"github.com/ethereum/hive/hivesim"
 	"taiko/common/clients"
 	"taiko/common/config/execution"
@@ -33,7 +32,7 @@ func SuiteHydrate(
 	for _, test := range tests {
 		test := test
 		suite.Add(hivesim.TestSpec{
-			Name:        fmt.Sprintf("%s/%s", suite.Name, test.GetName()),
+			Name:        test.GetName(),
 			DisplayName: test.GetDisplayName(),
 			Run: func(t *hivesim.T) {
 				t.Logf("Starting test: %s", test.GetName())

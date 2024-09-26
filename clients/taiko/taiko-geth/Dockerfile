@@ -4,7 +4,7 @@ ARG tag=taiko
 FROM $baseimage:$tag AS builder
 
 FROM alpine:3.20.2
-RUN apk add --update bash curl jq
+RUN apk add --no-cache --update bash curl jq
 COPY --from=builder /usr/local/bin/geth /usr/local/bin/geth
 
 # Generate the version.txt file.
