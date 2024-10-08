@@ -69,7 +69,7 @@ func (ts BaseTestSpec) GetDisplayName() string {
 
 func (ts BaseTestSpec) DebugTestSpec() suites.TestSpec {
 	return BaseTestSpec{
-		"debug",
+		fmt.Sprintf("debug/%s", ts.Name),
 		ts.DisplayName,
 		ts.Description,
 		ts.L2TargetNumber,
