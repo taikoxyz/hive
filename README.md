@@ -10,41 +10,152 @@ blockchain compatibility:
 
 **To read more about hive, please check [the documentation][doc].**
 
-### Trophies
+### Run hiveview
 
-If you find a bug in your client implementation due to this project, please be so kind as
-to add it here to the trophy list. It could help prove that `hive` is indeed a useful tool
-for validating Ethereum client implementations.
+> Open `http://localhost:8080` on explorer, and then we can see all the test results.
 
-- go-ethereum:
-  - Genesis chain config couldn't handle present but empty settings: [#2790](https://github.com/ethereum/go-ethereum/pull/2790)
-  - Data race between remote block import and local block mining: [#2793](https://github.com/ethereum/go-ethereum/pull/2793)
-  - Downloader didn't penalize incompatible forks harshly enough: [#2801](https://github.com/ethereum/go-ethereum/pull/2801)
-- Nethermind:
-  - Bug in p2p with bonding nodes algorithm found by Hive: [#1894](https://github.com/NethermindEth/nethermind/pull/1894)
-  - Difference in return value for 'r' parameter in getTransactionByHash: [#2372](https://github.com/NethermindEth/nethermind/issues/2372)
-  - CREATE/CREATE2 behavior when account already has max nonce [#3698](https://github.com/NethermindEth/nethermind/pull/3698)
-  - Blake2 performance issue with non-vectorized code [#3837](https://github.com/NethermindEth/nethermind/pull/3837)
+```shell
+./build/bin/hiveview --serve --logdir ./workspace/logs
+```
 
-### Contributions
+### Update contract transactions
 
-This project takes a different approach to code contributions than your usual FOSS project
-with well ingrained maintainers and relatively few external contributors. It is an
-experiment. Whether it will work out or not is for the future to decide.
+* Get the taiko-mono repo and turn to const_contracts branch
 
-We follow the [Collective Code Construction Contract (C4)][c4], code contribution model,
-as expanded and explained in [The ZeroMQ Process][zmq-process]. The core idea being that
-any patch that successfully solves an issue (bug/feature) and doesn't break any existing
-code/contracts must be optimistically merged by maintainers. Followup patches may be used
-for additional polishes – and patches may even be outright reverted if they turn out to
-have a negative impact – but no change must be rejected based on personal values.
+```
+git clone git@github.com:taikoxyz/taiko-mono.git
+git checkout const_contracts
+```
 
-### License
+* Update contract txs list(all the txs in simulators/params/l1contract_txs.txt file)
 
-The hive project is licensed under the [GNU General Public License v3.0][gpl]. You can
-find it in the COPYING file.
+```shell
+git clone git@github.com:taikoxyz/hive.git
+cd simulators/taiko
+TAIKO_MONO_DIR=taiko-mono_path ./scripts/deploy_l1_contract.sh
+```
 
-[doc]: ./docs/overview.md
-[c4]: http://rfc.zeromq.org/spec:22/C4/
-[zmq-process]: https://hintjens.gitbooks.io/social-architecture/content/chapter4.html
-[gpl]: http://www.gnu.org/licenses/gpl-3.0.en.html
+### Build binaries
+
+```shell
+git clone git@github.com:taikoxyz/hive.git
+make hive
+make hiveview
+```
+
+### Run hive test cases
+
+* Run l2-full-sync test:
+
+```shell
+./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover,taiko/taiko-geth,taiko/driver,taiko/taiko-geth,taiko/driver --sim taiko --sim.limit "taiko-genesis/l2-full-sync"
+```
+
+* Run l2-snap-sync test:
+
+```shell
+./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover,taiko/taiko-geth,taiko/driver,taiko/taiko-geth,taiko/driver --sim taiko --sim.limit "taiko-genesis/l2-snap-sync"
+```
+
+* Run taiko-reorg test:
+
+```shell
+./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "taiko-reorg/taiko-reorg"
+```
+
+* Run blob-l1-beacon test:
+
+```shell
+./build/bin/hive --docker.output --client geth,prysm/prysm-bn,prysm/prysm-vc,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "taiko-blob/blob-l1-beacon"
+```
+
+* Run blob-server test:
+
+```shell
+./build/bin/hive --docker.output --client geth,prysm/prysm-bn,prysm/prysm-vc,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover,storage/redis,storage/postgres,blobscan/blobscan-api,blobscan/blobscan-indexer --sim taiko --sim.limit "taiko-blob/blob-server"
+```
+
+### Hive framework
+
+* `./clients`: contains multi-docker images these are used for testing.
+* `./simulators/taiko`
+    * `binding`: taiko contract SDK.
+    * `scripts`: some shell scripts used to get txs and update envs and update SDK files.
+    * `docker`: docker: docker-compose folder used to deploy taiko contracts and get txs.
+    * `common/clients`: They are docker images that relate to clients.
+    * `common/config`: Most of them are related to the configuration of the beacon geth node.
+    * `common/spoofing`: Used to genesis l1 execution node.
+    * `common/testnet`
+    * `suites`: tests instances, new test case plz add in this folder.
+        * `base`:
+            * taiko-base/l2-full-sync
+            * taiko-base/l2-snap-sync
+        * `blob`:
+            * taiko-blob/blob-l1-beacon
+            * taiko-blob/blob-server
+        * `reorg`:
+            * taiko-reorg/taiko-reorg
+
+### add new test case
+
+* Create a new folder named `client` in `simulators/taiko/suites`
+
+* Add `execution.go`
+
+```go
+type ClientTestSpec struct {
+    suite_base.BaseTestSpec
+}
+
+func (r ClientTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Testnet) {
+    panic("Plz add test content in this function.")
+}
+
+```
+
+* Add `tests.go`
+```go
+var testSuite = hivesim.Suite{
+    Name:        "taiko-blob",
+    DisplayName: "driver blob client test",
+    Location:    "suites/blob",
+}
+
+var Tests = make([]suites.TestSpec, 0)
+
+func init() {
+    Tests = append(Tests,
+    BlobTestSpec{
+        TestL1Beacon: true,
+        BaseTestSpec: suite_base.BaseTestSpec{
+            Name: "blob-l1-beacon",
+        },
+    },
+    BlobTestSpec{
+        TestBlobServer: true,
+        BaseTestSpec: suite_base.BaseTestSpec{
+            Name: "blob-server",
+        },
+    })
+}
+
+func Suite(clients clients.ClientGroups) hivesim.Suite {
+    // Load params.yml
+    beaconConfig, err := params.UnmarshalConfig(taparams.ConfigContent, nil)
+    if err != nil {
+        panic(err)
+    }
+    
+    var genesis core.Genesis
+    // Load genesis.json
+    if err = json.Unmarshal(taparams.GenesisContent, &genesis); err != nil {
+        panic(err)
+    }
+	
+    suites.SuiteHydrate(&testSuite, clients, Tests, &execution_config.GenesisState{
+    BeaconConfig:     beaconConfig,
+    Genesis:          &genesis,
+    })
+	return testSuite
+}
+```
