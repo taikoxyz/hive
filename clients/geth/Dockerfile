@@ -1,5 +1,5 @@
 ARG baseimage=ethereum/client-go
-ARG tag=v1.14.7
+ARG tag=v1.14.11
 
 FROM $baseimage:$tag AS builder
 

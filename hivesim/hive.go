@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/joho/godotenv"
 	"io"
 	"mime/multipart"
 	"net"
@@ -196,7 +197,13 @@ func (sim *Simulation) StartClientWithOptions(testSuite SuiteID, test TestID, cl
 		opt.apply(setup)
 	}
 
-	err := setup.postWithFiles(url, &resp)
+	envs, err := godotenv.Marshal(setup.config.Environment)
+	if err != nil {
+		return "", nil, err
+	}
+	fmt.Printf("show the envs in %s: \n%s\n", clientType, envs)
+
+	err = setup.postWithFiles(url, &resp)
 	if err != nil {
 		return "", nil, err
 	}
