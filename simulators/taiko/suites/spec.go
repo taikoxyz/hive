@@ -27,10 +27,10 @@ func SuiteHydrate(
 ) {
 
 	// Add one more test for debug.
-	length := len(tests)
+	/*length := len(tests)
 	for i := 0; i < length; i++ {
 		tests = append(tests, tests[i].DebugTestSpec())
-	}
+	}*/
 
 	for _, test := range tests {
 		test := test
@@ -45,7 +45,7 @@ func SuiteHydrate(
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
 
-				testnet := testnet.StartTestnet(ctx, t, clients, test.GetTestnetConfig(), generateState)
+				testnet := testnet.StartTestnet(t, clients, test.GetTestnetConfig(), generateState)
 				if testnet == nil {
 					t.Fatalf("failed to start testnet")
 				}

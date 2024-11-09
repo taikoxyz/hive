@@ -10,10 +10,12 @@ check_env "L2_AUTH"
 check_env "TAIKO_L1_ADDRESS"
 check_env "TAIKO_L2_ADDRESS"
 check_env "HIVE_TAIKO_JWT_SECRET"
+check_env "SOFT_BLOCK_SERVER_PORT"
 
 if [ "$HIVE_TAIKO_JWT_SECRET" != "" ]; then
   echo "$HIVE_TAIKO_JWT_SECRET" >/taiko-client/jwt.hex
   export JWT_SECRET="/taiko-client/jwt.hex"
+  # export SOFT_BLOCK_SERVER_JWT_SECRET="/taiko-client/jwt.hex"
 fi
 
 if [ "$P2P_SYNC" = "true" ]; then

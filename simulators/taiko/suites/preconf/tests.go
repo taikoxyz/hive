@@ -1,4 +1,4 @@
-package suite_reorg
+package preconf
 
 import (
 	"encoding/json"
@@ -13,24 +13,24 @@ import (
 )
 
 var testSuite = hivesim.Suite{
-	Name:        "taiko-reorg",
-	DisplayName: "Deneb reorg",
-	Location:    "suites/reorg",
+	Name:        "taiko",
+	DisplayName: "driver preconf test",
+	Location:    "suites/preconf",
 }
 
 var Tests = make([]suites.TestSpec, 0)
 
 func init() {
 	Tests = append(Tests,
-		ReorgTestSpec{
+		PreconfTestSpec{
 			BaseTestSpec: suite_base.BaseTestSpec{
-				Name:       "taiko-reorg",
-				L2SyncMode: "full",
-				Debug:      true,
+				Name:  "preconf",
+				Debug: false,
 			},
 		},
 	)
 }
+
 func Suite(clients clients.ClientGroups) hivesim.Suite {
 	// Load params.yml
 	beaconConfig, err := params.UnmarshalConfig(taparams.ConfigContent, nil)
@@ -43,7 +43,6 @@ func Suite(clients clients.ClientGroups) hivesim.Suite {
 	if err = json.Unmarshal(taparams.GenesisContent, &genesis); err != nil {
 		panic(err)
 	}
-
 	suites.SuiteHydrate(&testSuite, clients, Tests, &execution_config.GenesisState{
 		ForkName:         "deneb",
 		BeaconConfig:     beaconConfig,

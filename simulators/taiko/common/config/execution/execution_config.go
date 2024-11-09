@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/prysmaticlabs/prysm/v4/beacon-chain/state"
+	"github.com/prysmaticlabs/prysm/v5/beacon-chain/state"
 	"math/big"
 	"taiko/common/config"
 	consensus_config "taiko/common/config/consensus"

@@ -15,7 +15,7 @@ export PROVER_SET_ADMIN=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 export TAIKO_TOKEN_PREMINT_RECIPIENT=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 export TAIKO_TOKEN_NAME="Taiko Token Test"
 export TAIKO_TOKEN_SYMBOL="TTKOt"
-export TIER_PROVIDER="devnet"
+export TIER_ROUTER="devnet"
 export PAUSE_TAIKO_L1="false"
 export PAUSE_BRIDGE="false"
 export TAIKO_TOKEN=0x0000000000000000000000000000000000000000
@@ -46,7 +46,7 @@ cd "$TAIKO_MONO_DIR"/packages/protocol && forge script script/layer1/DeployProto
   -vvvv \
   --evm-version cancun \
   --private-key $PRIVATE_KEY \
-  --block-gas-limit 100000000
+  --block-gas-limit 200000000
 
 cd - || exit
 # Get txs
@@ -54,3 +54,6 @@ sh scripts/get_txs.sh
 
 # Get deployed contract addresses.
 sh scripts/get_env.sh
+
+# update go bindings
+sh scripts/abigen.sh

@@ -1,5 +1,5 @@
 ARG baseimage=us-docker.pkg.dev/evmchain/images/taiko-client
-ARG tag=main
+ARG tag=preconf-driver-apis
 
 FROM $baseimage:$tag
 
@@ -10,5 +10,8 @@ WORKDIR /taiko-client
 
 ADD driver.sh .
 ADD common.sh .
+
+# expose soft server port.
+EXPOSE 7000/tcp
 
 ENTRYPOINT ["sh", "/taiko-client/driver.sh"]

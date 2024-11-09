@@ -5,22 +5,27 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/hive/hivesim"
-	"github.com/marioevz/eth-clients/clients"
 	"github.com/pkg/errors"
-	"github.com/prysmaticlabs/prysm/v4/config/params"
+	"github.com/prysmaticlabs/prysm/v5/config/params"
+	"net"
 	"strings"
 	"taiko/common/utils"
 )
 
 const (
-	EthHttpPort  = 8545
-	EthWSPort    = 8546
-	EthEngineRPC = 8551
-	BeaconPort   = 3500
+	EthHttpPort         = 8545
+	EthWSPort           = 8546
+	EthEngineRPC        = 8551
+	BeaconPort          = 3500
+	SoftBlockServerPort = 7000
 )
 
 type Client interface {
-	clients.Client
+	IsRunning() bool
+	GetAddress() string
+	GetHost() string
+	GetIP() net.IP
+	ClientType() string
 	HiveClient() *hivesim.Client
 }
 
@@ -238,17 +243,6 @@ func (all Nodes) L2EthClients() L2EthClients {
 		}
 	}
 	return en
-}
-
-// Return all beacon clients, even the ones not currently running
-func (all Nodes) BeaconClients() BeaconClients {
-	bn := make(BeaconClients, 0)
-	for _, n := range all {
-		if n.BeaconClient != nil {
-			bn = append(bn, n.BeaconClient)
-		}
-	}
-	return bn
 }
 
 // Return all validator clients, even the ones not currently running

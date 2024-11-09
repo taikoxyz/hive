@@ -3,13 +3,12 @@ package clients
 import (
 	"context"
 	"fmt"
-	api "github.com/ethereum/go-ethereum/beacon/engine"
+	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/marioevz/eth-clients/clients/execution"
 	"math/big"
 	"net"
 	"strings"
@@ -32,7 +31,7 @@ type ExecutionClientConfig struct {
 type ExecutionClient struct {
 	*EthNode
 
-	latestfcu *api.ForkchoiceStateV1
+	latestfcu *engine.ForkchoiceStateV1
 
 	engineClient *rpc.Client
 	httpClient   *ethclient.Client
@@ -181,20 +180,4 @@ func (all ExecutionClients) CheckHeads(
 		}
 	}
 	return true, nil
-}
-
-// Interface used to provide a proxy for a given execution client
-type ProxyProvider interface {
-	Proxy() *execution.Proxy
-}
-type Proxies []ProxyProvider
-
-func (all Proxies) Running() []*execution.Proxy {
-	res := make([]*execution.Proxy, 0)
-	for _, pp := range all {
-		if p := pp.Proxy(); p != nil {
-			res = append(res, p)
-		}
-	}
-	return res
 }

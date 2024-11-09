@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/hive/hivesim"
-	"github.com/prysmaticlabs/prysm/v4/config/params"
+	"github.com/prysmaticlabs/prysm/v5/config/params"
 	"taiko/common/clients"
 	execution_config "taiko/common/config/execution"
 	taparams "taiko/params"

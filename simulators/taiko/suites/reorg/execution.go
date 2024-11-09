@@ -16,9 +16,9 @@ func (r ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 	}
 
 	// For debug
-	if r.IsDebug() {
+	/*if r.IsDebug() {
 		time.Sleep(time.Minute * 60)
-	}
+	}*/
 
 	r.reorgAndVerifyFirstCluster(ctx, t, node)
 }

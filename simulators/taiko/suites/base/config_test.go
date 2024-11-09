@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/hive/hivesim"
-	"github.com/prysmaticlabs/prysm/v4/config/params"
+	"github.com/prysmaticlabs/prysm/v5/config/params"
 	"github.com/stretchr/testify/assert"
 	"taiko/common/clients"
 	execution_config "taiko/common/config/execution"
@@ -31,7 +31,11 @@ func TestCC(t *testing.T) {
 	_ = clientsByRole
 
 	// Load params.yml
-	beaconConfig, err := params.UnmarshalConfig(taparams.ConfigContent, nil)
+	var (
+		beaconConfig = &params.BeaconChainConfig{}
+		err          error
+	)
+	beaconConfig, err = params.UnmarshalConfig(taparams.ConfigContent, nil)
 	if err != nil {
 		panic(err)
 	}

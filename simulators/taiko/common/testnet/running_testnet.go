@@ -2,24 +2,24 @@ package testnet
 
 import (
 	"context"
-	"github.com/prysmaticlabs/prysm/v4/beacon-chain/state"
-	"github.com/prysmaticlabs/prysm/v4/consensus-types/primitives"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/prysmaticlabs/prysm/v5/beacon-chain/state"
+	"github.com/prysmaticlabs/prysm/v5/consensus-types/primitives"
 	"taiko/common/clients"
-	consensus_config "taiko/common/config/consensus"
 	"time"
 
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/hive/hivesim"
-	"github.com/protolambda/zrnt/eth2/beacon/common"
-	execution_config "taiko/common/config/execution"
+	"taiko/common/config/consensus"
+	"taiko/common/config/execution"
 )
 
 type Testnet struct {
 	*hivesim.T
 	clients.Nodes
 
-	genesisTime           common.Timestamp
-	genesisValidatorsRoot common.Root
+	genesisTime           uint64
+	genesisValidatorsRoot common.Hash
 
 	// Consensus chain configuration
 	spec *consensus_config.Spec
@@ -87,11 +87,6 @@ func (t *Testnet) Spec() *ActiveSpec {
 	}
 }
 
-func (t *Testnet) GenesisTime() common.Timestamp {
-	// return time.Unix(int64(t.genesisTime), 0)
-	return t.genesisTime
-}
-
 func (t *Testnet) GenesisTimeUnix() time.Time {
 	return time.Unix(int64(t.genesisTime), 0)
 }
@@ -100,7 +95,7 @@ func (t *Testnet) GenesisBeaconState() state.BeaconState {
 	return t.executionGenesis.GenesisState
 }
 
-func (t *Testnet) GenesisValidatorsRoot() common.Root {
+func (t *Testnet) GenesisValidatorsRoot() [32]byte {
 	return t.genesisValidatorsRoot
 }
 
@@ -109,7 +104,6 @@ func (t *Testnet) ExecutionGenesis() *core.Genesis {
 }
 
 func StartTestnet(
-	parentCtx context.Context,
 	t *hivesim.T,
 	clientGroups clients.ClientGroups,
 	config *Config,

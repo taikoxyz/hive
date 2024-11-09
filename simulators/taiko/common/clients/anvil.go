@@ -2,7 +2,7 @@ package clients
 
 import (
 	"errors"
-	"taiko/bindings/devnettierprovider"
+	"taiko/bindings/devnettierrouter"
 	"taiko/bindings/taikol1"
 )
 
@@ -33,7 +33,7 @@ type AnvilClient struct {
 
 	taikoL1 *taikol1.TaikoL1
 
-	tiers map[uint16]*devnettierprovider.ITierProviderTier
+	tiers map[uint16]*devnettierrouter.ITierProviderTier
 
 	proposedEvents []*BlockProposed
 }

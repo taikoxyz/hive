@@ -24,7 +24,7 @@ type BaseTestSpec struct {
 	IsGuardian bool
 	BeaconSync bool
 
-	debug bool
+	Debug bool
 }
 
 func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
@@ -51,7 +51,7 @@ func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
 		FeeReceipt: "a0Ee7A142d267C1f36714E4a8F75612F20a79720",
 		L2SyncMode: syncMode,
 		BeaconSync: ts.BeaconSync,
-		Debug:      ts.debug,
+		Debug:      ts.Debug,
 	}
 }
 
@@ -60,7 +60,7 @@ func (ts BaseTestSpec) GetName() string {
 }
 
 func (ts BaseTestSpec) IsDebug() bool {
-	return ts.debug
+	return ts.Debug
 }
 
 func (ts BaseTestSpec) GetDisplayName() string {
@@ -69,7 +69,7 @@ func (ts BaseTestSpec) GetDisplayName() string {
 
 func (ts BaseTestSpec) DebugTestSpec() suites.TestSpec {
 	return BaseTestSpec{
-		fmt.Sprintf("debug/%s", ts.Name),
+		fmt.Sprintf("Debug/%s", ts.Name),
 		ts.DisplayName,
 		ts.Description,
 		ts.L2TargetNumber,
