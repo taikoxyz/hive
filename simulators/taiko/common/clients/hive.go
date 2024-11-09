@@ -6,10 +6,7 @@ import (
 	"time"
 
 	"github.com/ethereum/hive/hivesim"
-	"github.com/marioevz/eth-clients/clients"
 )
-
-var _ clients.ManagedClient = &HiveManagedClient{}
 
 type HiveOptionsGenerator func() ([]hivesim.StartOption, error)
 

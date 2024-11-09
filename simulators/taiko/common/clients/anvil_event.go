@@ -5,7 +5,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"taiko/bindings/devnettierprovider"
+	"taiko/bindings/devnettierrouter"
 	"taiko/bindings/taikol1"
 	"taiko/common/utils"
 	"taiko/params"
@@ -41,7 +41,7 @@ func (a *AnvilClient) FillTiers(ctx context.Context) error {
 
 	tierRouterAddress, err := a.taikoL1.Resolve0(&bind.CallOpts{Context: ctx}, utils.StringToBytes32("tier_router"), false)
 
-	tierRouter, err := devnettierprovider.NewDevnetTierProvider(tierRouterAddress, client)
+	tierRouter, err := devnettierrouter.NewDevnetTierRouter(tierRouterAddress, client)
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func (a *AnvilClient) FillTiers(ctx context.Context) error {
 		return err
 	}
 
-	tierProvider, err := devnettierprovider.NewDevnetTierProvider(providerAddress, client)
+	tierProvider, err := devnettierrouter.NewDevnetTierRouter(providerAddress, client)
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (a *AnvilClient) FillTiers(ctx context.Context) error {
 		return errEmptyTiersList
 	}
 
-	a.tiers = make(map[uint16]*devnettierprovider.ITierProviderTier)
+	a.tiers = make(map[uint16]*devnettierrouter.ITierProviderTier)
 	for _, id := range ids {
 		tier, err := tierProvider.GetTier(&bind.CallOpts{Context: ctx}, id)
 		if err != nil {

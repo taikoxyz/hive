@@ -5,9 +5,9 @@ if [ ! -d "$TAIKO_MONO_DIR/packages/protocol/out" ]; then
     exit 1
 fi
 
-paths=("TaikoToken.sol" "TaikoL1.sol" "TaikoL2.sol" "GuardianProver.sol" "ProverSet.sol" "LibProving.sol" "DevnetTierProvider.sol")
+paths=("TaikoToken.sol" "TaikoL1.sol" "TaikoL2.sol" "GuardianProver.sol" "ProverSet.sol" "LibProving.sol" "DevnetTierRouter.sol")
 
-names=("TaikoToken" "TaikoL1" "TaikoL2" "GuardianProver" "ProverSet" "LibProving" "DevnetTierProvider")
+names=("TaikoToken" "TaikoL1" "TaikoL2" "GuardianProver" "ProverSet" "LibProving" "DevnetTierRouter")
 
 for (( i = 0; i < ${#paths[@]}; ++i ));
 do

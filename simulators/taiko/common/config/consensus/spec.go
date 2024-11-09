@@ -1,9 +1,8 @@
 package consensus_config
 
 import (
-	"github.com/protolambda/zrnt/eth2/beacon/common"
-	"github.com/prysmaticlabs/prysm/v4/config/params"
-	"github.com/prysmaticlabs/prysm/v4/consensus-types/primitives"
+	"github.com/prysmaticlabs/prysm/v5/config/params"
+	"github.com/prysmaticlabs/prysm/v5/consensus-types/primitives"
 )
 
 type Spec struct {
@@ -13,9 +12,6 @@ type Spec struct {
 	//common.CapellaPreset     `json:",inline" yaml:",inline"`
 	//common.DenebPreset       `json:",inline" yaml:",inline"`
 	params.BeaconChainConfig `json:",inline" yaml:",inline"`
-
-	// Experimental, for bellatrix
-	common.ExecutionEngine `json:"-" yaml:"-"`
 }
 
 func (spec *Spec) SlotToEpoch(s primitives.Slot) primitives.Epoch {

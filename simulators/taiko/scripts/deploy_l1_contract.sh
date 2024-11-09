@@ -46,7 +46,7 @@ cd "$TAIKO_MONO_DIR"/packages/protocol && forge script script/layer1/DeployProto
   -vvvv \
   --evm-version cancun \
   --private-key $PRIVATE_KEY \
-  --block-gas-limit 100000000
+  --block-gas-limit 200000000
 
 cd - || exit
 # Get txs
@@ -54,3 +54,6 @@ sh scripts/get_txs.sh
 
 # Get deployed contract addresses.
 sh scripts/get_env.sh
+
+# update go bindings
+sh scripts/abigen.sh

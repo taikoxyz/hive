@@ -29,57 +29,6 @@ var (
 	_ = abi.ConvertType
 )
 
-// LibSharedDataBaseFeeConfig is an auto generated low-level Go binding around an user-defined struct.
-type LibSharedDataBaseFeeConfig struct {
-	AdjustmentQuotient     uint8
-	SharingPctg            uint8
-	GasIssuancePerSecond   uint32
-	MinGasExcess           uint64
-	MaxGasIssuancePerBlock uint32
-}
-
-// TaikoDataBlockMetadata is an auto generated low-level Go binding around an user-defined struct.
-type TaikoDataBlockMetadata struct {
-	L1Hash         [32]byte
-	Difficulty     [32]byte
-	BlobHash       [32]byte
-	ExtraData      [32]byte
-	DepositsHash   [32]byte
-	Coinbase       common.Address
-	Id             uint64
-	GasLimit       uint32
-	Timestamp      uint64
-	L1Height       uint64
-	MinTier        uint16
-	BlobUsed       bool
-	ParentMetaHash [32]byte
-	Sender         common.Address
-}
-
-// TaikoDataBlockMetadataV2 is an auto generated low-level Go binding around an user-defined struct.
-type TaikoDataBlockMetadataV2 struct {
-	AnchorBlockHash  [32]byte
-	Difficulty       [32]byte
-	BlobHash         [32]byte
-	ExtraData        [32]byte
-	Coinbase         common.Address
-	Id               uint64
-	GasLimit         uint32
-	Timestamp        uint64
-	AnchorBlockId    uint64
-	MinTier          uint16
-	BlobUsed         bool
-	ParentMetaHash   [32]byte
-	Proposer         common.Address
-	LivenessBond     *big.Int
-	ProposedAt       uint64
-	ProposedIn       uint64
-	BlobTxListOffset uint32
-	BlobTxListLength uint32
-	BlobIndex        uint8
-	BaseFeeConfig    LibSharedDataBaseFeeConfig
-}
-
 // TaikoDataTransition is an auto generated low-level Go binding around an user-defined struct.
 type TaikoDataTransition struct {
 	ParentHash [32]byte
@@ -90,7 +39,7 @@ type TaikoDataTransition struct {
 
 // LibProvingMetaData contains all meta data concerning the LibProving contract.
 var LibProvingMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"event\",\"name\":\"BondCredited\",\"inputs\":[{\"name\":\"user\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"BondDebited\",\"inputs\":[{\"name\":\"user\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"LibProvingData\",\"inputs\":[{\"name\":\"blockId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"metaHash1\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"metaHash2\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"meta\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structTaikoData.BlockMetadata\",\"components\":[{\"name\":\"l1Hash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"difficulty\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"blobHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"extraData\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"depositsHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"coinbase\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"id\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"gasLimit\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"timestamp\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"l1Height\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"minTier\",\"type\":\"uint16\",\"internalType\":\"uint16\"},{\"name\":\"blobUsed\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"parentMetaHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"sender\",\"type\":\"address\",\"internalType\":\"address\"}]}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"LibProvingDataV2\",\"inputs\":[{\"name\":\"blockId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"metaHash1\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"metaHash2\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"meta\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structTaikoData.BlockMetadataV2\",\"components\":[{\"name\":\"anchorBlockHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"difficulty\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"blobHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"extraData\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"coinbase\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"id\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"gasLimit\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"timestamp\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"anchorBlockId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"minTier\",\"type\":\"uint16\",\"internalType\":\"uint16\"},{\"name\":\"blobUsed\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"parentMetaHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"proposer\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"livenessBond\",\"type\":\"uint96\",\"internalType\":\"uint96\"},{\"name\":\"proposedAt\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"proposedIn\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"blobTxListOffset\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"blobTxListLength\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"blobIndex\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"baseFeeConfig\",\"type\":\"tuple\",\"internalType\":\"structLibSharedData.BaseFeeConfig\",\"components\":[{\"name\":\"adjustmentQuotient\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"sharingPctg\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"gasIssuancePerSecond\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"minGasExcess\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"maxGasIssuancePerBlock\",\"type\":\"uint32\",\"internalType\":\"uint32\"}]}]}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ProvingPaused\",\"inputs\":[{\"name\":\"paused\",\"type\":\"bool\",\"indexed\":false,\"internalType\":\"bool\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TransitionContested\",\"inputs\":[{\"name\":\"blockId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"tran\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structTaikoData.Transition\",\"components\":[{\"name\":\"parentHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"blockHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"stateRoot\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"graffiti\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"name\":\"contester\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"contestBond\",\"type\":\"uint96\",\"indexed\":false,\"internalType\":\"uint96\"},{\"name\":\"tier\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TransitionContestedV2\",\"inputs\":[{\"name\":\"blockId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"tran\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structTaikoData.Transition\",\"components\":[{\"name\":\"parentHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"blockHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"stateRoot\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"graffiti\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"name\":\"contester\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"contestBond\",\"type\":\"uint96\",\"indexed\":false,\"internalType\":\"uint96\"},{\"name\":\"tier\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"},{\"name\":\"proposedIn\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TransitionProved\",\"inputs\":[{\"name\":\"blockId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"tran\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structTaikoData.Transition\",\"components\":[{\"name\":\"parentHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"blockHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"stateRoot\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"graffiti\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"name\":\"prover\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"validityBond\",\"type\":\"uint96\",\"indexed\":false,\"internalType\":\"uint96\"},{\"name\":\"tier\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TransitionProvedV2\",\"inputs\":[{\"name\":\"blockId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"tran\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structTaikoData.Transition\",\"components\":[{\"name\":\"parentHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"blockHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"stateRoot\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"graffiti\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"name\":\"prover\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"validityBond\",\"type\":\"uint96\",\"indexed\":false,\"internalType\":\"uint96\"},{\"name\":\"tier\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"},{\"name\":\"proposedIn\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"L1_ALREADY_CONTESTED\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_ALREADY_PROVED\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_BLOCK_MISMATCH\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_CANNOT_CONTEST\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_DIFF_VERIFIER\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_BLOCK_ID\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_PARAMS\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_PAUSE_STATUS\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_TIER\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_TRANSITION\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_NOT_ASSIGNED_PROVER\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_PROVING_PAUSED\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_UNEXPECTED_TRANSITION_ID\",\"inputs\":[]}]",
+	ABI: "[{\"type\":\"event\",\"name\":\"BlockVerifiedV2\",\"inputs\":[{\"name\":\"blockId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"prover\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"blockHash\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"tier\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"BondCredited\",\"inputs\":[{\"name\":\"user\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"blockId\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"BondDebited\",\"inputs\":[{\"name\":\"user\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"blockId\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"BondDeposited\",\"inputs\":[{\"name\":\"user\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ProvingPaused\",\"inputs\":[{\"name\":\"paused\",\"type\":\"bool\",\"indexed\":false,\"internalType\":\"bool\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TransitionContestedV2\",\"inputs\":[{\"name\":\"blockId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"tran\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structTaikoData.Transition\",\"components\":[{\"name\":\"parentHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"blockHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"stateRoot\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"graffiti\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"name\":\"contester\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"contestBond\",\"type\":\"uint96\",\"indexed\":false,\"internalType\":\"uint96\"},{\"name\":\"tier\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"},{\"name\":\"proposedIn\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TransitionProvedV2\",\"inputs\":[{\"name\":\"blockId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"tran\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structTaikoData.Transition\",\"components\":[{\"name\":\"parentHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"blockHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"stateRoot\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"graffiti\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"name\":\"prover\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"validityBond\",\"type\":\"uint96\",\"indexed\":false,\"internalType\":\"uint96\"},{\"name\":\"tier\",\"type\":\"uint16\",\"indexed\":false,\"internalType\":\"uint16\"},{\"name\":\"proposedIn\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"L1_ALREADY_CONTESTED\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_ALREADY_PROVED\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_BLOCK_MISMATCH\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_BLOCK_MISMATCH\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_CANNOT_CONTEST\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_DIFF_VERIFIER\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_ETH_NOT_PAID_AS_BOND\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_BLOCK_ID\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_MSG_VALUE\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_PARAMS\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_PAUSE_STATUS\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_TIER\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_INVALID_TRANSITION\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_NOT_ASSIGNED_PROVER\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_PROVING_PAUSED\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_TRANSITION_ID_ZERO\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"L1_UNEXPECTED_TRANSITION_ID\",\"inputs\":[]}]",
 }
 
 // LibProvingABI is the input ABI used to generate the binding from.
@@ -239,6 +188,161 @@ func (_LibProving *LibProvingTransactorRaw) Transact(opts *bind.TransactOpts, me
 	return _LibProving.Contract.contract.Transact(opts, method, params...)
 }
 
+// LibProvingBlockVerifiedV2Iterator is returned from FilterBlockVerifiedV2 and is used to iterate over the raw logs and unpacked data for BlockVerifiedV2 events raised by the LibProving contract.
+type LibProvingBlockVerifiedV2Iterator struct {
+	Event *LibProvingBlockVerifiedV2 // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *LibProvingBlockVerifiedV2Iterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(LibProvingBlockVerifiedV2)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(LibProvingBlockVerifiedV2)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *LibProvingBlockVerifiedV2Iterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *LibProvingBlockVerifiedV2Iterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// LibProvingBlockVerifiedV2 represents a BlockVerifiedV2 event raised by the LibProving contract.
+type LibProvingBlockVerifiedV2 struct {
+	BlockId   *big.Int
+	Prover    common.Address
+	BlockHash [32]byte
+	Tier      uint16
+	Raw       types.Log // Blockchain specific contextual infos
+}
+
+// FilterBlockVerifiedV2 is a free log retrieval operation binding the contract event 0xe5a390d9800811154279af0c1a80d3bdf558ea91f1301e7c6ec3c1ad83e80aef.
+//
+// Solidity: event BlockVerifiedV2(uint256 indexed blockId, address indexed prover, bytes32 blockHash, uint16 tier)
+func (_LibProving *LibProvingFilterer) FilterBlockVerifiedV2(opts *bind.FilterOpts, blockId []*big.Int, prover []common.Address) (*LibProvingBlockVerifiedV2Iterator, error) {
+
+	var blockIdRule []interface{}
+	for _, blockIdItem := range blockId {
+		blockIdRule = append(blockIdRule, blockIdItem)
+	}
+	var proverRule []interface{}
+	for _, proverItem := range prover {
+		proverRule = append(proverRule, proverItem)
+	}
+
+	logs, sub, err := _LibProving.contract.FilterLogs(opts, "BlockVerifiedV2", blockIdRule, proverRule)
+	if err != nil {
+		return nil, err
+	}
+	return &LibProvingBlockVerifiedV2Iterator{contract: _LibProving.contract, event: "BlockVerifiedV2", logs: logs, sub: sub}, nil
+}
+
+// WatchBlockVerifiedV2 is a free log subscription operation binding the contract event 0xe5a390d9800811154279af0c1a80d3bdf558ea91f1301e7c6ec3c1ad83e80aef.
+//
+// Solidity: event BlockVerifiedV2(uint256 indexed blockId, address indexed prover, bytes32 blockHash, uint16 tier)
+func (_LibProving *LibProvingFilterer) WatchBlockVerifiedV2(opts *bind.WatchOpts, sink chan<- *LibProvingBlockVerifiedV2, blockId []*big.Int, prover []common.Address) (event.Subscription, error) {
+
+	var blockIdRule []interface{}
+	for _, blockIdItem := range blockId {
+		blockIdRule = append(blockIdRule, blockIdItem)
+	}
+	var proverRule []interface{}
+	for _, proverItem := range prover {
+		proverRule = append(proverRule, proverItem)
+	}
+
+	logs, sub, err := _LibProving.contract.WatchLogs(opts, "BlockVerifiedV2", blockIdRule, proverRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(LibProvingBlockVerifiedV2)
+				if err := _LibProving.contract.UnpackLog(event, "BlockVerifiedV2", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseBlockVerifiedV2 is a log parse operation binding the contract event 0xe5a390d9800811154279af0c1a80d3bdf558ea91f1301e7c6ec3c1ad83e80aef.
+//
+// Solidity: event BlockVerifiedV2(uint256 indexed blockId, address indexed prover, bytes32 blockHash, uint16 tier)
+func (_LibProving *LibProvingFilterer) ParseBlockVerifiedV2(log types.Log) (*LibProvingBlockVerifiedV2, error) {
+	event := new(LibProvingBlockVerifiedV2)
+	if err := _LibProving.contract.UnpackLog(event, "BlockVerifiedV2", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
 // LibProvingBondCreditedIterator is returned from FilterBondCredited and is used to iterate over the raw logs and unpacked data for BondCredited events raised by the LibProving contract.
 type LibProvingBondCreditedIterator struct {
 	Event *LibProvingBondCredited // Event containing the contract specifics and raw log
@@ -308,14 +412,15 @@ func (it *LibProvingBondCreditedIterator) Close() error {
 
 // LibProvingBondCredited represents a BondCredited event raised by the LibProving contract.
 type LibProvingBondCredited struct {
-	User   common.Address
-	Amount *big.Int
-	Raw    types.Log // Blockchain specific contextual infos
+	User    common.Address
+	BlockId *big.Int
+	Amount  *big.Int
+	Raw     types.Log // Blockchain specific contextual infos
 }
 
-// FilterBondCredited is a free log retrieval operation binding the contract event 0x6de6fe586196fa05b73b973026c5fda3968a2933989bff3a0b6bd57644fab606.
+// FilterBondCredited is a free log retrieval operation binding the contract event 0x767672484792852973001cc22546fd96c3d7466da3c383e42741793dce5e4169.
 //
-// Solidity: event BondCredited(address indexed user, uint256 amount)
+// Solidity: event BondCredited(address indexed user, uint256 blockId, uint256 amount)
 func (_LibProving *LibProvingFilterer) FilterBondCredited(opts *bind.FilterOpts, user []common.Address) (*LibProvingBondCreditedIterator, error) {
 
 	var userRule []interface{}
@@ -330,9 +435,9 @@ func (_LibProving *LibProvingFilterer) FilterBondCredited(opts *bind.FilterOpts,
 	return &LibProvingBondCreditedIterator{contract: _LibProving.contract, event: "BondCredited", logs: logs, sub: sub}, nil
 }
 
-// WatchBondCredited is a free log subscription operation binding the contract event 0x6de6fe586196fa05b73b973026c5fda3968a2933989bff3a0b6bd57644fab606.
+// WatchBondCredited is a free log subscription operation binding the contract event 0x767672484792852973001cc22546fd96c3d7466da3c383e42741793dce5e4169.
 //
-// Solidity: event BondCredited(address indexed user, uint256 amount)
+// Solidity: event BondCredited(address indexed user, uint256 blockId, uint256 amount)
 func (_LibProving *LibProvingFilterer) WatchBondCredited(opts *bind.WatchOpts, sink chan<- *LibProvingBondCredited, user []common.Address) (event.Subscription, error) {
 
 	var userRule []interface{}
@@ -372,9 +477,9 @@ func (_LibProving *LibProvingFilterer) WatchBondCredited(opts *bind.WatchOpts, s
 	}), nil
 }
 
-// ParseBondCredited is a log parse operation binding the contract event 0x6de6fe586196fa05b73b973026c5fda3968a2933989bff3a0b6bd57644fab606.
+// ParseBondCredited is a log parse operation binding the contract event 0x767672484792852973001cc22546fd96c3d7466da3c383e42741793dce5e4169.
 //
-// Solidity: event BondCredited(address indexed user, uint256 amount)
+// Solidity: event BondCredited(address indexed user, uint256 blockId, uint256 amount)
 func (_LibProving *LibProvingFilterer) ParseBondCredited(log types.Log) (*LibProvingBondCredited, error) {
 	event := new(LibProvingBondCredited)
 	if err := _LibProving.contract.UnpackLog(event, "BondCredited", log); err != nil {
@@ -453,14 +558,15 @@ func (it *LibProvingBondDebitedIterator) Close() error {
 
 // LibProvingBondDebited represents a BondDebited event raised by the LibProving contract.
 type LibProvingBondDebited struct {
-	User   common.Address
-	Amount *big.Int
-	Raw    types.Log // Blockchain specific contextual infos
+	User    common.Address
+	BlockId *big.Int
+	Amount  *big.Int
+	Raw     types.Log // Blockchain specific contextual infos
 }
 
-// FilterBondDebited is a free log retrieval operation binding the contract event 0x85f32beeaff2d0019a8d196f06790c9a652191759c46643311344fd38920423c.
+// FilterBondDebited is a free log retrieval operation binding the contract event 0xf4636413c66bd7ef2a1d735c30d22543acb0fba1b0892503bef0734b237c3f37.
 //
-// Solidity: event BondDebited(address indexed user, uint256 amount)
+// Solidity: event BondDebited(address indexed user, uint256 blockId, uint256 amount)
 func (_LibProving *LibProvingFilterer) FilterBondDebited(opts *bind.FilterOpts, user []common.Address) (*LibProvingBondDebitedIterator, error) {
 
 	var userRule []interface{}
@@ -475,9 +581,9 @@ func (_LibProving *LibProvingFilterer) FilterBondDebited(opts *bind.FilterOpts, 
 	return &LibProvingBondDebitedIterator{contract: _LibProving.contract, event: "BondDebited", logs: logs, sub: sub}, nil
 }
 
-// WatchBondDebited is a free log subscription operation binding the contract event 0x85f32beeaff2d0019a8d196f06790c9a652191759c46643311344fd38920423c.
+// WatchBondDebited is a free log subscription operation binding the contract event 0xf4636413c66bd7ef2a1d735c30d22543acb0fba1b0892503bef0734b237c3f37.
 //
-// Solidity: event BondDebited(address indexed user, uint256 amount)
+// Solidity: event BondDebited(address indexed user, uint256 blockId, uint256 amount)
 func (_LibProving *LibProvingFilterer) WatchBondDebited(opts *bind.WatchOpts, sink chan<- *LibProvingBondDebited, user []common.Address) (event.Subscription, error) {
 
 	var userRule []interface{}
@@ -517,9 +623,9 @@ func (_LibProving *LibProvingFilterer) WatchBondDebited(opts *bind.WatchOpts, si
 	}), nil
 }
 
-// ParseBondDebited is a log parse operation binding the contract event 0x85f32beeaff2d0019a8d196f06790c9a652191759c46643311344fd38920423c.
+// ParseBondDebited is a log parse operation binding the contract event 0xf4636413c66bd7ef2a1d735c30d22543acb0fba1b0892503bef0734b237c3f37.
 //
-// Solidity: event BondDebited(address indexed user, uint256 amount)
+// Solidity: event BondDebited(address indexed user, uint256 blockId, uint256 amount)
 func (_LibProving *LibProvingFilterer) ParseBondDebited(log types.Log) (*LibProvingBondDebited, error) {
 	event := new(LibProvingBondDebited)
 	if err := _LibProving.contract.UnpackLog(event, "BondDebited", log); err != nil {
@@ -529,9 +635,9 @@ func (_LibProving *LibProvingFilterer) ParseBondDebited(log types.Log) (*LibProv
 	return event, nil
 }
 
-// LibProvingLibProvingDataIterator is returned from FilterLibProvingData and is used to iterate over the raw logs and unpacked data for LibProvingData events raised by the LibProving contract.
-type LibProvingLibProvingDataIterator struct {
-	Event *LibProvingLibProvingData // Event containing the contract specifics and raw log
+// LibProvingBondDepositedIterator is returned from FilterBondDeposited and is used to iterate over the raw logs and unpacked data for BondDeposited events raised by the LibProving contract.
+type LibProvingBondDepositedIterator struct {
+	Event *LibProvingBondDeposited // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -545,7 +651,7 @@ type LibProvingLibProvingDataIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *LibProvingLibProvingDataIterator) Next() bool {
+func (it *LibProvingBondDepositedIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -554,7 +660,7 @@ func (it *LibProvingLibProvingDataIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(LibProvingLibProvingData)
+			it.Event = new(LibProvingBondDeposited)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -569,7 +675,7 @@ func (it *LibProvingLibProvingDataIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(LibProvingLibProvingData)
+		it.Event = new(LibProvingBondDeposited)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -585,54 +691,52 @@ func (it *LibProvingLibProvingDataIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *LibProvingLibProvingDataIterator) Error() error {
+func (it *LibProvingBondDepositedIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *LibProvingLibProvingDataIterator) Close() error {
+func (it *LibProvingBondDepositedIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// LibProvingLibProvingData represents a LibProvingData event raised by the LibProving contract.
-type LibProvingLibProvingData struct {
-	BlockId   *big.Int
-	MetaHash1 [32]byte
-	MetaHash2 [32]byte
-	Meta      TaikoDataBlockMetadata
-	Raw       types.Log // Blockchain specific contextual infos
+// LibProvingBondDeposited represents a BondDeposited event raised by the LibProving contract.
+type LibProvingBondDeposited struct {
+	User   common.Address
+	Amount *big.Int
+	Raw    types.Log // Blockchain specific contextual infos
 }
 
-// FilterLibProvingData is a free log retrieval operation binding the contract event 0x96b52fab8b37658615d353233521cff308658e38a19848c4bc9ace237ac4ea31.
+// FilterBondDeposited is a free log retrieval operation binding the contract event 0x8ed8c6869618197b68315ade66e75ed3906c97b111fa3ab81e5760046825c7db.
 //
-// Solidity: event LibProvingData(uint256 indexed blockId, bytes32 metaHash1, bytes32 metaHash2, (bytes32,bytes32,bytes32,bytes32,bytes32,address,uint64,uint32,uint64,uint64,uint16,bool,bytes32,address) meta)
-func (_LibProving *LibProvingFilterer) FilterLibProvingData(opts *bind.FilterOpts, blockId []*big.Int) (*LibProvingLibProvingDataIterator, error) {
+// Solidity: event BondDeposited(address indexed user, uint256 amount)
+func (_LibProving *LibProvingFilterer) FilterBondDeposited(opts *bind.FilterOpts, user []common.Address) (*LibProvingBondDepositedIterator, error) {
 
-	var blockIdRule []interface{}
-	for _, blockIdItem := range blockId {
-		blockIdRule = append(blockIdRule, blockIdItem)
+	var userRule []interface{}
+	for _, userItem := range user {
+		userRule = append(userRule, userItem)
 	}
 
-	logs, sub, err := _LibProving.contract.FilterLogs(opts, "LibProvingData", blockIdRule)
+	logs, sub, err := _LibProving.contract.FilterLogs(opts, "BondDeposited", userRule)
 	if err != nil {
 		return nil, err
 	}
-	return &LibProvingLibProvingDataIterator{contract: _LibProving.contract, event: "LibProvingData", logs: logs, sub: sub}, nil
+	return &LibProvingBondDepositedIterator{contract: _LibProving.contract, event: "BondDeposited", logs: logs, sub: sub}, nil
 }
 
-// WatchLibProvingData is a free log subscription operation binding the contract event 0x96b52fab8b37658615d353233521cff308658e38a19848c4bc9ace237ac4ea31.
+// WatchBondDeposited is a free log subscription operation binding the contract event 0x8ed8c6869618197b68315ade66e75ed3906c97b111fa3ab81e5760046825c7db.
 //
-// Solidity: event LibProvingData(uint256 indexed blockId, bytes32 metaHash1, bytes32 metaHash2, (bytes32,bytes32,bytes32,bytes32,bytes32,address,uint64,uint32,uint64,uint64,uint16,bool,bytes32,address) meta)
-func (_LibProving *LibProvingFilterer) WatchLibProvingData(opts *bind.WatchOpts, sink chan<- *LibProvingLibProvingData, blockId []*big.Int) (event.Subscription, error) {
+// Solidity: event BondDeposited(address indexed user, uint256 amount)
+func (_LibProving *LibProvingFilterer) WatchBondDeposited(opts *bind.WatchOpts, sink chan<- *LibProvingBondDeposited, user []common.Address) (event.Subscription, error) {
 
-	var blockIdRule []interface{}
-	for _, blockIdItem := range blockId {
-		blockIdRule = append(blockIdRule, blockIdItem)
+	var userRule []interface{}
+	for _, userItem := range user {
+		userRule = append(userRule, userItem)
 	}
 
-	logs, sub, err := _LibProving.contract.WatchLogs(opts, "LibProvingData", blockIdRule)
+	logs, sub, err := _LibProving.contract.WatchLogs(opts, "BondDeposited", userRule)
 	if err != nil {
 		return nil, err
 	}
@@ -642,8 +746,8 @@ func (_LibProving *LibProvingFilterer) WatchLibProvingData(opts *bind.WatchOpts,
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(LibProvingLibProvingData)
-				if err := _LibProving.contract.UnpackLog(event, "LibProvingData", log); err != nil {
+				event := new(LibProvingBondDeposited)
+				if err := _LibProving.contract.UnpackLog(event, "BondDeposited", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -664,159 +768,12 @@ func (_LibProving *LibProvingFilterer) WatchLibProvingData(opts *bind.WatchOpts,
 	}), nil
 }
 
-// ParseLibProvingData is a log parse operation binding the contract event 0x96b52fab8b37658615d353233521cff308658e38a19848c4bc9ace237ac4ea31.
+// ParseBondDeposited is a log parse operation binding the contract event 0x8ed8c6869618197b68315ade66e75ed3906c97b111fa3ab81e5760046825c7db.
 //
-// Solidity: event LibProvingData(uint256 indexed blockId, bytes32 metaHash1, bytes32 metaHash2, (bytes32,bytes32,bytes32,bytes32,bytes32,address,uint64,uint32,uint64,uint64,uint16,bool,bytes32,address) meta)
-func (_LibProving *LibProvingFilterer) ParseLibProvingData(log types.Log) (*LibProvingLibProvingData, error) {
-	event := new(LibProvingLibProvingData)
-	if err := _LibProving.contract.UnpackLog(event, "LibProvingData", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// LibProvingLibProvingDataV2Iterator is returned from FilterLibProvingDataV2 and is used to iterate over the raw logs and unpacked data for LibProvingDataV2 events raised by the LibProving contract.
-type LibProvingLibProvingDataV2Iterator struct {
-	Event *LibProvingLibProvingDataV2 // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *LibProvingLibProvingDataV2Iterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(LibProvingLibProvingDataV2)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(LibProvingLibProvingDataV2)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *LibProvingLibProvingDataV2Iterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *LibProvingLibProvingDataV2Iterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// LibProvingLibProvingDataV2 represents a LibProvingDataV2 event raised by the LibProving contract.
-type LibProvingLibProvingDataV2 struct {
-	BlockId   *big.Int
-	MetaHash1 [32]byte
-	MetaHash2 [32]byte
-	Meta      TaikoDataBlockMetadataV2
-	Raw       types.Log // Blockchain specific contextual infos
-}
-
-// FilterLibProvingDataV2 is a free log retrieval operation binding the contract event 0x875fa42077ff96fddf63bca98e9c86473c1af8a165567fdadf5de26adfd77060.
-//
-// Solidity: event LibProvingDataV2(uint256 indexed blockId, bytes32 metaHash1, bytes32 metaHash2, (bytes32,bytes32,bytes32,bytes32,address,uint64,uint32,uint64,uint64,uint16,bool,bytes32,address,uint96,uint64,uint64,uint32,uint32,uint8,(uint8,uint8,uint32,uint64,uint32)) meta)
-func (_LibProving *LibProvingFilterer) FilterLibProvingDataV2(opts *bind.FilterOpts, blockId []*big.Int) (*LibProvingLibProvingDataV2Iterator, error) {
-
-	var blockIdRule []interface{}
-	for _, blockIdItem := range blockId {
-		blockIdRule = append(blockIdRule, blockIdItem)
-	}
-
-	logs, sub, err := _LibProving.contract.FilterLogs(opts, "LibProvingDataV2", blockIdRule)
-	if err != nil {
-		return nil, err
-	}
-	return &LibProvingLibProvingDataV2Iterator{contract: _LibProving.contract, event: "LibProvingDataV2", logs: logs, sub: sub}, nil
-}
-
-// WatchLibProvingDataV2 is a free log subscription operation binding the contract event 0x875fa42077ff96fddf63bca98e9c86473c1af8a165567fdadf5de26adfd77060.
-//
-// Solidity: event LibProvingDataV2(uint256 indexed blockId, bytes32 metaHash1, bytes32 metaHash2, (bytes32,bytes32,bytes32,bytes32,address,uint64,uint32,uint64,uint64,uint16,bool,bytes32,address,uint96,uint64,uint64,uint32,uint32,uint8,(uint8,uint8,uint32,uint64,uint32)) meta)
-func (_LibProving *LibProvingFilterer) WatchLibProvingDataV2(opts *bind.WatchOpts, sink chan<- *LibProvingLibProvingDataV2, blockId []*big.Int) (event.Subscription, error) {
-
-	var blockIdRule []interface{}
-	for _, blockIdItem := range blockId {
-		blockIdRule = append(blockIdRule, blockIdItem)
-	}
-
-	logs, sub, err := _LibProving.contract.WatchLogs(opts, "LibProvingDataV2", blockIdRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(LibProvingLibProvingDataV2)
-				if err := _LibProving.contract.UnpackLog(event, "LibProvingDataV2", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseLibProvingDataV2 is a log parse operation binding the contract event 0x875fa42077ff96fddf63bca98e9c86473c1af8a165567fdadf5de26adfd77060.
-//
-// Solidity: event LibProvingDataV2(uint256 indexed blockId, bytes32 metaHash1, bytes32 metaHash2, (bytes32,bytes32,bytes32,bytes32,address,uint64,uint32,uint64,uint64,uint16,bool,bytes32,address,uint96,uint64,uint64,uint32,uint32,uint8,(uint8,uint8,uint32,uint64,uint32)) meta)
-func (_LibProving *LibProvingFilterer) ParseLibProvingDataV2(log types.Log) (*LibProvingLibProvingDataV2, error) {
-	event := new(LibProvingLibProvingDataV2)
-	if err := _LibProving.contract.UnpackLog(event, "LibProvingDataV2", log); err != nil {
+// Solidity: event BondDeposited(address indexed user, uint256 amount)
+func (_LibProving *LibProvingFilterer) ParseBondDeposited(log types.Log) (*LibProvingBondDeposited, error) {
+	event := new(LibProvingBondDeposited)
+	if err := _LibProving.contract.UnpackLog(event, "BondDeposited", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -951,154 +908,6 @@ func (_LibProving *LibProvingFilterer) WatchProvingPaused(opts *bind.WatchOpts, 
 func (_LibProving *LibProvingFilterer) ParseProvingPaused(log types.Log) (*LibProvingProvingPaused, error) {
 	event := new(LibProvingProvingPaused)
 	if err := _LibProving.contract.UnpackLog(event, "ProvingPaused", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// LibProvingTransitionContestedIterator is returned from FilterTransitionContested and is used to iterate over the raw logs and unpacked data for TransitionContested events raised by the LibProving contract.
-type LibProvingTransitionContestedIterator struct {
-	Event *LibProvingTransitionContested // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *LibProvingTransitionContestedIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(LibProvingTransitionContested)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(LibProvingTransitionContested)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *LibProvingTransitionContestedIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *LibProvingTransitionContestedIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// LibProvingTransitionContested represents a TransitionContested event raised by the LibProving contract.
-type LibProvingTransitionContested struct {
-	BlockId     *big.Int
-	Tran        TaikoDataTransition
-	Contester   common.Address
-	ContestBond *big.Int
-	Tier        uint16
-	Raw         types.Log // Blockchain specific contextual infos
-}
-
-// FilterTransitionContested is a free log retrieval operation binding the contract event 0xb4c0a86c1ff239277697775b1e91d3375fd3a5ef6b345aa4e2f6001c890558f6.
-//
-// Solidity: event TransitionContested(uint256 indexed blockId, (bytes32,bytes32,bytes32,bytes32) tran, address contester, uint96 contestBond, uint16 tier)
-func (_LibProving *LibProvingFilterer) FilterTransitionContested(opts *bind.FilterOpts, blockId []*big.Int) (*LibProvingTransitionContestedIterator, error) {
-
-	var blockIdRule []interface{}
-	for _, blockIdItem := range blockId {
-		blockIdRule = append(blockIdRule, blockIdItem)
-	}
-
-	logs, sub, err := _LibProving.contract.FilterLogs(opts, "TransitionContested", blockIdRule)
-	if err != nil {
-		return nil, err
-	}
-	return &LibProvingTransitionContestedIterator{contract: _LibProving.contract, event: "TransitionContested", logs: logs, sub: sub}, nil
-}
-
-// WatchTransitionContested is a free log subscription operation binding the contract event 0xb4c0a86c1ff239277697775b1e91d3375fd3a5ef6b345aa4e2f6001c890558f6.
-//
-// Solidity: event TransitionContested(uint256 indexed blockId, (bytes32,bytes32,bytes32,bytes32) tran, address contester, uint96 contestBond, uint16 tier)
-func (_LibProving *LibProvingFilterer) WatchTransitionContested(opts *bind.WatchOpts, sink chan<- *LibProvingTransitionContested, blockId []*big.Int) (event.Subscription, error) {
-
-	var blockIdRule []interface{}
-	for _, blockIdItem := range blockId {
-		blockIdRule = append(blockIdRule, blockIdItem)
-	}
-
-	logs, sub, err := _LibProving.contract.WatchLogs(opts, "TransitionContested", blockIdRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(LibProvingTransitionContested)
-				if err := _LibProving.contract.UnpackLog(event, "TransitionContested", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseTransitionContested is a log parse operation binding the contract event 0xb4c0a86c1ff239277697775b1e91d3375fd3a5ef6b345aa4e2f6001c890558f6.
-//
-// Solidity: event TransitionContested(uint256 indexed blockId, (bytes32,bytes32,bytes32,bytes32) tran, address contester, uint96 contestBond, uint16 tier)
-func (_LibProving *LibProvingFilterer) ParseTransitionContested(log types.Log) (*LibProvingTransitionContested, error) {
-	event := new(LibProvingTransitionContested)
-	if err := _LibProving.contract.UnpackLog(event, "TransitionContested", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -1248,154 +1057,6 @@ func (_LibProving *LibProvingFilterer) WatchTransitionContestedV2(opts *bind.Wat
 func (_LibProving *LibProvingFilterer) ParseTransitionContestedV2(log types.Log) (*LibProvingTransitionContestedV2, error) {
 	event := new(LibProvingTransitionContestedV2)
 	if err := _LibProving.contract.UnpackLog(event, "TransitionContestedV2", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// LibProvingTransitionProvedIterator is returned from FilterTransitionProved and is used to iterate over the raw logs and unpacked data for TransitionProved events raised by the LibProving contract.
-type LibProvingTransitionProvedIterator struct {
-	Event *LibProvingTransitionProved // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *LibProvingTransitionProvedIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(LibProvingTransitionProved)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(LibProvingTransitionProved)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *LibProvingTransitionProvedIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *LibProvingTransitionProvedIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// LibProvingTransitionProved represents a TransitionProved event raised by the LibProving contract.
-type LibProvingTransitionProved struct {
-	BlockId      *big.Int
-	Tran         TaikoDataTransition
-	Prover       common.Address
-	ValidityBond *big.Int
-	Tier         uint16
-	Raw          types.Log // Blockchain specific contextual infos
-}
-
-// FilterTransitionProved is a free log retrieval operation binding the contract event 0xc195e4be3b936845492b8be4b1cf604db687a4d79ad84d979499c136f8e6701f.
-//
-// Solidity: event TransitionProved(uint256 indexed blockId, (bytes32,bytes32,bytes32,bytes32) tran, address prover, uint96 validityBond, uint16 tier)
-func (_LibProving *LibProvingFilterer) FilterTransitionProved(opts *bind.FilterOpts, blockId []*big.Int) (*LibProvingTransitionProvedIterator, error) {
-
-	var blockIdRule []interface{}
-	for _, blockIdItem := range blockId {
-		blockIdRule = append(blockIdRule, blockIdItem)
-	}
-
-	logs, sub, err := _LibProving.contract.FilterLogs(opts, "TransitionProved", blockIdRule)
-	if err != nil {
-		return nil, err
-	}
-	return &LibProvingTransitionProvedIterator{contract: _LibProving.contract, event: "TransitionProved", logs: logs, sub: sub}, nil
-}
-
-// WatchTransitionProved is a free log subscription operation binding the contract event 0xc195e4be3b936845492b8be4b1cf604db687a4d79ad84d979499c136f8e6701f.
-//
-// Solidity: event TransitionProved(uint256 indexed blockId, (bytes32,bytes32,bytes32,bytes32) tran, address prover, uint96 validityBond, uint16 tier)
-func (_LibProving *LibProvingFilterer) WatchTransitionProved(opts *bind.WatchOpts, sink chan<- *LibProvingTransitionProved, blockId []*big.Int) (event.Subscription, error) {
-
-	var blockIdRule []interface{}
-	for _, blockIdItem := range blockId {
-		blockIdRule = append(blockIdRule, blockIdItem)
-	}
-
-	logs, sub, err := _LibProving.contract.WatchLogs(opts, "TransitionProved", blockIdRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(LibProvingTransitionProved)
-				if err := _LibProving.contract.UnpackLog(event, "TransitionProved", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseTransitionProved is a log parse operation binding the contract event 0xc195e4be3b936845492b8be4b1cf604db687a4d79ad84d979499c136f8e6701f.
-//
-// Solidity: event TransitionProved(uint256 indexed blockId, (bytes32,bytes32,bytes32,bytes32) tran, address prover, uint96 validityBond, uint16 tier)
-func (_LibProving *LibProvingFilterer) ParseTransitionProved(log types.Log) (*LibProvingTransitionProved, error) {
-	event := new(LibProvingTransitionProved)
-	if err := _LibProving.contract.UnpackLog(event, "TransitionProved", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log

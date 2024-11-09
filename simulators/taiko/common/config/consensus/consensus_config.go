@@ -3,8 +3,8 @@ package consensus_config
 import (
 	"errors"
 	"github.com/ethereum/hive/hivesim"
-	"github.com/prysmaticlabs/prysm/v4/beacon-chain/state"
-	"github.com/prysmaticlabs/prysm/v4/config/params"
+	"github.com/prysmaticlabs/prysm/v5/beacon-chain/state"
+	"github.com/prysmaticlabs/prysm/v5/config/params"
 	"math/big"
 	"taiko/common/config"
 )

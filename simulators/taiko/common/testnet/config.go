@@ -3,8 +3,6 @@ package testnet
 import (
 	"math/big"
 	execution_config "taiko/common/config/execution"
-
-	blobber_config "github.com/marioevz/blobber/config"
 )
 
 var (
@@ -36,10 +34,6 @@ type Config struct {
 	// Builders
 	EnableBuilders bool `json:"enable_builders,omitempty"`
 	//BuilderOptions []mock_builder.Option `json:"builder_options,omitempty"`
-
-	// Blobber
-	EnableBlobber  bool                    `json:"enable_blobber,omitempty"`
-	BlobberOptions []blobber_config.Option `json:"blobber_options,omitempty"`
 
 	// Network
 	Network string
