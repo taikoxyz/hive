@@ -3,13 +3,11 @@ package testnet
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/hive/hivesim"
-	exec_client "github.com/marioevz/eth-clients/clients/execution"
-	"github.com/protolambda/zrnt/eth2/beacon/common"
 	"math/big"
 	"taiko/common/clients"
 	cl "taiko/common/config/consensus"
-	consensus_config "taiko/common/config/consensus"
 	el "taiko/common/config/execution"
 	"taiko/params"
 )
@@ -22,7 +20,7 @@ var (
 // PreparedTestnet has all the options for starting nodes, ready to build the network.
 type PreparedTestnet struct {
 	// Consensus chain configuration
-	Spec *consensus_config.Spec
+	Spec *cl.Spec
 
 	// Execution chain configuration and genesis info
 	ExecutionGenesis *el.ExecutionGenesis
@@ -171,8 +169,8 @@ func (p *PreparedTestnet) createTestnet(t *hivesim.T, config *Config) *Testnet {
 	genesisValidatorsRoot := genesisState.GenesisValidatorsRoot()
 	return &Testnet{
 		T:                     t,
-		genesisTime:           common.Timestamp(genesisTime),
-		genesisValidatorsRoot: common.Root(genesisValidatorsRoot),
+		genesisTime:           genesisTime,
+		genesisValidatorsRoot: common.BytesToHash(genesisValidatorsRoot),
 		spec:                  p.Spec,
 		executionGenesis:      p.ExecutionGenesis,
 
@@ -371,7 +369,6 @@ func (p *PreparedTestnet) prepareTaikoGethClient(
 		T:                    testnet.T,
 		HiveClientDefinition: eth2Def,
 		Network:              cfg.Network,
-		Port:                 exec_client.PortEngineRPC,
 	}
 	cm.OptionsGenerator = func() ([]hivesim.StartOption, error) {
 		opts := []hivesim.StartOption{p.taikoGethOpts}

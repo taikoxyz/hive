@@ -35,7 +35,7 @@ func (ts BaseTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 	}
 	waitL2LatestNumber(ctx, t, target, nodes[0].L2EthClient)
 
-	// For debug
+	// For Debug
 	if ts.IsDebug() {
 		time.Sleep(time.Minute * 60)
 	}
