@@ -48,6 +48,12 @@ func (t *T) True(ok bool, msgAndArgs ...interface{}) {
 	}
 }
 
+func (t *T) False(ok bool, msgAndArgs ...interface{}) {
+	if ok {
+		t.Error("Should be false", msgAndArgs)
+	}
+}
+
 func (t *T) Equal(expected, actual interface{}, msgAndArgs ...interface{}) {
 	if err := validateEqualArgs(expected, actual); err != nil {
 		t.Error(fmt.Sprintf("Invalid operation: %#v == %#v (%s)", expected, actual, err), msgAndArgs)
