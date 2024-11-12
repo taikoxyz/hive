@@ -28,7 +28,7 @@ var spewConfigStringerEnabled = spew.ConfigState{
 	MaxDepth:                10,
 }
 
-func (t *T) FailIfNil(object interface{}, msgAndArgs ...interface{}) {
+func (t *T) FailIfNotNil(object interface{}, msgAndArgs ...interface{}) {
 	if isNil(object) {
 		return
 	}
