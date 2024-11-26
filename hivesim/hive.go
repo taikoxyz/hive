@@ -201,7 +201,12 @@ func (sim *Simulation) StartClientWithOptions(testSuite SuiteID, test TestID, cl
 	if err != nil {
 		return "", nil, err
 	}
+
 	fmt.Printf("show the envs in %s: \n%s\n", clientType, envs)
+	// Set environment variables.
+	for k, v := range setup.config.Environment {
+		_ = os.Setenv(k, v)
+	}
 
 	err = setup.postWithFiles(url, &resp)
 	if err != nil {
