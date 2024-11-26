@@ -39,6 +39,11 @@ func (r PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.T
 		t.Fatalf("cannot start node: %v", err)
 	}
 
+	// Hold on the servers.
+	if r.Debug {
+		time.Sleep(time.Minute * 60)
+	}
+
 	driver := node.DriverClient
 	l1Cli, err := ethclient.Dial(node.AnvilClient.WSURL())
 	if err != nil {
@@ -106,7 +111,7 @@ func (r PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.T
 
 	var batchID uint64
 	for range 10 {
-		time.Sleep(time.Millisecond * 200)
+		time.Sleep(time.Second)
 		if rand.Int()/2 == 0 {
 			batchID = 0
 			r.insertNewSoftBlock(t, l1Cli, l2Cli, driver)

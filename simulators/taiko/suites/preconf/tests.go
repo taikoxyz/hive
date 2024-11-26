@@ -25,7 +25,7 @@ func init() {
 		PreconfTestSpec{
 			BaseTestSpec: suite_base.BaseTestSpec{
 				Name:  "preconf",
-				Debug: false,
+				Debug: true,
 			},
 		},
 	)
