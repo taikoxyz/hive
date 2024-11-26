@@ -15,6 +15,7 @@ require (
 	github.com/holiman/uint256 v1.3.1
 	github.com/joho/godotenv v1.5.1
 	github.com/lithammer/dedent v1.1.0
+	github.com/pmezard/go-difflib v1.0.0
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/exp v0.0.0-20231214170342-aacd6d4b4611
 	golang.org/x/net v0.24.0
@@ -81,7 +82,6 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc2.0.20221005185240-3a7f492d3f1b // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_golang v1.14.0 // indirect
 	github.com/prometheus/client_model v0.4.0 // indirect
 	github.com/prometheus/common v0.42.0 // indirect
