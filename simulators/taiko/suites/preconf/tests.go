@@ -22,7 +22,7 @@ var Tests = make([]suites.TestSpec, 0)
 
 func init() {
 	Tests = append(Tests,
-		PreconfTestSpec{
+		&PreconfTestSpec{
 			BaseTestSpec: suite_base.BaseTestSpec{
 				Name:  "preconf",
 				Debug: true,

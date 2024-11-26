@@ -12,7 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/hive/hivesim"
+	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"math/big"
 	"math/rand/v2"
 	"os"
@@ -288,15 +288,14 @@ func EncodeAndCompressTxList(txs types.Transactions) ([]byte, error) {
 
 func CreateL2Txs(
 	ctx context.Context,
-	t *hivesim.T,
-	l2cli *ethclient.Client,
+	l2cli *rpc.EthClient,
 	send bool,
-) types.Transactions {
+) (types.Transactions, error) {
 	var txs types.Transactions
 	for _, auth := range params.L2Auths {
 		nonce, err := l2cli.PendingNonceAt(ctx, auth.From)
 		if err != nil {
-			t.Fatalf("cannot get nonce: %v", err)
+			return nil, fmt.Errorf("cannot get nonce: %v", err)
 		}
 		to := common.BigToAddress(big.NewInt(rand.Int64()))
 		signedTx, err := auth.Signer(auth.From, types.NewTx(&types.DynamicFeeTx{
@@ -311,11 +310,11 @@ func CreateL2Txs(
 
 		if send {
 			if err = l2cli.SendTransaction(ctx, signedTx); err != nil {
-				t.Fatalf("cannot send transaction:, address: %s, err: %v", auth.From, err)
+				return nil, fmt.Errorf("cannot send transaction:, address: %s, err: %v", auth.From, err)
 			}
 		}
 
 		txs = append(txs, signedTx)
 	}
-	return txs
+	return txs, nil
 }

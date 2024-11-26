@@ -7,7 +7,6 @@ import (
 	"github.com/ethereum/hive/hivesim"
 	"github.com/pkg/errors"
 	"github.com/prysmaticlabs/prysm/v5/config/params"
-	"net"
 	"strings"
 	"taiko/common/utils"
 )
@@ -19,15 +18,6 @@ const (
 	BeaconPort          = 3500
 	SoftBlockServerPort = 7000
 )
-
-type Client interface {
-	IsRunning() bool
-	GetAddress() string
-	GetHost() string
-	GetIP() net.IP
-	ClientType() string
-	HiveClient() *hivesim.Client
-}
 
 // A node bundles together:
 // - Running Execution client

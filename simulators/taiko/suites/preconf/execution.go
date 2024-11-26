@@ -3,12 +3,12 @@ package preconf
 import (
 	"context"
 	"fmt"
-	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/hive/hivesim"
+	"github.com/taikoxyz/taiko-mono/packages/taiko-client/bindings"
+	"math/big"
 	"math/rand/v2"
-	"strings"
 	"taiko/common/clients"
 	"taiko/common/testnet"
 	tn "taiko/common/testnet"
@@ -19,221 +19,228 @@ import (
 
 type PreconfTestSpec struct {
 	suite_base.BaseTestSpec
+
+	batchID uint64
+	l1Head  *types.Header
 }
 
-var (
-	l1HeadCh            = make(chan *types.Header, 1)
-	l2BlockCh           = make(chan *types.Block, 1)
-	curL1OriginCh       = make(chan *rawdb.L1Origin, 1)
-	canonicalL1OriginCh = make(chan *rawdb.L1Origin, 1)
-)
-
-func (r PreconfTestSpec) GetTestnetConfig() *testnet.Config {
+func (r *PreconfTestSpec) GetTestnetConfig() *testnet.Config {
 	params.SetEnvParams("SOFT_BLOCK_SERVER_PORT", fmt.Sprintf("%d", clients.SoftBlockServerPort))
 	return r.BaseTestSpec.GetTestnetConfig()
 }
 
-func (r PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Testnet) {
+func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Testnet) {
 	node := testnet.Nodes[0]
-	if err := node.Start(); err != nil {
-		t.Fatalf("cannot start node: %v", err)
-	}
-
-	// Hold on the servers.
-	if r.Debug {
-		time.Sleep(time.Minute * 60)
-	}
+	t.Nil(node.Start(), "cannot start node")
 
 	driver := node.DriverClient
-	l1Cli, err := ethclient.Dial(node.AnvilClient.WSURL())
-	if err != nil {
-		t.Fatalf("cannot connect l1 client: %v", err)
-	}
-	l2Cli, err := ethclient.Dial(node.L2EthClient.WSURL())
-	if err != nil {
-		t.Fatalf("cannot dial l2 client: %v", err)
-	}
-
-	l1HCh := make(chan *types.Header, 2)
-	l2HeadCh := make(chan *types.Header, 2)
-	l1Sub, err := l1Cli.SubscribeNewHead(context.Background(), l1HeadCh)
-	t.Nil(err)
-	defer l1Sub.Unsubscribe()
-	l2Sub, err := l2Cli.SubscribeNewHead(context.Background(), l2HeadCh)
-	t.Nil(err)
-	defer l2Sub.Unsubscribe()
-
-	var closeCh = make(chan struct{})
-	go func() {
-		for {
-			select {
-			case <-closeCh:
-				return
-			case head := <-l1HCh:
-				select {
-				case <-l1HeadCh:
-					l1HeadCh <- head
-				default:
-					l1HeadCh <- head
-				}
-			case head := <-l2HeadCh:
-				block, err := l2Cli.BlockByHash(ctx, head.Hash())
-				t.Nil(err)
-				select {
-				case <-l2BlockCh:
-					l2BlockCh <- block
-				default:
-					l2BlockCh <- block
-				}
-				origin, err := l2Cli.HeadL1Origin(ctx)
-				t.Nil(err)
-				select {
-				case <-canonicalL1OriginCh:
-					canonicalL1OriginCh <- origin
-				default:
-					canonicalL1OriginCh <- origin
-				}
-				origin, err = l2Cli.L1OriginByID(ctx, head.Number)
-				t.Nil(err)
-				select {
-				case <-curL1OriginCh:
-					curL1OriginCh <- origin
-				default:
-					curL1OriginCh <- origin
-				}
-			}
-		}
-	}()
-	defer close(closeCh)
+	taikoL1 := driver.TaikoL1
 
 	// wait l2 node.
-	t.Nil(node.L2EthClient.WaitTargetNumber(ctx, time.Second*60, 5))
-
-	var batchID uint64
-	for range 10 {
-		time.Sleep(time.Second)
-		if rand.Int()/2 == 0 {
-			batchID = 0
-			r.insertNewSoftBlock(t, l1Cli, l2Cli, driver)
-		} else {
-			batchID++
-			r.replaceLatestSoftBlock(t, l1Cli, l2Cli, driver, batchID)
+	safeNum := uint64(5)
+	eventCh := make(chan *bindings.TaikoL1ClientBlockProposedV2, 3)
+	sub, err := taikoL1.WatchBlockProposedV2(nil, eventCh, nil)
+	t.Nil(err)
+	defer sub.Unsubscribe()
+	for event := range eventCh {
+		if event.BlockId.Uint64() == safeNum {
+			// pause proposer
+			node.ProposerClient.PauseClient()
+			break
 		}
 	}
+	t.Nil(node.L2EthClient.WaitTargetNumber(ctx, time.Second*60, safeNum))
 
+	loops := 2
+	for range loops {
+		for i := 0; i < 6; i++ {
+			time.Sleep(time.Second)
+			if i%2 == 0 {
+				r.insertNewSoftBlock(t, node.L2EthClient, driver)
+			} else {
+				r.replaceLatestSoftBlock(t, driver)
+			}
+		}
+
+		//time.Sleep(time.Second)
+		r.randomRemoveSoftBlock(t, driver)
+
+		// propose safe block.
+		r.proposeTxLists(t, node.L2EthClient, node.ProposerClient)
+	}
 }
 
-func (r PreconfTestSpec) insertNewSoftBlock(
+func (r *PreconfTestSpec) insertNewSoftBlock(
 	t *hivesim.T,
-	l1cli *ethclient.Client,
-	l2cli *ethclient.Client,
+	l2EthClient *clients.TaikoGethClient,
 	driver *clients.DriverClient,
 ) {
-	l2Block := <-l2BlockCh
+	r.batchID = 0
+	t.Logf("start insert new soft block")
+	defer t.Logf("successfully insert new soft block")
+
+	l2Block, err := driver.L2.BlockByNumber(context.Background(), nil)
+	t.Nil(err, "l2 latest block")
+
 	l2Num := l2Block.NumberU64()
-	t.Logf("insertNewSoftBlock, l2 number: %d", l2Num)
-	txsCount, err := driver.BuildSoftBlock(
-		t,
-		l1cli,
-		l2cli,
+	l1Head, txs, err := driver.BuildSoftBlock(
 		l2Num+1,
-		0,
+		r.batchID,
 		false,
 		false,
+		nil,
+	)
+	t.Nil(err)
+	r.l1Head = l1Head
+
+	// wait l2 node.
+	t.Nil(l2EthClient.WaitTargetNumber(context.Background(), time.Second*60, l2Num+1))
+
+	l2Block, err = driver.L2.BlockByNumber(context.Background(), nil)
+	t.Nil(err, "l2 latest block")
+
+	t.Equal(l2Num+1, l2Block.NumberU64(), "block number")
+
+	// check txs count.
+	t.Equal(txs.Len()+1, l2Block.Transactions().Len(), "transaction count")
+
+	// check l1Origin variables.
+	l1Origin, err := driver.L2.L1OriginByID(context.Background(), l2Block.Number())
+	t.Nil(err, "l1 origin")
+
+	t.Equal(l2Block.Number(), l1Origin.BlockID, "l1Origin's blockID")
+	t.Equal(l2Block.Hash().String(), l1Origin.L2BlockHash.String(), "l1Origin's l2BlockHash")
+	t.Equal(uint64(0), l1Origin.L1BlockHeight.Uint64(), "l1Origin's l1BlockHeight")
+	t.Equal(common.Hash{}.String(), l1Origin.L1BlockHash.String(), "l1Origin's l1BlockHash")
+	t.Equal(r.batchID, l1Origin.BatchID.Uint64(), "l1Origin's batchID")
+	t.Equal(false, l1Origin.EndOfBlock, "l1Origin's endOfBlock")
+	t.Equal(false, l1Origin.EndOfPreconf, "l1Origin's endOfPreconf")
+	t.Nil(driver.StateError(), "state error")
+}
+
+func (r *PreconfTestSpec) replaceLatestSoftBlock(
+	t *hivesim.T,
+	driver *clients.DriverClient,
+) {
+	r.batchID++
+	t.Logf("start replace latest soft block")
+	defer t.Logf("successfully replace latest soft block")
+
+	preBlock, err := driver.L2.BlockByNumber(context.Background(), nil)
+	t.Nil(err, "l2 latest block before append soft block")
+
+	_, txs, err := driver.BuildSoftBlock(
+		preBlock.NumberU64(),
+		r.batchID,
+		false,
+		false,
+		r.l1Head,
 	)
 	t.Nil(err)
 
-	l2Block = <-l2BlockCh
-	t.Equal(l2Num+1, l2Block.NumberU64())
+	curBlock, err := driver.L2.BlockByNumber(context.Background(), nil)
+	t.Nil(err, "l2 latest block after append soft block")
 
-	// check txs count.
-	t.Equal(txsCount+1, l2Block.Transactions().Len())
+	t.Equal(preBlock.NumberU64(), curBlock.NumberU64(), "block number")
+	t.Equal(preBlock.Transactions().Len()+txs.Len(), curBlock.Transactions().Len(), "transaction count")
 
-	l1Head := <-l1HeadCh
-	// check l1Origin variables.
-	l1Origin := <-curL1OriginCh
-	t.Nil(err, "cannot get l1 origin")
-	t.Equal(l2Block.Number(), l1Origin.BlockID)
-	t.Equal(l2Block.Hash(), l1Origin.L2BlockHash)
-	t.Equal(l1Head.Number, l1Origin.L1BlockHeight)
-	t.Equal(l1Head.Hash(), l1Origin.L1BlockHash)
-	t.Equal(0, l1Origin.BatchID.Uint64())
-	t.Equal(false, l1Origin.EndOfBlock)
-	t.Equal(false, l1Origin.EndOfPreconf)
+	l1Origin, err := driver.L2.L1OriginByID(context.Background(), curBlock.Number())
+	t.Nil(err, "l1 origin")
+
+	t.Equal(r.batchID, l1Origin.BatchID.Uint64(), "batchID")
+	t.Equal(curBlock.Number().Uint64(), l1Origin.BlockID.Uint64(), "l1Origin's blockID")
+	t.Equal(curBlock.Hash().String(), l1Origin.L2BlockHash.String(), "l1Origin's l2BlockHash")
+	t.Equal(uint64(0), l1Origin.L1BlockHeight.Uint64(), "l1Origin's l1BlockHeight")
+	t.Equal(common.Hash{}.String(), l1Origin.L1BlockHash.String(), "l1Origin's l1BlockHash")
+	t.Equal(false, l1Origin.EndOfBlock, "l1Origin's endOfBlock")
+	t.Equal(false, l1Origin.EndOfPreconf, "l1Origin's endOfPreconf")
+	t.Nil(driver.StateError(), "state error")
 }
 
-func (r PreconfTestSpec) replaceLatestSoftBlock(
+func (r *PreconfTestSpec) randomRemoveSoftBlock(
 	t *hivesim.T,
-	l1cli *ethclient.Client,
-	l2cli *ethclient.Client,
 	driver *clients.DriverClient,
-	batchID uint64,
 ) {
-	preBlock := <-l2BlockCh
-	t.Logf("replaceLatestSoftBlock, l2 number: %d", preBlock.NumberU64())
+	t.Logf("start remove soft blocks")
+	defer t.Logf("successfully remove soft blocks")
 
-	txsCount, err := driver.BuildSoftBlock(
-		t,
-		l1cli,
-		l2cli,
-		preBlock.NumberU64(),
-		batchID,
-		false,
-		false,
-	)
+	canonicalL1Origin := driver.CanonicalL1Origin.Load()
+	latestNum, err := driver.L2.BlockNumber(context.Background())
+	t.Nil(err, "l2 latest block number")
 
-	l1Origin := <-curL1OriginCh
-	if l1Origin.BatchID != nil {
-		t.FailIfNotNil(err, "cannot build soft block")
-	} else if err == nil || !strings.Contains(err.Error(), "batch ID mismatch") {
-		t.Fatalf("if current block is not soft block then the error should contain 'batch ID mismatch', err: %v", err)
+	l2Num := rand.Uint64N(latestNum-canonicalL1Origin.BlockID.Uint64()) +
+		canonicalL1Origin.BlockID.Uint64()
+
+	t.Logf("canonical number: %d, remove number: %d, latest number: %d", canonicalL1Origin.BlockID.Uint64(), l2Num, latestNum)
+
+	curL1Origin, err := driver.L2.L1OriginByID(context.Background(), big.NewInt(int64(l2Num)))
+	t.Nil(err, "l1 origin")
+
+	// remove soft blocks.
+	t.Nil(driver.RemoveSoftBlocks(l2Num))
+	time.Sleep(time.Second)
+
+	l2Head := driver.L2Head.Load()
+	// wait a new current l1Origin
+	curL1Origin2 := driver.LatestL1Origin.Load()
+
+	t.Equal(l2Num, l2Head.Number.Uint64(), "l2 number")
+	t.Equal(curL1Origin2.BlockID, l2Head.Number, "current l1Origin's blockID")
+
+	t.Equal(curL1Origin.BatchID, curL1Origin2.BatchID, "l1Origin's batchID")
+	t.Equal(curL1Origin.L1BlockHeight.Uint64(), curL1Origin2.L1BlockHeight.Uint64(), "l1Origin's l1BlockHeight")
+	t.Equal(curL1Origin.L1BlockHash.String(), curL1Origin2.L1BlockHash.String(), "l1Origin's l1BlockHash")
+	t.Equal(curL1Origin.L2BlockHash.String(), curL1Origin2.L2BlockHash.String(), "l1Origin's l2BlockHash")
+	t.Equal(curL1Origin.EndOfBlock, curL1Origin2.EndOfBlock, "l1Origin's endOfBlock")
+	t.Equal(curL1Origin.EndOfPreconf, curL1Origin2.EndOfPreconf, "l1Origin's endOfPreconf")
+	t.Equal(curL1Origin.Preconfer.String(), curL1Origin2.Preconfer.String(), "l1Origin's preconfer")
+	t.Nil(driver.StateError(), "state error")
+}
+
+func (r *PreconfTestSpec) proposeTxLists(
+	t *hivesim.T,
+	l2EthClient *clients.TaikoGethClient,
+	proposerClient *clients.ProposerClient,
+) {
+	t.Logf("start propose tx lists")
+	defer t.Logf("successfully start propose tx lists")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	canonicalL1Origin, txs, err := proposerClient.ProposeTxLists(ctx)
+	t.Nil(err)
+
+	// No soft blocks need to be proposed
+	if canonicalL1Origin == nil {
+		return
 	}
 
-	curBlock := <-l2BlockCh
-	l1Head := <-l1HeadCh
+	err = l2EthClient.WaitTargetNumber(ctx, time.Second*60, canonicalL1Origin.BlockID.Uint64()+uint64(len(txs)))
+	t.Nil(err)
 
-	t.Equal(preBlock.NumberU64(), curBlock.NumberU64())
-	t.Equal(preBlock.Transactions().Len()+txsCount, curBlock.Transactions().Len())
+	var (
+		l1Number    *big.Int
+		l1Hash      common.Hash
+		startNumber = canonicalL1Origin.BlockID.Uint64() + 1
+	)
+	for _, txLst := range txs {
+		block, err := proposerClient.L2.BlockByNumber(ctx, big.NewInt(int64(startNumber)))
+		t.Nil(err)
 
-	l1Origin = <-curL1OriginCh
-	t.Equal(curBlock.Number(), l1Origin.BlockID)
-	t.Equal(curBlock.Hash(), l1Origin.L2BlockHash)
-	t.Equal(l1Head.Number, l1Origin.L1BlockHeight)
-	t.Equal(l1Head.Hash(), l1Origin.L1BlockHash)
-	t.Equal(batchID, l1Origin.BatchID.Uint64())
-	t.Equal(false, l1Origin.EndOfBlock)
-	t.Equal(false, l1Origin.EndOfPreconf)
-}
+		l1Origin, err := proposerClient.L2.L1OriginByID(ctx, big.NewInt(int64(startNumber)))
+		t.Nil(err)
 
-func (r PreconfTestSpec) randomRemoveSoftBlock(
-	t *hivesim.T,
-	driver *clients.DriverClient,
-) {
-	canonicalL1Origin := <-canonicalL1OriginCh
-	curL1Origin1 := <-curL1OriginCh
-	l2Num := rand.Uint64N(curL1Origin1.BlockID.Uint64()-canonicalL1Origin.BlockID.Uint64()) +
-		canonicalL1Origin.BlockID.Uint64()
-	// remove soft blocks.
-	t.FailIfNotNil(driver.RemoveSoftBlocks(t, l2Num))
-
-	// wait a new current l1Origin
-	curL1Origin2 := <-curL1OriginCh
-	l2Block := <-l2BlockCh
-	t.Equal(l2Num, l2Block.NumberU64())
-	t.Equal(curL1Origin2.BlockID, l2Block.Number())
-
-	t.Equal(curL1Origin1.BatchID, curL1Origin2.BatchID)
-	t.Equal(curL1Origin1.L1BlockHeight, curL1Origin2.L1BlockHeight)
-	t.Equal(curL1Origin1.L1BlockHash, curL1Origin2.L1BlockHash)
-	t.Equal(curL1Origin1.L2BlockHash, curL1Origin2.L2BlockHash)
-	t.Equal(curL1Origin1.EndOfBlock, curL1Origin2.EndOfBlock)
-	t.Equal(curL1Origin1.EndOfPreconf, curL1Origin2.EndOfPreconf)
-	t.Equal(curL1Origin1.Preconfer, curL1Origin2.Preconfer)
-}
-
-func (r PreconfTestSpec) testInsertSoftBlocksAfterEOB(
-	t *hivesim.T,
-	driver *clients.DriverClient,
-) {
-
+		t.Equal(txLst.Len(), block.Transactions().Len())
+		t.Equal(block.NumberU64(), l1Origin.BlockID.Uint64(), "l1Origin's blockID")
+		t.Equal(block.Hash().String(), l1Origin.L2BlockHash.String(), "l1Origin's l2BlockHash")
+		t.True(l1Origin.BatchID == nil, "l1Origin's batchID")
+		t.True(l1Origin.L1BlockHeight != nil, "l1Origin's l1BlockHeight")
+		if l1Number == nil {
+			l1Number = l1Origin.L1BlockHeight
+			l1Hash = l1Origin.L1BlockHash
+		} else {
+			t.Equal(l1Number.Uint64(), l1Origin.L1BlockHeight.Uint64(), "l1Origin's l1BlockHeight")
+			t.Equal(l1Hash.String(), l1Origin.L1BlockHash.String(), "l1Origin's l1BlockHash")
+		}
+	}
 }

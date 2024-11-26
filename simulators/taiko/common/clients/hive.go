@@ -2,7 +2,6 @@ package clients
 
 import (
 	"fmt"
-	"net"
 	"time"
 
 	"github.com/ethereum/hive/hivesim"
@@ -14,17 +13,12 @@ type HiveManagedClient struct {
 	*hivesim.T
 	OptionsGenerator     HiveOptionsGenerator
 	HiveClientDefinition *hivesim.ClientDefinition
-	Port                 int64
 
 	simClient         *hivesim.Client
 	extraStartOptions []hivesim.StartOption
 
 	Network   string
 	networkIP string
-}
-
-func (h *HiveManagedClient) HiveClient() *hivesim.Client {
-	return h.simClient
 }
 
 func (h *HiveManagedClient) IsRunning() bool {
@@ -58,17 +52,6 @@ func (h *HiveManagedClient) Start() error {
 	return nil
 }
 
-func (h *HiveManagedClient) AddStartOption(opts ...interface{}) {
-	if h.extraStartOptions == nil {
-		h.extraStartOptions = make([]hivesim.StartOption, 0)
-	}
-	for _, o := range opts {
-		if o, ok := o.(hivesim.StartOption); ok {
-			h.extraStartOptions = append(h.extraStartOptions, o)
-		}
-	}
-}
-
 func (h *HiveManagedClient) PauseClient() {
 	h.Logf("Pausing %s client", h.ClientType())
 	err := h.Sim.PauseClient(h.SuiteID, h.TestID, h.simClient.Container)
@@ -94,29 +77,12 @@ func (h *HiveManagedClient) NetworkIP() string {
 	var err error
 	h.networkIP, err = h.Sim.ContainerNetworkIP(h.SuiteID, h.Network, h.simClient.Container)
 	if err != nil {
-		h.Logf("Error getting network IP: %v", err)
+		// h.Logf("Error getting network IP: %v", err)
 		return h.GetHost()
 	}
 	h.Logf("%s network IP %v", h.ClientType(), h.networkIP)
 
 	return h.networkIP
-}
-
-func (h *HiveManagedClient) GetAddress() string {
-	if h.simClient == nil {
-		return ""
-	}
-	if h.Port > 0 {
-		return fmt.Sprintf("http://%s:%d", h.simClient.IP, h.Port)
-	}
-	return fmt.Sprintf("http://%s", h.simClient.IP)
-}
-
-func (h *HiveManagedClient) GetIP() net.IP {
-	if h.simClient == nil {
-		return net.IP{}
-	}
-	return h.simClient.IP
 }
 
 func (h *HiveManagedClient) GetHost() string {

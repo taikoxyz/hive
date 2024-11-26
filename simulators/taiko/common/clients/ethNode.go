@@ -117,6 +117,7 @@ func (ec *EthNode) WaitLatestNumber(ctx context.Context, timeout time.Duration, 
 
 func (ec *EthNode) WaitTargetNumber(ctx context.Context, timeout time.Duration, number uint64) error {
 	client := ec.EthClient()
+	defer ec.Logf("%s: wait target number %d", ec.ClientType(), number)
 	for ; ; <-time.Tick(time.Second) {
 		select {
 		case <-time.After(timeout):

@@ -4,6 +4,7 @@ RUN apk --no-cache add gcc musl-dev linux-headers cmake make clang build-base cl
 
 WORKDIR /source
 ADD . /source
+COPY params/jwt.hex /tmp/
 
 RUN go build -v
 
