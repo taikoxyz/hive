@@ -5,9 +5,8 @@ go 1.23
 toolchain go1.23.2
 
 require (
-	github.com/ethereum-optimism/optimism v1.7.4
 	github.com/ethereum/go-ethereum v1.14.11
-	github.com/ethereum/hive v0.0.0-20241107164540-7b0ce986d7da
+	github.com/ethereum/hive v0.0.0-20241125105211-a0ad3e1d529a
 	github.com/go-resty/resty/v2 v2.16.2
 	github.com/joho/godotenv v1.5.1
 	github.com/lithammer/dedent v1.1.0
@@ -70,6 +69,7 @@ require (
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/ethereum-optimism/go-ethereum-hdwallet v0.1.3 // indirect
+	github.com/ethereum-optimism/optimism v1.7.4 // indirect
 	github.com/ethereum/c-kzg-4844 v1.0.0 // indirect
 	github.com/ethereum/go-verkle v0.1.1-0.20240829091221-dffa7562dbe9 // indirect
 	github.com/ethereum/hive/hiveproxy v0.0.0-20240808014330-625b82294b46 // indirect
@@ -173,7 +173,7 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/ethereum/hive v0.0.0-20241107164540-7b0ce986d7da => github.com/taikoxyz/hive v0.0.0-20241112031110-310cd828f42d
+replace github.com/ethereum/hive v0.0.0-20241125105211-a0ad3e1d529a => github.com/taikoxyz/hive v0.0.0-20241126032034-b568c06286fc
 
 replace github.com/ethereum/go-ethereum v1.14.11 => github.com/taikoxyz/taiko-geth v1.11.2-0.20241117075323-5c649bae8cde
 
