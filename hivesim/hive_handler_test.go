@@ -27,31 +27,32 @@ func TestTaikoRethHandler(t *testing.T) {
 
 	// Multi clusters test.
 	t.Run("taiko-genesis/l2-full-sync/clusters(3)", func(t *testing.T) {
-		testDenebGenesis(t, "taiko-genesis/l2-full-sync", clientGroups)
+		runHive(t, "taiko-genesis/l2-full-sync", clientGroups)
 	})
 
 	t.Run("taiko-reorg/taiko-reorg", func(t *testing.T) {
-		testDenebReorg(t, "taiko-reorg/taiko-reorg", [][]string{clientGroups[0]})
+		runHive(t, "taiko-reorg/taiko-reorg", [][]string{clientGroups[0]})
 	})
 
 	t.Run("taiko-blob/blob-l1-beacon", func(t *testing.T) {
-		testBlobScan(t, "taiko-blob/blob-l1-beacon", []string{
-			"geth",
-			"prysm/prysm-bn",
-			"prysm/prysm-vc",
-			"taiko/taiko-reth",
-			"taiko/driver",
-			"taiko/proposer",
-			"taiko/prover",
-			"storage/redis",
-			"storage/postgres",
-			"blobscan/blobscan-api",
-			"blobscan/blobscan-indexer",
-		})
+		runHive(t, "taiko-blob/blob-l1-beacon", [][]string{
+			{
+				"geth",
+				"prysm/prysm-bn",
+				"prysm/prysm-vc",
+				"taiko/taiko-reth",
+				"taiko/driver",
+				"taiko/proposer",
+				"taiko/prover",
+				"storage/redis",
+				"storage/postgres",
+				"blobscan/blobscan-api",
+				"blobscan/blobscan-indexer",
+			}})
 	})
 
 	t.Run("taiko-blob/blob-server", func(t *testing.T) {
-		testBlobScan(t, "taiko-blob/blob-server", []string{
+		runHive(t, "taiko-blob/blob-server", [][]string{{
 			"geth",
 			"prysm/prysm-bn",
 			"prysm/prysm-vc",
@@ -59,7 +60,7 @@ func TestTaikoRethHandler(t *testing.T) {
 			"taiko/driver",
 			"taiko/proposer",
 			"taiko/prover",
-		})
+		}})
 	})
 }
 
@@ -85,19 +86,19 @@ func TestTaikoGethHandler(t *testing.T) {
 	// Multi clusters test.
 	// ./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover,taiko/taiko-geth,taiko/driver,taiko/taiko-geth,taiko/driver --sim taiko --sim.limit "taiko-genesis/l2-snap-sync"
 	t.Run("taiko-genesis/l2-snap-sync/clusters(3)", func(t *testing.T) {
-		testDenebGenesis(t, "taiko-genesis/l2-snap-sync", clientGroups)
+		runHive(t, "taiko-genesis/l2-snap-sync", clientGroups)
 	})
 	// ./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover,taiko/taiko-geth,taiko/driver,taiko/taiko-geth,taiko/driver --sim taiko --sim.limit "taiko-genesis/l2-full-sync"
 	t.Run("taiko-genesis/l2-full-sync/clusters(3)", func(t *testing.T) {
-		testDenebGenesis(t, "taiko-genesis/l2-full-sync", clientGroups)
+		runHive(t, "taiko-genesis/l2-full-sync", clientGroups)
 	})
 	// ./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "taiko-reorg/taiko-reorg"
 	t.Run("taiko-reorg/taiko-reorg", func(t *testing.T) {
-		testDenebReorg(t, "taiko-reorg/taiko-reorg", [][]string{clientGroups[0]})
+		runHive(t, "taiko-reorg/taiko-reorg", [][]string{clientGroups[0]})
 	})
 	// ./build/bin/hive --docker.output --client geth,prysm/prysm-bn,prysm/prysm-vc,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "taiko-blob/blob-l1-beacon"
 	t.Run("taiko-blob/blob-l1-beacon", func(t *testing.T) {
-		testBlobScan(t, "taiko-blob/blob-l1-beacon", []string{
+		runHive(t, "taiko-blob/blob-l1-beacon", [][]string{{
 			"geth",
 			"prysm/prysm-bn",
 			"prysm/prysm-vc",
@@ -109,11 +110,11 @@ func TestTaikoGethHandler(t *testing.T) {
 			"storage/postgres",
 			"blobscan/blobscan-api",
 			"blobscan/blobscan-indexer",
-		})
+		}})
 	})
 	// ./build/bin/hive --docker.output --client geth,prysm/prysm-bn,prysm/prysm-vc,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover,storage/redis,storage/postgres,blobscan/blobscan-api,blobscan/blobscan-indexer --sim taiko --sim.limit "taiko-blob/blob-server"
 	t.Run("taiko-blob/blob-server", func(t *testing.T) {
-		testBlobScan(t, "taiko-blob/blob-server", []string{
+		runHive(t, "taiko-blob/blob-server", [][]string{{
 			"geth",
 			"prysm/prysm-bn",
 			"prysm/prysm-vc",
@@ -121,44 +122,23 @@ func TestTaikoGethHandler(t *testing.T) {
 			"taiko/driver",
 			"taiko/proposer",
 			"taiko/prover",
-		})
+		}})
+	})
+	// ./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "taiko/preconf"
+	t.Run("taiko/preconf", func(t *testing.T) {
+		runHive(t, "taiko/preconf", [][]string{{
+			"anvil",
+			"taiko/taiko-geth",
+			"taiko/driver",
+			"taiko/proposer",
+			"taiko/prover",
+		}})
 	})
 }
 
-func testBlobScan(t *testing.T, pattern string, clients []string) {
+func runHive(t *testing.T, pattern string, clientGroups [][]string) {
 	handler, err := NewHiveFramework(&HiveConfig{
-		BuildOutput:     false,
-		ContainerOutput: true,
-		BaseDir:         "/Users/huan/projects/taiko/hive",
-		SimPattern:      "taiko",
-		SimTestPattern:  pattern,
-		ClientGroups:    [][]string{clients},
-	})
-	assert.NoError(t, err)
-
-	failedCount, err := handler.Run(context.Background())
-	assert.NoError(t, err)
-	assert.Equal(t, 0, failedCount)
-}
-
-func testDenebGenesis(t *testing.T, pattern string, clientGroups [][]string) {
-	handler, err := NewHiveFramework(&HiveConfig{
-		BuildOutput:     false,
-		ContainerOutput: true,
-		BaseDir:         "/Users/huan/projects/taiko/hive",
-		SimPattern:      "taiko",
-		SimTestPattern:  pattern,
-		ClientGroups:    clientGroups,
-	})
-	assert.NoError(t, err)
-
-	failedCount, err := handler.Run(context.Background())
-	assert.NoError(t, err)
-	assert.Equal(t, 0, failedCount)
-}
-
-func testDenebReorg(t *testing.T, pattern string, clientGroups [][]string) {
-	handler, err := NewHiveFramework(&HiveConfig{
+		DockerPull:      true,
 		BuildOutput:     true,
 		ContainerOutput: true,
 		BaseDir:         "/Users/huan/projects/taiko/hive",
