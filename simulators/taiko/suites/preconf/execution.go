@@ -51,9 +51,8 @@ func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 	}
 	t.Nil(node.L2EthClient.WaitTargetNumber(ctx, time.Second*60, safeNum))
 
-	loops := 2
-	for range loops {
-		for i := 0; i < 6; i++ {
+	for loops := 0; loops < rand.IntN(10)+10; loops++ {
+		for i := 0; i < 4; i++ {
 			time.Sleep(time.Second)
 			if i%2 == 0 {
 				r.insertNewSoftBlock(t, node.L2EthClient, driver)
@@ -62,11 +61,13 @@ func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 			}
 		}
 
-		//time.Sleep(time.Second)
 		r.randomRemoveSoftBlock(t, driver)
 
 		// propose safe block.
-		r.proposeTxLists(t, node.L2EthClient, node.ProposerClient)
+		r.proposeTxListsForSoftBlocks(t, node.L2EthClient, node.ProposerClient)
+
+		// Propose all the pending txs.
+		r.proposeTxListForPendingTxs(t, node.L2EthClient, node.ProposerClient)
 	}
 }
 
@@ -126,7 +127,8 @@ func (r *PreconfTestSpec) replaceLatestSoftBlock(
 	t.Logf("start replace latest soft block")
 	defer t.Logf("successfully replace latest soft block")
 
-	preBlock, err := driver.L2.BlockByNumber(context.Background(), nil)
+	preHead := driver.L2Head.Load()
+	preBlock, err := driver.L2.BlockByNumber(context.Background(), preHead.Number)
 	t.Nil(err, "l2 latest block before append soft block")
 
 	_, txs, err := driver.BuildSoftBlock(
@@ -168,8 +170,7 @@ func (r *PreconfTestSpec) randomRemoveSoftBlock(
 	latestNum, err := driver.L2.BlockNumber(context.Background())
 	t.Nil(err, "l2 latest block number")
 
-	l2Num := rand.Uint64N(latestNum-canonicalL1Origin.BlockID.Uint64()) +
-		canonicalL1Origin.BlockID.Uint64()
+	l2Num := rand.Uint64N(latestNum-canonicalL1Origin.BlockID.Uint64()) + canonicalL1Origin.BlockID.Uint64()
 
 	t.Logf("canonical number: %d, remove number: %d, latest number: %d", canonicalL1Origin.BlockID.Uint64(), l2Num, latestNum)
 
@@ -178,7 +179,7 @@ func (r *PreconfTestSpec) randomRemoveSoftBlock(
 
 	// remove soft blocks.
 	t.Nil(driver.RemoveSoftBlocks(l2Num))
-	time.Sleep(time.Second)
+	time.Sleep(time.Millisecond * 500)
 
 	l2Head := driver.L2Head.Load()
 	// wait a new current l1Origin
@@ -197,7 +198,7 @@ func (r *PreconfTestSpec) randomRemoveSoftBlock(
 	t.Nil(driver.StateError(), "state error")
 }
 
-func (r *PreconfTestSpec) proposeTxLists(
+func (r *PreconfTestSpec) proposeTxListsForSoftBlocks(
 	t *hivesim.T,
 	l2EthClient *clients.TaikoGethClient,
 	proposerClient *clients.ProposerClient,
@@ -207,7 +208,7 @@ func (r *PreconfTestSpec) proposeTxLists(
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	canonicalL1Origin, txs, err := proposerClient.ProposeTxLists(ctx)
+	canonicalL1Origin, txs, err := proposerClient.ProposeTxLists(ctx, t)
 	t.Nil(err)
 
 	// No soft blocks need to be proposed
@@ -241,6 +242,30 @@ func (r *PreconfTestSpec) proposeTxLists(
 		} else {
 			t.Equal(l1Number.Uint64(), l1Origin.L1BlockHeight.Uint64(), "l1Origin's l1BlockHeight")
 			t.Equal(l1Hash.String(), l1Origin.L1BlockHash.String(), "l1Origin's l1BlockHash")
+		}
+	}
+}
+
+func (r *PreconfTestSpec) proposeTxListForPendingTxs(
+	t *hivesim.T,
+	l2EthClient *clients.TaikoGethClient,
+	proposerClient *clients.ProposerClient,
+) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// propose pending txs.
+	t.Nil(proposerClient.ProposeOp(ctx), "propose for pending txs")
+
+	// Wait until all the txs are proposed.
+
+	for {
+		timeAfter := time.After(time.Second * 10)
+		select {
+		case <-timeAfter:
+			return
+		case number := <-proposerClient.ProposedBlockID:
+			_ = l2EthClient.WaitTargetNumber(ctx, time.Second*10, number.Uint64())
 		}
 	}
 }

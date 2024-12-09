@@ -14,7 +14,6 @@ import (
 	"github.com/joho/godotenv"
 	"math/big"
 	"os"
-	"os/exec"
 	"strconv"
 	"time"
 )
@@ -50,7 +49,7 @@ func init() {
 		// set envs
 		_ = os.Setenv(k, v)
 	}
-	err = exec.Command("echo", "c49690b5a9bc72c7b451b48c5fee2b542e66559d840a133d090769abc56e39e7", ">", "/tmp/jwt.hex").Run()
+	err = os.WriteFile("/tmp/jwt.hex", []byte("c49690b5a9bc72c7b451b48c5fee2b542e66559d840a133d090769abc56e39e7"), 0644)
 	if err != nil {
 		panic(err)
 	}

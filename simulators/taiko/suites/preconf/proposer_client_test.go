@@ -2,27 +2,43 @@ package preconf
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/consensus/taiko"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/cmd/flags"
-	"github.com/taikoxyz/taiko-mono/packages/taiko-client/driver"
+	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
+	"github.com/taikoxyz/taiko-mono/packages/taiko-client/proposer"
 	"math/big"
-	"os"
 	"strings"
 	"taiko/common/clients"
 	"testing"
 )
 
 func TestNewProposer(t *testing.T) {
-	t.Log(os.Getenv("L1_BEACON"))
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	driverClient := &driver.Driver{}
-	err := clients.NewTaikoClient(driverClient, flags.DriverFlags)
+	proposerClient := &proposer.Proposer{}
+	err := clients.NewTaikoClient(proposerClient, flags.ProposerFlags)
 	assert.Nil(t, err)
-	assert.NotNil(t, driverClient)
+	assert.NotNil(t, proposerClient)
+
+	rpcClient, err := rpc.NewClient(ctx, proposerClient.ClientConfig)
+	assert.Nil(t, err)
+
+	var num hexutil.Uint
+	err = rpcClient.L2.Call(&num, "eth_getBlockTransactionCountByNumber", "pending")
+	assert.Nil(t, err)
+	t.Log(num)
+
+	pendingCount, err := rpcClient.L2.PendingTransactionCount(ctx)
+	assert.Nil(t, err)
+	t.Log(pendingCount)
 }
 
 func TestCC(t *testing.T) {
@@ -105,104 +121,14 @@ func TestBB(t *testing.T) {
 	t.Log(ok)
 }
 
-/*
-func TestAppend(t *testing.T) {
-	propose, err := NewProposer()
-	assert.Nil(t, err)
-	assert.NotNil(t, propose)
-
-	rpcClient, err := rpc.NewClient(context.Background(), propose.ClientConfig)
+func TestDD(t *testing.T) {
+	l2Cli, err := ethclient.Dial("http://localhost:8535")
 	assert.Nil(t, err)
 
-	anchorConstructor, err := anchortxconstructor.New(rpcClient)
+	_, err = l2Cli.HeaderByNumber(context.Background(), nil)
 	assert.Nil(t, err)
 
-	syncer := clients.Syncer{
-		Rpc:               rpcClient,
-		AnchorConstructor: anchorConstructor,
-	}
-
-	l1Cli, err := ethclient.Dial(params.ParamByKey("L1_WS"))
+	count, err := l2Cli.PendingTransactionCount(context.Background())
 	assert.Nil(t, err)
-
-	l2Cli, err := ethclient.Dial(params.ParamByKey("L2_WS"))
-	assert.Nil(t, err)
-
-	l1Head, err := l1Cli.HeaderByNumber(context.Background(), nil)
-	assert.Nil(t, err)
-
-	l2Head, err := l2Cli.HeaderByNumber(context.Background(), nil)
-	assert.Nil(t, err)
-
-	// Create and send a batch of txs.
-	signedTxs, err := utils.CreateL2Txs(context.Background(), l2Cli, true)
-	assert.Nil(t, err)
-
-	header, err := syncer.InsertSoftBlockFromTransactionsBatch(
-		context.Background(),
-		l2Head.Number.Uint64(),
-		1,
-		signedTxs,
-		"",
-		&softblocks.SoftBlockParams{
-			AnchorBlockID:   l1Head.Number.Uint64(),
-			AnchorStateRoot: l1Head.Root,
-			Timestamp:       l1Head.Time + 12,
-			Coinbase:        params.L2Auths[0].From,
-		},
-	)
-	assert.Nil(t, err)
-
-	t.Log(header.Hash().String())
+	t.Log(count)
 }
-
-func TestInsert(t *testing.T) {
-	propose, err := NewProposer()
-	assert.Nil(t, err)
-	assert.NotNil(t, propose)
-
-	rpcClient, err := rpc.NewClient(context.Background(), propose.ClientConfig)
-	assert.Nil(t, err)
-
-	anchorConstructor, err := anchortxconstructor.New(rpcClient)
-	assert.Nil(t, err)
-
-	syncer := clients.Syncer{
-		Rpc:               rpcClient,
-		AnchorConstructor: anchorConstructor,
-	}
-
-	l1Cli, err := ethclient.Dial(params.ParamByKey("L1_WS"))
-	assert.Nil(t, err)
-
-	l2Cli, err := ethclient.Dial(params.ParamByKey("L2_WS"))
-	assert.Nil(t, err)
-
-	l1Head, err := l1Cli.HeaderByNumber(context.Background(), nil)
-	assert.Nil(t, err)
-
-	l2Head, err := l2Cli.HeaderByNumber(context.Background(), nil)
-	assert.Nil(t, err)
-
-	// Create and send a batch of txs.
-	signedTxs, err := utils.CreateL2Txs(context.Background(), l2Cli, true)
-	assert.Nil(t, err)
-
-	header, err := syncer.InsertSoftBlockFromTransactionsBatch(
-		context.Background(),
-		l2Head.Number.Uint64()+1,
-		0,
-		signedTxs,
-		"",
-		&softblocks.SoftBlockParams{
-			AnchorBlockID:   l1Head.Number.Uint64(),
-			AnchorStateRoot: l1Head.Root,
-			Timestamp:       l1Head.Time + 12,
-			Coinbase:        params.L2Auths[0].From,
-		},
-	)
-	assert.Nil(t, err)
-
-	t.Log(header.Hash().String())
-}
-*/

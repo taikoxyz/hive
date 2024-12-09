@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/hive/hivesim"
 	tkflags "github.com/taikoxyz/taiko-mono/packages/taiko-client/cmd/flags"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/proposer"
@@ -41,17 +42,18 @@ func (p *ProposerClient) Start() error {
 	return err
 }
 
-func (d *ProposerClient) Shutdown() error {
-	if err := d.HiveManagedClient.Shutdown(); err != nil {
+func (p *ProposerClient) Shutdown() error {
+	if err := p.HiveManagedClient.Shutdown(); err != nil {
 		return err
 	}
-	d.State.Close()
+	p.State.Close()
 
 	return nil
 }
 
 func (p *ProposerClient) ProposeTxLists(
 	ctx context.Context,
+	t *hivesim.T,
 ) (*rawdb.L1Origin, []types.Transactions, error) {
 	canonicalL1Origin, err := p.L2.HeadL1Origin(ctx)
 	if err != nil {
@@ -69,14 +71,19 @@ func (p *ProposerClient) ProposeTxLists(
 	}
 
 	// Collect all the soft transactions.
-	var txs []types.Transactions
+	var (
+		total int
+		txs   []types.Transactions
+	)
 	for number := canonicalL1Origin.BlockID.Uint64() + 1; number <= l2Number; number++ {
 		l2Block, err := p.L2.BlockByNumber(ctx, big.NewInt(int64(number)))
 		if err != nil {
 			return nil, nil, err
 		}
 		txs = append(txs, l2Block.Transactions())
+		total += l2Block.Transactions().Len()
 	}
+	t.Logf("propose tx list, batch count: %d, txs count: %d", len(txs), total)
 
 	return canonicalL1Origin, txs, p.Proposer.ProposeTxLists(ctx, txs)
 }

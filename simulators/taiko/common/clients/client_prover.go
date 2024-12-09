@@ -3,8 +3,10 @@ package clients
 import (
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/taikoxyz/taiko-mono/packages/taiko-client/bindings"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"golang.org/x/net/context"
+	"math/big"
 	"sync"
 	"sync/atomic"
 )
@@ -18,6 +20,8 @@ type State struct {
 
 	L1Head atomic.Pointer[types.Header]
 	L2Head atomic.Pointer[types.Header]
+
+	ProposedBlockID chan *big.Int
 
 	LatestL1Origin    atomic.Pointer[rawdb.L1Origin]
 	CanonicalL1Origin atomic.Pointer[rawdb.L1Origin]
@@ -36,6 +40,7 @@ func NewState(rpcCli *rpc.Client) (state *State, err error) {
 		Client:            rpcCli,
 		L1Head:            atomic.Pointer[types.Header]{},
 		L2Head:            atomic.Pointer[types.Header]{},
+		ProposedBlockID:   make(chan *big.Int, 1),
 		LatestL1Origin:    atomic.Pointer[rawdb.L1Origin]{},
 		CanonicalL1Origin: atomic.Pointer[rawdb.L1Origin]{},
 
@@ -67,12 +72,19 @@ func (s *State) loop() {
 
 	l1HeadCh := make(chan *types.Header, 3)
 	l2HeadCh := make(chan *types.Header, 3)
+	blockProposedCh := make(chan *bindings.TaikoL1ClientBlockProposed, 10)
+	blockProposedV2Ch := make(chan *bindings.TaikoL1ClientBlockProposedV2, 10)
 
 	l1Sub := rpc.SubscribeChainHead(s.L1, l1HeadCh)
 	l2Sub := rpc.SubscribeChainHead(s.L2, l2HeadCh)
+	l2BlockProposedSub := rpc.SubscribeBlockProposed(s.TaikoL1, blockProposedCh)
+	l2BlockProposedV2Sub := rpc.SubscribeBlockProposedV2(s.TaikoL1, blockProposedV2Ch)
+
 	defer func() {
 		l1Sub.Unsubscribe()
 		l2Sub.Unsubscribe()
+		l2BlockProposedSub.Unsubscribe()
+		l2BlockProposedV2Sub.Unsubscribe()
 	}()
 
 	ctx, cancel := context.WithCancel(s.ctx)
@@ -82,6 +94,20 @@ func (s *State) loop() {
 		select {
 		case <-ctx.Done():
 			return
+		case e := <-blockProposedCh:
+			select {
+			case <-s.ProposedBlockID:
+				s.ProposedBlockID <- e.BlockId
+			default:
+				s.ProposedBlockID <- e.BlockId
+			}
+		case e := <-blockProposedV2Ch:
+			select {
+			case <-s.ProposedBlockID:
+				s.ProposedBlockID <- e.BlockId
+			default:
+				s.ProposedBlockID <- e.BlockId
+			}
 		case head := <-l1HeadCh:
 			s.L1Head.Store(head)
 		case head := <-l2HeadCh:
