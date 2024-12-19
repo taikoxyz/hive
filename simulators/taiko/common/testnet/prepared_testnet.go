@@ -191,7 +191,6 @@ func (p *PreparedTestnet) prepareAnvilNode(
 		T:                    testnet.T,
 		HiveClientDefinition: anvilDef,
 		Network:              cfg.Network,
-		Port:                 clients.AnvilPort,
 	}
 	cm.OptionsGenerator = func() ([]hivesim.StartOption, error) {
 		opts := []hivesim.StartOption{p.executionOpts}
@@ -234,7 +233,6 @@ func (p *PreparedTestnet) prepareExecutionNode(
 		T:                    testnet.T,
 		HiveClientDefinition: eth1Def,
 		Network:              cfg.Network,
-		Port:                 clients.EthEngineRPC,
 	}
 
 	// This method will return the options used to run the client.
@@ -278,7 +276,6 @@ func (p *PreparedTestnet) prepareBeaconNode(
 		T:                    testnet.T,
 		Network:              cfg.Network,
 		HiveClientDefinition: beaconDef,
-		Port:                 int64(clients.BeaconPort),
 	}
 
 	// This method will return the options used to run the client.

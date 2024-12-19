@@ -1,5 +1,5 @@
 ARG baseimage=us-docker.pkg.dev/evmchain/images/taiko-client
-ARG tag=main
+ARG tag=preconf-driver-apis
 
 FROM $baseimage:$tag
 

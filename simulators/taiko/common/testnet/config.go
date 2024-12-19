@@ -50,6 +50,9 @@ type Config struct {
 	// driver variables, false: beacon sync, true: blob sync
 	BeaconSync bool
 
+	// driver variables
+	SoftBlockServerPort uint64
+
 	// open debug flag
 	Debug bool
 }

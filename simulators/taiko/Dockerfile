@@ -1,9 +1,10 @@
 # Build the simulator binary
-FROM golang:1.22-alpine AS builder
+FROM golang:1.23.2-alpine AS builder
 RUN apk --no-cache add gcc musl-dev linux-headers cmake make clang build-base clang-static clang-dev
 
 WORKDIR /source
 ADD . /source
+COPY params/jwt.hex /tmp/
 
 RUN go build -v
 

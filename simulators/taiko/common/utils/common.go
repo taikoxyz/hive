@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"bytes"
+	"compress/zlib"
 	"context"
 	"errors"
 	"fmt"
@@ -9,7 +11,10 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"math/big"
+	"math/rand/v2"
 	"os"
 	"taiko/bindings/proverset"
 	"taiko/bindings/taikol1"
@@ -252,4 +257,64 @@ func StringToBytes32(str string) [32]byte {
 	copy(b[:], []byte(str))
 
 	return b
+}
+
+// compress compresses the given txList bytes using zlib.
+func compress(txListBytes []byte) ([]byte, error) {
+	var b bytes.Buffer
+	w := zlib.NewWriter(&b)
+	defer w.Close()
+
+	if _, err := w.Write(txListBytes); err != nil {
+		return nil, err
+	}
+
+	if err := w.Flush(); err != nil {
+		return nil, err
+	}
+
+	return b.Bytes(), nil
+}
+
+// EncodeAndCompressTxList encodes and compresses the given transactions list.
+func EncodeAndCompressTxList(txs types.Transactions) ([]byte, error) {
+	b, err := rlp.EncodeToBytes(txs)
+	if err != nil {
+		return nil, err
+	}
+
+	return compress(b)
+}
+
+func CreateL2Txs(
+	ctx context.Context,
+	l2cli *rpc.EthClient,
+	send bool,
+) (types.Transactions, error) {
+	var txs types.Transactions
+	for _, auth := range params.L2Auths {
+		nonce, err := l2cli.PendingNonceAt(ctx, auth.From)
+		if err != nil {
+			return nil, fmt.Errorf("cannot get nonce: %v", err)
+		}
+		to := common.BigToAddress(big.NewInt(rand.Int64()))
+		signedTx, err := auth.Signer(auth.From, types.NewTx(&types.DynamicFeeTx{
+			To:        &to,
+			Nonce:     nonce,
+			Value:     big.NewInt(0),
+			GasTipCap: new(big.Int).SetUint64(10 * 1e9),
+			GasFeeCap: new(big.Int).SetUint64(20 * 1e9),
+			Gas:       2_100_000,
+			Data:      nil,
+		}))
+
+		if send {
+			if err = l2cli.SendTransaction(ctx, signedTx); err != nil {
+				return nil, fmt.Errorf("cannot send transaction:, address: %s, err: %v", auth.From, err)
+			}
+		}
+
+		txs = append(txs, signedTx)
+	}
+	return txs, nil
 }
