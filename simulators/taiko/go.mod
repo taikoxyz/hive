@@ -16,6 +16,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/taikoxyz/taiko-mono v0.0.0-20241125114613-acf21e46538e
 	github.com/urfave/cli/v2 v2.27.5
+	golang.org/x/net v0.30.0
 )
 
 require (
@@ -150,7 +151,6 @@ require (
 	golang.org/x/crypto v0.28.0 // indirect
 	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa // indirect
 	golang.org/x/mod v0.21.0 // indirect
-	golang.org/x/net v0.30.0 // indirect
 	golang.org/x/oauth2 v0.21.0 // indirect
 	golang.org/x/sync v0.9.0 // indirect
 	golang.org/x/term v0.25.0 // indirect
@@ -173,8 +173,8 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/ethereum/hive v0.0.0-20241125105211-a0ad3e1d529a => github.com/taikoxyz/hive v0.0.0-20241126032034-b568c06286fc
-
 replace github.com/ethereum/go-ethereum v1.14.11 => github.com/taikoxyz/taiko-geth v1.11.2-0.20241117075323-5c649bae8cde
 
 replace github.com/ethereum-optimism/optimism v1.7.4 => github.com/taikoxyz/optimism v0.0.0-20241003061504-cdf8af288f39
+
+replace github.com/ethereum/hive v0.0.0-20241125105211-a0ad3e1d529a => github.com/taikoxyz/hive v0.0.0-20250104124441-bbf7cb4a059d
