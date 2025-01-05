@@ -105,7 +105,6 @@ require (
 	github.com/labstack/echo-jwt/v4 v4.2.0 // indirect
 	github.com/labstack/echo/v4 v4.12.0 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect
-	github.com/lmittmann/tint v1.0.5 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/minio/highwayhash v1.0.2 // indirect
@@ -178,4 +177,4 @@ replace github.com/ethereum/go-ethereum v1.14.11 => github.com/taikoxyz/taiko-ge
 
 replace github.com/ethereum-optimism/optimism v1.7.4 => github.com/taikoxyz/optimism v0.0.0-20241003061504-cdf8af288f39
 
-replace github.com/ethereum/hive v0.0.0-20250103200002-c30dd4246d02 => github.com/taikoxyz/hive v0.0.0-20250105073025-5f7c8eba077c
+replace github.com/ethereum/hive v0.0.0-20250103200002-c30dd4246d02 => github.com/taikoxyz/hive v0.0.0-20250105121652-16e25cc026cf
