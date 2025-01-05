@@ -1,5 +1,5 @@
 ARG baseimage=us-docker.pkg.dev/evmchain/images/taiko-geth
-ARG tag=softblock
+ARG tag=taiko
 
 FROM $baseimage:$tag AS builder
 
