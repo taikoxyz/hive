@@ -18,7 +18,7 @@ if [ "$HIVE_TAIKO_JWT_SECRET" != "" ]; then
   # export SOFT_BLOCK_SERVER_JWT_SECRET="/taiko-client/jwt.hex"
 fi
 
-if [ "$P2P_SYNC" = "true" ]; then
+if [ "$P2P_SYNC" == "true" ]; then
   check_env "P2P_CHECK_POINT_SYNC_URL"
 fi
 
