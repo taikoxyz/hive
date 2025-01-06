@@ -37,7 +37,7 @@ func TestTaikoRethHandler(t *testing.T) {
 	t.Run("taiko-blob/blob-l1-beacon", func(t *testing.T) {
 		runHive(t, "taiko-blob/blob-l1-beacon", [][]string{
 			{
-				"geth",
+				"reth",
 				"prysm/prysm-bn",
 				"prysm/prysm-vc",
 				"taiko/taiko-reth",
@@ -53,7 +53,7 @@ func TestTaikoRethHandler(t *testing.T) {
 
 	t.Run("taiko-blob/blob-server", func(t *testing.T) {
 		runHive(t, "taiko-blob/blob-server", [][]string{{
-			"geth",
+			"reth",
 			"prysm/prysm-bn",
 			"prysm/prysm-vc",
 			"taiko/taiko-reth",

@@ -24,8 +24,7 @@ func init() {
 	Tests = append(Tests,
 		&PreconfTestSpec{
 			BaseTestSpec: suite_base.BaseTestSpec{
-				Name:  "preconf",
-				Debug: true,
+				Name: "preconf",
 			},
 		},
 	)

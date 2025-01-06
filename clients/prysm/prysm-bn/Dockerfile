@@ -10,6 +10,7 @@ WORKDIR /prysm
 
 COPY prysm_bn.sh .
 COPY common.sh .
+COPY jwt.hex /tmp/jwt.hex
 
 RUN beacon-chain --version > /version.txt
 

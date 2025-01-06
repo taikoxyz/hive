@@ -196,15 +196,13 @@ func (sim *Simulation) StartClientWithOptions(testSuite SuiteID, test TestID, cl
 		opt.apply(setup)
 	}
 
-	showEnv := fmt.Sprintf("\n\n---------------------------------------------- %s\n", clientType)
+	showEnv := fmt.Sprintf("\n---------------------------------------------- %s environment variables\n", clientType)
 	// Set environment variables.
 	for k, v := range setup.config.Environment {
 		_ = os.Setenv(k, v)
 		showEnv += fmt.Sprintf("%s=%s;", k, v)
 	}
-	showEnv += fmt.Sprintf("---------------------------------------------- %s\n\n", clientType)
-
-	fmt.Printf(showEnv)
+	fmt.Printf(showEnv[:len(showEnv)-1])
 
 	err := setup.postWithFiles(url, &resp)
 	if err != nil {

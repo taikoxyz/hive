@@ -14,6 +14,7 @@ WORKDIR /geth
 
 COPY common.sh .
 COPY geth.sh .
+COPY jwt.hex /tmp/jwt.hex
 
 RUN chmod +x /geth/geth.sh
 

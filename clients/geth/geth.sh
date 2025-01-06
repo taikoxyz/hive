@@ -8,7 +8,6 @@ set -e
 
 EXECUTION_DIR=/geth
 
-check_env "HIVE_TAIKO_JWT_SECRET"
 check_env "HIVE_TAIKO_CLIQUE_PRIVATEKEY"
 check_env "HIVE_TAIKO_CLIQUE_ADDRESS"
 
@@ -18,10 +17,6 @@ cat /hive/input/genesis.json
 # Initialize the local testchain with the genesis state
 echo "Initializing database with genesis state..."
 geth init /hive/input/genesis.json
-
-if [ "$HIVE_TAIKO_JWT_SECRET" != "" ]; then
-  echo "$HIVE_TAIKO_JWT_SECRET" >$EXECUTION_DIR/jwtsecret
-fi
 
 if [ "$HIVE_TAIKO_CLIQUE_PRIVATEKEY" != "" ]; then
   echo "Importing clique key..."
@@ -46,7 +41,7 @@ geth \
   --ws.origins=* \
   --authrpc.vhosts=* \
   --authrpc.addr=0.0.0.0 \
-  --authrpc.jwtsecret=$EXECUTION_DIR/jwtsecret \
+  --authrpc.jwtsecret=/tmp/jwt.hex \
   --allow-insecure-unlock \
   --unlock="$HIVE_TAIKO_CLIQUE_ADDRESS" \
   --password=$EXECUTION_DIR/geth_password.txt \

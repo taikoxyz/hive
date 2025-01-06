@@ -8,7 +8,6 @@ set -e
 
 EXECUTION_DIR=/prysm
 
-check_env "HIVE_TAIKO_JWT_SECRET"
 check_env "HIVE_TAIKO_FEE_RECEIPT"
 check_env "HIVE_TAIKO_DEPOSIT_CONTRACT_ADDRESS"
 check_env "HIVE_TAIKO_CHAIN_ID"
@@ -40,10 +39,6 @@ cat /hive/input/config.yaml
 CONTAINER_IP=$(hostname -i | awk '{print $1;}')
 metrics_option=$([[ "$HIVE_TAIKO_METRICS_PORT" == "" ]] && echo "--disable-monitoring=true" || echo "--disable-monitoring=false --monitoring-host=0.0.0.0 --monitoring-port=$HIVE_TAIKO_METRICS_PORT")
 
-if [ "$HIVE_TAIKO_JWT_SECRET" != "" ]; then
-  echo "$HIVE_TAIKO_JWT_SECRET" >$EXECUTION_DIR/jwtsecret
-fi
-
 if [[ "$HIVE_TAIKO_BOOTNODE_ENRS" == "" ]]; then
   bootnode_option=""
 else
@@ -68,7 +63,7 @@ beacon-chain \
   --accept-terms-of-use=true \
   $bootnode_option \
   --execution-endpoint="$HIVE_TAIKO_ETH1_RPC_ADDRS" \
-  --jwt-secret=$EXECUTION_DIR/jwtsecret \
+  --jwt-secret=/tmp/jwt.hex \
   --min-sync-peers=0 \
   --minimum-peers-per-subnet=0 \
   --subscribe-all-subnets=true \
