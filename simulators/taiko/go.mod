@@ -177,4 +177,4 @@ replace github.com/ethereum/go-ethereum v1.14.11 => github.com/taikoxyz/taiko-ge
 
 replace github.com/ethereum-optimism/optimism v1.7.4 => github.com/taikoxyz/optimism v0.0.0-20241003061504-cdf8af288f39
 
-replace github.com/ethereum/hive v0.0.0-20250103200002-c30dd4246d02 => github.com/taikoxyz/hive v0.0.0-20250106060632-07aaeb60e9bf
+replace github.com/ethereum/hive v0.0.0-20250103200002-c30dd4246d02 => github.com/taikoxyz/hive v0.0.0-20250106081036-320acd0344c2
