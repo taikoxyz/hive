@@ -12,6 +12,7 @@ WORKDIR /reth
 
 # Inject the startup script.
 ADD taiko-reth.sh .
+ADD jwt.hex /tmp/jwt.hex
 
 # Inject the enode id retriever script.
 RUN mkdir /hive-bin

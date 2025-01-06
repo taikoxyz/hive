@@ -94,7 +94,7 @@ func PrepareTestnet(
 
 	commonParams := hivesim.Params{
 		"HIVE_LOGLEVEL":          getLogLevelString(cfg.LogLevel),
-		"HIVE_TAIKO_JWT_SECRET":  cfg.JWTSecret,
+		"JWT_SECRET":             "/tmp/jwt.hex",
 		"HIVE_TAIKO_FEE_RECEIPT": cfg.FeeReceipt,
 	}
 

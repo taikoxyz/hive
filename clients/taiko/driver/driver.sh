@@ -9,20 +9,16 @@ check_env "L2_WS"
 check_env "L2_AUTH"
 check_env "TAIKO_L1_ADDRESS"
 check_env "TAIKO_L2_ADDRESS"
-check_env "HIVE_TAIKO_JWT_SECRET"
 # check_env "SOFT_BLOCK_SERVER_PORT"
 
-if [ "$HIVE_TAIKO_JWT_SECRET" != "" ]; then
-  echo "$HIVE_TAIKO_JWT_SECRET" >/taiko-client/jwt.hex
-  export JWT_SECRET="/taiko-client/jwt.hex"
-  # export SOFT_BLOCK_SERVER_JWT_SECRET="/taiko-client/jwt.hex"
-fi
-
-if [ "$P2P_SYNC" == "true" ]; then
+if [ "$P2P_SYNC" != "" ]; then
   check_env "P2P_CHECK_POINT_SYNC_URL"
 fi
 
 # Run driver
 echo "Starting driver..."
-exec taiko-client driver \
-  --verbosity 4
+nohup taiko-client driver \
+  --verbosity 4 2>&1 &
+
+touch /taiko-client/nohup.out
+tail -f /taiko-client/nohup.out

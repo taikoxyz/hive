@@ -18,6 +18,7 @@ ADD geth.sh .
 # Inject the enode id retriever script.
 RUN mkdir /hive-bin
 ADD enode.sh /hive-bin/enode.sh
+ADD jwt.hex /tmp/jwt.hex
 RUN chmod +x /hive-bin/enode.sh
 
 # Export the usual networking ports to allow outside access to the node

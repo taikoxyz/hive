@@ -1,5 +1,5 @@
 ARG baseimage=us-docker.pkg.dev/evmchain/images/taiko-client
-ARG tag=taiko-client-v0.40.0
+ARG tag=main
 
 FROM $baseimage:$tag
 
@@ -10,5 +10,6 @@ WORKDIR /taiko-client
 
 ADD common.sh .
 ADD proposer.sh .
+ADD jwt.hex /tmp/jwt.hex
 
 ENTRYPOINT ["sh", "/taiko-client/proposer.sh"]

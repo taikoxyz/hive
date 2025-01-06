@@ -41,7 +41,6 @@ type Config struct {
 	// 0=silent, 1=error, 2=warn, 3=info, 4=debug, 5=detail
 	LogLevel int
 
-	JWTSecret  string
 	FeeReceipt string
 
 	// l2 geth syncmode

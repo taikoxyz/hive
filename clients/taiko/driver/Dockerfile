@@ -1,5 +1,5 @@
 ARG baseimage=us-docker.pkg.dev/evmchain/images/taiko-client
-ARG tag=taiko-client-v0.40.0
+ARG tag=main
 
 FROM $baseimage:$tag
 
@@ -10,6 +10,7 @@ WORKDIR /taiko-client
 
 ADD driver.sh .
 ADD common.sh .
+ADD jwt.hex /tmp/jwt.hex
 
 # expose soft server port.
 EXPOSE 7000/tcp

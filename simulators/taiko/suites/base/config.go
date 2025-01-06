@@ -47,7 +47,6 @@ func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
 		},
 		Network:    "taiko_base_test",
 		LogLevel:   3,
-		JWTSecret:  "c49690b5a9bc72c7b451b48c5fee2b542e66559d840a133d090769abc56e39e7",
 		FeeReceipt: "a0Ee7A142d267C1f36714E4a8F75612F20a79720",
 		L2SyncMode: syncMode,
 		BeaconSync: ts.BeaconSync,

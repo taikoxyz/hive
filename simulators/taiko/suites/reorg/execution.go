@@ -15,6 +15,8 @@ func (r ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 		t.Fatalf("%s: failed to start the first node, err: %v", r.Name, err)
 	}
 
+	time.Sleep(time.Minute * 60)
+
 	// For debug
 	/*if r.IsDebug() {
 		time.Sleep(time.Minute * 60)

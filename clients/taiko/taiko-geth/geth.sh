@@ -7,10 +7,6 @@ HIVE_NETWORK_ID=${HIVE_NETWORK_ID:-167001}
 # Immediately abort the script on any error encountered
 set -e
 
-if [ "$HIVE_TAIKO_JWT_SECRET" != "" ]; then
-  echo "$HIVE_TAIKO_JWT_SECRET" >/geth/jwt.hex
-fi
-
 FLAGS="--syncmode=snap"
 # Handle any client mode or operation requests
 if [ "$HIVE_NODETYPE" == "archive" ]; then
@@ -28,7 +24,7 @@ fi
 echo FLAGS: "$FLAGS"
 
 echo "Starting taiko geth..."
-geth \
+nohup geth \
   --bootnodes="$HIVE_BOOTNODE" \
   --taiko \
   --datadir=/geth/data \
@@ -45,7 +41,10 @@ geth \
   --ws.origins=* \
   --authrpc.vhosts=* \
   --authrpc.addr=0.0.0.0 \
-  --authrpc.jwtsecret=/geth/jwt.hex \
+  --authrpc.jwtsecret=/tmp/jwt.hex \
   --allow-insecure-unlock \
   --state.scheme=path \
-  "$FLAGS"
+  "$FLAGS" 2>&1 &
+
+touch /geth/nohup.out
+tail -f /geth/nohup.out
