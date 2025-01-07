@@ -27,7 +27,7 @@ FLAGS="$FLAGS --ws --ws.addr=0.0.0.0 --ws.origins=* --ws.api=admin,debug,eth,net
 FLAGS="$FLAGS --authrpc.addr=0.0.0.0 --authrpc.jwtsecret=/tmp/jwt.hex"
 
 if [ "$HIVE_BOOTNODE" != "" ]; then
-  FLAGS="$FLAGS --port 30303 --addr 0.0.0.0 --trusted-peers=$HIVE_BOOTNODE " # --enable-discv5-discovery --trusted-peers
+  FLAGS="$FLAGS --port 30303 --addr 0.0.0.0 --bootnodes=$HIVE_BOOTNODE " # --enable-discv5-discovery --trusted-peers
 fi
 
 echo FLAGS: "$FLAGS"
