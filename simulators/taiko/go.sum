@@ -124,8 +124,8 @@ github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4
 github.com/fsnotify/fsnotify v1.5.4/go.mod h1:OVB6XrOHzAwXMpEM7uPOzcehqUV2UqJxmVXmkdnm1bU=
 github.com/fsnotify/fsnotify v1.7.0 h1:8JEhPFa5W2WU7YfeZzPNqzMP6Lwt7L2715Ggo0nosvA=
 github.com/fsnotify/fsnotify v1.7.0/go.mod h1:40Bi/Hjc2AVfZrqy+aj+yEI+/bRxZnMJyTJwOpGvigM=
-github.com/fsouza/go-dockerclient v1.11.0 h1:4ZAk6W7rPAtPXm7198EFqA5S68rwnNQORxlOA5OurCA=
-github.com/fsouza/go-dockerclient v1.11.0/go.mod h1:0I3TQCRseuPTzqlY4Y3ajfsg2VAdMQoazrkxJTiJg8s=
+github.com/fsouza/go-dockerclient v1.11.2 h1:Wos4OMUwIjOW2rt8Z10TZSJHxgQH0KcYyf3O86dqFII=
+github.com/fsouza/go-dockerclient v1.11.2/go.mod h1:HZN6ky2Mg5mfZO/WZBFDe6XCricqTnDJntfXHZTYnQQ=
 github.com/gballet/go-libpcsclite v0.0.0-20191108122812-4678299bea08 h1:f6D9Hr8xV8uYKlyuj8XIruxlh9WjVjdh1gIicAS7ays=
 github.com/gballet/go-libpcsclite v0.0.0-20191108122812-4678299bea08/go.mod h1:x7DCsMOv1taUwEWCzT4cmDeAkigA5/QCwUodaVOe8Ww=
 github.com/getsentry/sentry-go v0.27.0 h1:Pv98CIbtB3LkMWmXi4Joa5OOcwbmnX88sF5qbK3r3Ps=
@@ -381,8 +381,8 @@ github.com/supranational/blst v0.3.13/go.mod h1:jZJtfjgudtNl4en1tzwPIV3KjUnQUvG3
 github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7/go.mod h1:q4W45IWZaF22tdD+VEXcAWRA037jwmWEB5VWYORlTpc=
 github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d h1:vfofYNRScrDdvS342BElfbETmL1Aiz3i2t0zfRj16Hs=
 github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d/go.mod h1:RRCYJbIwD5jmqPI9XoAFR0OcDxqUctll6zUj/+B4S48=
-github.com/taikoxyz/hive v0.0.0-20250107124914-2031268ce34b h1:7eRaKWm/EzB15qtRQlkLtwEm441JLHhmRAvD16PrPx0=
-github.com/taikoxyz/hive v0.0.0-20250107124914-2031268ce34b/go.mod h1:aOIFPfss2UUWKi93mecqWzI8rzaiLBQdsf5+WYqKcIU=
+github.com/taikoxyz/hive v0.0.0-20250107125248-a8d77fdf5033 h1:NCGA9CsoftWOf5yAHyvxdGHWOO4zv0LiGSklxB3iUKU=
+github.com/taikoxyz/hive v0.0.0-20250107125248-a8d77fdf5033/go.mod h1:aOIFPfss2UUWKi93mecqWzI8rzaiLBQdsf5+WYqKcIU=
 github.com/taikoxyz/optimism v0.0.0-20241003061504-cdf8af288f39 h1:JssMxaDmORjQ9RPZNulVJhAD8zSPd6LZFq5wsr6Nwz8=
 github.com/taikoxyz/optimism v0.0.0-20241003061504-cdf8af288f39/go.mod h1:ym7scR7ZHvEmwx1DLGVDzFlAdR+uhP1+Z4XCiFuSD5s=
 github.com/taikoxyz/taiko-geth v1.11.2-0.20241117075323-5c649bae8cde h1:KMg1QNhitKRnqbeQAMQN0eK0LrjhCeLW9B6jfcI9XKw=
