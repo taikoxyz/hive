@@ -74,7 +74,7 @@ require (
 	github.com/ethereum/go-verkle v0.2.2 // indirect
 	github.com/ethereum/hive/hiveproxy v0.0.0-20240808014330-625b82294b46 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
-	github.com/fsouza/go-dockerclient v1.11.2 // indirect
+	github.com/fsouza/go-dockerclient v1.11.0 // indirect
 	github.com/getsentry/sentry-go v0.27.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -177,4 +177,4 @@ replace github.com/ethereum/go-ethereum v1.14.11 => github.com/taikoxyz/taiko-ge
 
 replace github.com/ethereum-optimism/optimism v1.7.4 => github.com/taikoxyz/optimism v0.0.0-20241003061504-cdf8af288f39
 
-replace github.com/ethereum/hive v0.0.0-20250106091503-57886d9f4ac4 => github.com/taikoxyz/hive v0.0.0-20250106101124-0e4a28cc4a97
+replace github.com/ethereum/hive v0.0.0-20250106091503-57886d9f4ac4 => github.com/taikoxyz/hive v0.0.0-20250107124914-2031268ce34b
