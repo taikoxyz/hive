@@ -47,15 +47,17 @@ func GetClientsByRole(
 	)
 
 	for _, client := range available {
-		for _, role := range client.Meta.Roles {
-			if _, ok := Roles[Role(role)]; !ok {
+		for _, r := range client.Meta.Roles {
+			if _, ok := Roles[Role(r)]; !ok {
 				continue
 			}
-			if _, ok := group[Role(role)]; ok {
+			role := Role(r)
+
+			if group[role] != nil || (role == Eth2 && group[Reth] != nil) || (role == Reth && group[Eth2] != nil) {
 				clientGroups = append(clientGroups, group)
-				group = map[Role]*hivesim.ClientDefinition{Role(role): client}
+				group = map[Role]*hivesim.ClientDefinition{role: client}
 			} else {
-				group[Role(role)] = client
+				group[role] = client
 			}
 		}
 	}

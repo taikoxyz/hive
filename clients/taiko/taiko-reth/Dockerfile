@@ -1,7 +1,10 @@
 ARG baseimage=us-docker.pkg.dev/evmchain/images/taiko-reth
 ARG tag=latest
 
+FROM us-docker.pkg.dev/evmchain/images/taiko-geth:taiko AS taiko-geth
+
 FROM $baseimage:$tag AS builder
+COPY --from=taiko-geth /usr/local/bin/geth /usr/local/bin/geth
 
 RUN apt-get update && apt-get install -y curl jq && apt-get autoclean
 

@@ -23,9 +23,11 @@ var Tests = make([]suites.TestSpec, 0)
 func init() {
 	Tests = append(Tests,
 		BaseTestSpec{
-			Name:       "l2-full-sync",
-			L2SyncMode: "full",
-			BeaconSync: true,
+			Name:           "l2-full-sync",
+			L2SyncMode:     "full",
+			BeaconSync:     true,
+			L2TargetNumber: 5,
+			Debug:          true,
 		},
 		BaseTestSpec{
 			Name:       "l2-snap-sync",
