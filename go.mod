@@ -13,7 +13,6 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/gorilla/mux v1.8.1
 	github.com/holiman/uint256 v1.3.1
-	github.com/joho/godotenv v1.5.1
 	github.com/lithammer/dedent v1.1.0
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/stretchr/testify v1.9.0
@@ -103,4 +102,4 @@ require (
 	rsc.io/tmplfunc v0.0.3 // indirect
 )
 
-replace github.com/ethereum/go-ethereum v1.14.11 => github.com/taikoxyz/taiko-geth v1.11.2-0.20241104004712-fdd905ad9d7e
+replace github.com/ethereum/go-ethereum v1.14.11 => github.com/taikoxyz/taiko-geth v1.11.2-0.20250108083254-9309c26ff74e
