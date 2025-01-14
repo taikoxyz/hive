@@ -18,6 +18,7 @@ GUARDIAN_PROVER_CONTRACT=$(echo "$DEPLOYMENT_JSON" | jq '.guardian_prover' | sed
 # L1_BEACON_HTTP_ENDPOINT=$L1_BEACON_HTTP_ENDPOINT
 echo "L1_HTTP=http://localhost:8545
 L1_WS=ws://localhost:8545
+L1_BEACON=http://localhost:8545
 L2_HTTP=http://localhost:8545
 L2_WS=ws://localhost:8546
 L2_AUTH=http://localhost:8551
@@ -46,7 +47,8 @@ GUARDIAN_PROVER_MAJORITY=$GUARDIAN_PROVER_CONTRACT
 L1_PROPOSER_PRIV_KEY=$L1_PROPOSER_PRIV_KEY
 L1_PROVER_PRIV_KEY=$L1_PROVER_PRIV_KEY
 L1_CONTRACT_OWNER_PRIVATE_KEY=$L1_CONTRACT_OWNER_PRIVATE_KEY
-BACKOFF_RETRY_INTERVAL=3s" >params/.env
+BACKOFF_RETRY_INTERVAL=3s
+JWT_SECRET=/tmp/jwt.hex" >params/.env
 
 # show taiko-client variables.
 cat params/.env

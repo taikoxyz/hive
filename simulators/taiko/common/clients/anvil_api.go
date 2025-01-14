@@ -9,7 +9,7 @@ import (
 )
 
 func (a *AnvilClient) MineBlock() {
-	client := a.RPClient()
+	client := a.EthClient.Client()
 	err := client.CallContext(context.Background(), nil, "evm_mine")
 	if err != nil {
 		a.Fatalf("failed to mine block, err: %v", err)
@@ -17,7 +17,7 @@ func (a *AnvilClient) MineBlock() {
 }
 
 func (a *AnvilClient) StartMining() {
-	client := a.RPClient()
+	client := a.EthClient.Client()
 	err := client.CallContext(context.Background(), nil, "evm_setIntervalMining", a.SecondsPerSlot)
 	if err != nil {
 		a.Fatalf("failed to start mining, err: %v", err)
@@ -25,7 +25,7 @@ func (a *AnvilClient) StartMining() {
 }
 
 func (a *AnvilClient) StopMining() {
-	client := a.RPClient()
+	client := a.EthClient.Client()
 	err := client.CallContext(context.Background(), nil, "evm_setIntervalMining", 0)
 	if err != nil {
 		a.Fatalf("failed to stop mining, err: %v", err)
@@ -33,7 +33,7 @@ func (a *AnvilClient) StopMining() {
 }
 
 func (a *AnvilClient) SetNextBlockTimestamp(timestamp uint64) {
-	client := a.RPClient()
+	client := a.EthClient.Client()
 	err := client.CallContext(context.Background(), nil, "evm_setNextBlockTimestamp", timestamp)
 	if err != nil {
 		a.Fatalf("failed to set next block timestamp, err: %v", err)
@@ -42,7 +42,7 @@ func (a *AnvilClient) SetNextBlockTimestamp(timestamp uint64) {
 
 func (a *AnvilClient) IncreaseTime(timestamp uint64) {
 	a.Logf("%s: increase time: %ds", a.ClientType(), timestamp)
-	client := a.RPClient()
+	client := a.EthClient.Client()
 	err := client.CallContext(context.Background(), nil, "evm_increaseTime", timestamp)
 	if err != nil {
 		a.Fatalf("failed to increase time, err: %v", err)
@@ -50,7 +50,7 @@ func (a *AnvilClient) IncreaseTime(timestamp uint64) {
 }
 
 func (a *AnvilClient) SetSnapshot() (snapshotID string) {
-	client := a.RPClient()
+	client := a.EthClient.Client()
 	err := client.CallContext(context.Background(), &snapshotID, "evm_snapshot")
 	if err != nil {
 		a.Fatalf("failed to take snapshot, err: %v", err)
@@ -59,8 +59,7 @@ func (a *AnvilClient) SetSnapshot() (snapshotID string) {
 }
 
 func (a *AnvilClient) RevertSnapshot(snapshotID string) {
-	//a.Logf("revert %s snapshot %s", a.ClientType(), snapshotID)
-	client := a.RPClient()
+	client := a.EthClient.Client()
 	err := client.CallContext(context.Background(), nil, "evm_revert", snapshotID)
 	if err != nil {
 		a.Fatalf("failed to revert snapshot, err: %v", err)

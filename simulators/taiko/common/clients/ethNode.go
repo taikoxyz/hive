@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	"math/big"
 	"time"
 )
@@ -21,32 +20,23 @@ type EthNode struct {
 	HttpPort   int64
 	WSPort     int64
 	EnginePort int64
-	client     *rpc.Client
+	EthClient  *ethclient.Client
 }
 
-func (ec *EthNode) Start() error {
+func (ec *EthNode) Start() (err error) {
 	if !ec.IsRunning() {
 		if err := ec.HiveManagedClient.Start(); err != nil {
 			return err
 		}
 	}
 
-	return ec.EthIsReady(context.Background(), time.Second*20)
-}
-
-func (ec *EthNode) RPClient() *rpc.Client {
-	if ec.client == nil {
-		var err error
-		ec.client, err = rpc.Dial(ec.HttpURL())
-		if err != nil {
-			ec.Fatalf("failed to dial %s node", ec.ClientType())
-		}
+	// Connect to eth client
+	ec.EthClient, err = ethclient.Dial(ec.HttpURL())
+	if err != nil {
+		return err
 	}
-	return ec.client
-}
 
-func (ec *EthNode) EthClient() *ethclient.Client {
-	return ethclient.NewClient(ec.RPClient())
+	return ec.EthIsReady(context.Background(), time.Second*20)
 }
 
 func (ec *EthNode) HttpURL() string {
@@ -71,14 +61,13 @@ func (ec *EthNode) EngineURL() string {
 }
 
 func (ec *EthNode) EthIsReady(ctx context.Context, timeout time.Duration) error {
-	ethClient := ec.EthClient()
 	for ; ; <-time.Tick(time.Second) {
 		ec.Logf("waiting for %s to be ready", ec.ClientType())
 		select {
 		case <-time.After(timeout):
 			return fmt.Errorf("reach timeout but %s is not ready", ec.ClientType())
 		default:
-			_, err := ethClient.ChainID(ctx)
+			_, err := ec.EthClient.ChainID(ctx)
 			if err != nil {
 				continue
 			}
@@ -89,12 +78,11 @@ func (ec *EthNode) EthIsReady(ctx context.Context, timeout time.Duration) error 
 
 func (ec *EthNode) WaitLatestNumber(ctx context.Context, timeout time.Duration, number uint64) error {
 	ec.Logf("%s: wait latest number %d", ec.ClientType(), number)
-	client := ec.EthClient()
 	current, times := uint64(0), timeout/time.Second
 	for times > 0 && number >= current {
 		select {
 		case <-time.Tick(time.Second):
-			number, err := client.BlockNumber(ctx)
+			number, err := ec.EthClient.BlockNumber(ctx)
 			if err != nil {
 				ec.Logf("failed to get block number from %s, err: %v", ec.ClientType(), err)
 				continue
@@ -116,14 +104,13 @@ func (ec *EthNode) WaitLatestNumber(ctx context.Context, timeout time.Duration, 
 }
 
 func (ec *EthNode) WaitTargetNumber(ctx context.Context, timeout time.Duration, number uint64) error {
-	client := ec.EthClient()
 	defer ec.Logf("%s: wait target number %d", ec.ClientType(), number)
 	for ; ; <-time.Tick(time.Second) {
 		select {
 		case <-time.After(timeout):
 			return fmt.Errorf("reach timeout but %s is not ready", ec.ClientType())
 		default:
-			_, err := client.HeaderByNumber(ctx, new(big.Int).SetUint64(number))
+			_, err := ec.EthClient.HeaderByNumber(ctx, new(big.Int).SetUint64(number))
 			if err == nil {
 				return nil
 			}

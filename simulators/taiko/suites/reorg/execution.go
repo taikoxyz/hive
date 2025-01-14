@@ -49,7 +49,7 @@ func (r ReorgTestSpec) reorgAndVerifyFirstCluster(ctx context.Context, t *hivesi
 	}
 
 	// Start recording reorg points.
-	anvil.StartRecordReorgPoints(ctx, l2eth.EthClient())
+	anvil.StartRecordReorgPoints(ctx, l2eth.EthClient)
 
 	if err := l2eth.WaitLatestNumber(ctx, timeout, l2ReorgStartNumber); err != nil {
 		t.Fatalf("%s: failed to wait latest number, err: %v", l2eth.ClientType(), err)

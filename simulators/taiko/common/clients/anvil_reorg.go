@@ -15,7 +15,7 @@ func (a *AnvilClient) StartRecordReorgPoints(ctx context.Context, l2cli *ethclie
 
 	var (
 		l1Number uint64
-		l1Cli    = a.EthClient()
+		l1Cli    = a.EthClient
 	)
 	go func() {
 		tick := time.NewTicker(time.Second)
@@ -53,7 +53,7 @@ func (a *AnvilClient) Reorg(l2Number uint64) {
 
 	var (
 		ctx      = context.Background()
-		client   = a.EthClient()
+		client   = a.EthClient
 		l1Number uint64
 		snapshot string
 	)

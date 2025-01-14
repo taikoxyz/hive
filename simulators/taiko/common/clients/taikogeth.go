@@ -70,7 +70,7 @@ type TaikoGethClient struct {
 }
 
 func (t *TaikoGethClient) L1OriginByID(ctx context.Context, blockID *big.Int) (*L1Origin, error) {
-	rpcClient := t.RPClient()
+	rpcClient := t.EthClient.Client()
 	var res *L1Origin
 	if err := rpcClient.CallContext(ctx, &res, "taiko_l1OriginByID", hexutil.EncodeBig(blockID)); err != nil {
 		return nil, err

@@ -37,7 +37,7 @@ func (ts BaseTestSpec) snapSyncVerify(ctx context.Context, t *hivesim.T, testnet
 			continue
 		}
 
-		l2cli := node.L2EthClient.EthClient()
+		l2cli := node.L2EthClient.EthClient
 		for num := target - 65; num <= target; num++ {
 			_, err := l2cli.BalanceAt(ctx, common.HexToAddress(params.ParamByKey("TAIKO_L1")), new(big.Int).SetUint64(num))
 			if num == target-65 && (err == nil || !strings.Contains(err.Error(), "missing trie node")) {

@@ -78,7 +78,7 @@ func waitLatestVerifiedNumber(ctx context.Context, t *hivesim.T, targetNumber ui
 
 func (ts BaseTestSpec) verifyL2Nodes(ctx context.Context, t *hivesim.T, latestVerified uint64, nodes []*clients.Node) {
 	var (
-		l2cli = nodes[0].L2EthClient.EthClient()
+		l2cli = nodes[0].L2EthClient.EthClient
 		index int
 	)
 
@@ -93,7 +93,7 @@ func (ts BaseTestSpec) verifyL2Nodes(ctx context.Context, t *hivesim.T, latestVe
 	for i, node := range nodes[1:] {
 		l2client := node.L2EthClient
 
-		client := l2client.EthClient()
+		client := l2client.EthClient
 		hd, err := client.HeaderByNumber(ctx, new(big.Int).SetUint64(target))
 		if err != nil {
 			t.Fatalf("failed to get header from [%d]:%s, err: %v", i, node.L1EthClient.ClientType(), err)
