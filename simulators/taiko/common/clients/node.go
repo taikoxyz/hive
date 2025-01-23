@@ -6,9 +6,9 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/hive/hivesim"
 	"github.com/pkg/errors"
-	"github.com/prysmaticlabs/prysm/v5/config/params"
 	"strings"
 	"taiko/common/utils"
+	"taiko/params"
 )
 
 const (
@@ -44,8 +44,7 @@ type Node struct {
 
 	BlobScanClient *BlobScanClient
 
-	BeaconConfig *params.BeaconChainConfig
-	Genesis      *core.Genesis
+	Genesis *core.Genesis
 }
 
 func (n *Node) Logf(format string, values ...interface{}) {
@@ -91,19 +90,15 @@ func (n *Node) Start() error {
 
 	// Deploy contracts if needed
 	if n.Index == 0 && (n.DriverClient != nil || n.ProposerClient != nil || n.ProverClient != nil) {
-		if n.AnvilClient != nil {
-			fmt.Printf("Deploying contracts in %s node, url: %s\n", n.AnvilClient.ClientType(), n.AnvilClient.HttpURL())
-			if err := utils.DeployContracts(context.Background(), n.AnvilClient.HttpURL(), n.L2EthClient.HttpURL()); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("%s: failed to deploy contracts", n.AnvilClient.ClientType()))
-			}
-			if err := n.AnvilClient.FillTiers(context.Background()); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("%s: failed to watch ProposerEvent", n.AnvilClient.ClientType()))
-			}
-		} else if n.L1EthClient != nil {
-			fmt.Printf("Deploying contracts in %s node, url: %s\n", n.L1EthClient.ClientType(), n.L1EthClient.HttpURL())
-			if err := utils.DeployContracts(context.Background(), n.L1EthClient.HttpURL(), n.L2EthClient.HttpURL()); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("%s: failed to deploy contracts", n.L1EthClient.ClientType()))
-			}
+		l1API := EthExposeAPI(n.AnvilClient)
+		if n.L1EthClient != nil {
+			l1API = n.L1EthClient
+		}
+		params.SetEnvParams("L1_HTTP", l1API.HttpURL())
+		params.SetEnvParams("L2_HTTP", l1API.HttpURL())
+		fmt.Printf("Deploying contracts in %s node, url: %s\n", l1API.ClientType(), l1API.HttpURL())
+		if err := utils.DeployContracts(context.Background(), l1API.HTTPClient(), n.L2EthClient.HTTPClient()); err != nil {
+			return errors.Wrap(err, fmt.Sprintf("%s: failed to deploy contracts", l1API.ClientType()))
 		}
 	}
 

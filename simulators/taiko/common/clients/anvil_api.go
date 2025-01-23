@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"taiko/bindings/taikol1"
+	"taiko/bindings/ontake/taikol1"
 	"time"
 )
 
@@ -67,7 +67,7 @@ func (a *AnvilClient) RevertSnapshot(snapshotID string) {
 }
 
 func (a *AnvilClient) GetTaikoDataSlotB(ctx context.Context) *taikol1.TaikoDataSlotB {
-	_, slotB, err := a.taikoL1.GetStateVariables(&bind.CallOpts{Context: ctx})
+	_, slotB, err := a.TaikoL1.GetStateVariables(&bind.CallOpts{Context: ctx})
 	if err != nil {
 		a.Fatal(err)
 	}

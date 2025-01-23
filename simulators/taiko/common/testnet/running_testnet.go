@@ -125,10 +125,9 @@ func StartTestnet(
 
 	for index, clientsByRole := range clientGroups {
 		nodeClient := &clients.Node{
-			Logging:      t,
-			Index:        index,
-			BeaconConfig: generateState.BeaconConfig,
-			Genesis:      generateState.Genesis,
+			Logging: t,
+			Index:   index,
+			Genesis: generateState.Genesis,
 		}
 		testnet.Nodes = append(testnet.Nodes, nodeClient)
 

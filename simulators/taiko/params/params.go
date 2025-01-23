@@ -6,6 +6,7 @@ import (
 	"crypto/ecdsa"
 	_ "embed"
 	"encoding/json"
+	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -18,32 +19,46 @@ import (
 	"time"
 )
 
-//go:embed .env
-var envContent []byte
-
-//go:embed l1contract_txs.txt
-var txsContent []byte
-
 //go:embed config.yml
 var ConfigContent []byte
 
 //go:embed genesis.json
 var GenesisContent []byte
 
+type TaikoVersion string
+
 var (
-	envParams   = hivesim.Params{}
+	envParams = hivesim.Params{}
+
+	OntakeVersion  = TaikoVersion("ontake")
+	PacayaVersion  = TaikoVersion("pacaya")
+	CurrentVersion = TaikoVersion(os.Getenv("TAIKO_VERSION"))
+
 	ContractTxs = make([]*types.Transaction, 0)
 	PrivateKeys []*ecdsa.PrivateKey
 	L1Auths     []*bind.TransactOpts
 	L2Auths     []*bind.TransactOpts
+
+	ZeroAddress = common.Address{}
 )
 
 func init() {
+	var (
+		txsContent []byte
+		vals       map[string]string
+		err        error
+	)
+
 	// Load env params.
-	vals, err := godotenv.UnmarshalBytes(envContent)
+	vals, err = godotenv.Read(fmt.Sprintf("%s/.env", CurrentVersion))
 	if err != nil {
 		panic(err)
 	}
+	txsContent, err = os.ReadFile(fmt.Sprintf("%s/contract_txs.json", CurrentVersion))
+	if err != nil {
+		panic(err)
+	}
+
 	for k, v := range vals {
 		envParams[k] = v
 		// set envs
@@ -117,6 +132,10 @@ func ParamToAddress(key string) common.Address {
 	return common.HexToAddress(envParams[key])
 }
 
+func ParamToBytes(key string) []byte {
+	return common.FromHex(envParams[key])
+}
+
 func ParamToUint64(key string) uint64 {
 	parsed, err := strconv.ParseUint(envParams[key], 0, 64)
 	if err != nil {
@@ -134,5 +153,7 @@ func SetEnvParams(key, value string) {
 		delete(envParams, key)
 	} else {
 		envParams[key] = value
+		// set envs
+		_ = os.Setenv(key, value)
 	}
 }

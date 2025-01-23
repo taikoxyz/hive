@@ -1,15 +1,5 @@
 package clients
 
-import (
-	"errors"
-	"taiko/bindings/devnettierrouter"
-	"taiko/bindings/taikol1"
-)
-
-var (
-	errEmptyTiersList = errors.New("empty proof tiers list in protocol")
-)
-
 var (
 	AnvilPort int64 = 8545
 )
@@ -30,10 +20,11 @@ type AnvilClient struct {
 
 	reorgCh    chan struct{}
 	reorgCache map[uint64]*L1BlockInfo
+}
 
-	taikoL1 *taikol1.TaikoL1
-
-	tiers map[uint16]*devnettierrouter.ITierProviderTier
-
-	proposedEvents []*BlockProposed
+func (a *AnvilClient) Start() error {
+	if err := a.EthNode.Start(); err != nil {
+		return err
+	}
+	return a.EthNode.InitL1Clients()
 }

@@ -1,14 +1,22 @@
 #!/bin/bash
 
+if [ "$TAIKO_VERSION" == "" ]; then
+    echo "TAIKO_VERSION is not set"
+    exit 1
+fi
+
+params_path=params/$TAIKO_VERSION
+mkdir -p $params_path && rm -f $params_path/.env
+
 L1_PROPOSER_PRIV_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 L1_PROVER_PRIV_KEY=0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba
 L1_CONTRACT_OWNER_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-TAIKO_L2=0x1670010000000000000000000000000000010001
+TAIKO_ANCHOR=0x1670010000000000000000000000000000010001
 L2_SUGGESTED_FEE_RECIPIENT=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 
 # get deployed contract address.
 DEPLOYMENT_JSON=$(cat "$TAIKO_MONO_DIR"/packages/protocol/deployments/deploy_l1.json)
-TAIKO_L1=$(echo "$DEPLOYMENT_JSON" | jq '.taiko' | sed 's/\"//g')
+TAIKO_INBOX=$(echo "$DEPLOYMENT_JSON" | jq '.taiko' | sed 's/\"//g')
 TAIKO_TOKEN=$(echo "$DEPLOYMENT_JSON" | jq '.taiko_token' | sed 's/\"//g')
 PROVER_SET=$(echo "$DEPLOYMENT_JSON" | jq '.prover_set' | sed 's/\"//g')
 GUARDIAN_PROVER_MINORITY=$(echo "$DEPLOYMENT_JSON" | jq '.guardian_prover_minority' | sed 's/\"//g')
@@ -16,13 +24,13 @@ GUARDIAN_PROVER_CONTRACT=$(echo "$DEPLOYMENT_JSON" | jq '.guardian_prover' | sed
 
 # show the integration test environment variables.
 # L1_BEACON_HTTP_ENDPOINT=$L1_BEACON_HTTP_ENDPOINT
-echo "L1_HTTP=http://localhost:8545
+echo "RUN_TESTS=true
+L1_HTTP=http://localhost:8545
 L1_WS=ws://localhost:8545
 L1_BEACON=http://localhost:8545
 L2_HTTP=http://localhost:8545
 L2_WS=ws://localhost:8546
 L2_AUTH=http://localhost:8551
-RUN_TESTS=true
 MODE_CONTESTER=true
 EPOCH_INTERVAL=1s
 TX_RECEIPT_QUERY_INTERVAL=1s
@@ -33,12 +41,9 @@ PROVER_CAPACITY=1024
 PROVER_L1_NODE_VERSION=1.0.0
 PROVER_L2_NODE_VERSION=0.1.0
 PROVER_ALLOWANCE=10.0
-TAIKO_L1=$TAIKO_L1
-TAIKO_L2=$TAIKO_L2
+TAIKO_INBOX=$TAIKO_INBOX
+TAIKO_ANCHOR=$TAIKO_ANCHOR
 TAIKO_TOKEN=$TAIKO_TOKEN
-TAIKO_L1_ADDRESS=$TAIKO_L1
-TAIKO_L2_ADDRESS=$TAIKO_L2
-TAIKO_TOKEN_ADDRESS=$TAIKO_TOKEN
 PROVER_SET=$PROVER_SET
 L2_SUGGESTED_FEE_RECIPIENT=$L2_SUGGESTED_FEE_RECIPIENT
 GUARDIAN_PROVER_MINORITY=$GUARDIAN_PROVER_MINORITY
@@ -48,7 +53,7 @@ L1_PROPOSER_PRIV_KEY=$L1_PROPOSER_PRIV_KEY
 L1_PROVER_PRIV_KEY=$L1_PROVER_PRIV_KEY
 L1_CONTRACT_OWNER_PRIVATE_KEY=$L1_CONTRACT_OWNER_PRIVATE_KEY
 BACKOFF_RETRY_INTERVAL=3s
-JWT_SECRET=/tmp/jwt.hex" >params/.env
+JWT_SECRET=/tmp/jwt.hex" >$params_path/.env
 
 # show taiko-client variables.
-cat params/.env
+cat $params_path/.env

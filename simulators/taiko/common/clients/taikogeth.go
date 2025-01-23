@@ -79,6 +79,14 @@ func (t *TaikoGethClient) L1OriginByID(ctx context.Context, blockID *big.Int) (*
 	return res, nil
 }
 
+func (t *TaikoGethClient) Start() error {
+	if err := t.EthNode.Start(); err != nil {
+		return err
+	}
+
+	return t.EthNode.InitL2Clients()
+}
+
 type L2EthClients []*TaikoGethClient
 
 func (all L2EthClients) Running() L2EthClients {

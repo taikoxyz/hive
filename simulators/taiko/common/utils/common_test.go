@@ -6,8 +6,8 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stretchr/testify/assert"
-	"taiko/bindings/libproving"
-	"taiko/bindings/taikol1"
+	"taiko/bindings/ontake/libproving"
+	"taiko/bindings/ontake/taikol1"
 	"taiko/params"
 	"testing"
 )

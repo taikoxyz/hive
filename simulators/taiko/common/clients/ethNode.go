@@ -5,13 +5,18 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"math/big"
+	"taiko/bindings/ontake"
+	"taiko/bindings/pacaya"
+	"taiko/params"
 	"time"
 )
 
 type EthExposeAPI interface {
-	NetworkIP() string
+	ClientType() string
 	HttpURL() string
 	WSURL() string
+	EngineURL() string
+	HTTPClient() *ethclient.Client
 }
 
 type EthNode struct {
@@ -21,6 +26,11 @@ type EthNode struct {
 	WSPort     int64
 	EnginePort int64
 	EthClient  *ethclient.Client
+
+	*ontake.OntakeL1Clients
+	*pacaya.PacayaL1Clients
+	*ontake.OntakeL2Clients
+	*pacaya.PacayaL2Clients
 }
 
 func (ec *EthNode) Start() (err error) {
@@ -37,6 +47,34 @@ func (ec *EthNode) Start() (err error) {
 	}
 
 	return ec.EthIsReady(context.Background(), time.Second*20)
+}
+
+func (ec *EthNode) InitL1Clients() (err error) {
+	switch params.CurrentVersion {
+	case params.OntakeVersion:
+		ec.OntakeL1Clients, err = ontake.NewOntakeL1Clients(ec.EthClient)
+	case params.PacayaVersion:
+		ec.PacayaL1Clients, err = pacaya.NewPacayaL1Clients(ec.EthClient)
+	default:
+		return fmt.Errorf("unsupported version: %s", params.CurrentVersion)
+	}
+	return
+}
+
+func (ec *EthNode) InitL2Clients() (err error) {
+	switch params.CurrentVersion {
+	case params.OntakeVersion:
+		ec.OntakeL2Clients, err = ontake.NewOntakeL2Clients(ec.EthClient)
+	case params.PacayaVersion:
+		ec.PacayaL2Clients, err = pacaya.NewPacayaL2Clients(ec.EthClient)
+	default:
+		return fmt.Errorf("unsupported version: %s", params.CurrentVersion)
+	}
+	return
+}
+
+func (ec *EthNode) HTTPClient() *ethclient.Client {
+	return ec.EthClient
 }
 
 func (ec *EthNode) HttpURL() string {

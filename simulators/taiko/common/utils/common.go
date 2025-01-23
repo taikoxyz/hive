@@ -16,23 +16,15 @@ import (
 	"math/big"
 	"math/rand/v2"
 	"os"
-	"taiko/bindings/proverset"
-	"taiko/bindings/taikol1"
-	"taiko/bindings/taikotoken"
+	"taiko/bindings/ontake/proverset"
+	"taiko/bindings/ontake/taikol1"
+	"taiko/bindings/ontake/taikotoken"
+	"taiko/bindings/pacaya/taikoinbox"
 	"taiko/params"
 )
 
-func DeployContracts(ctx context.Context, l1Url, l2Url string) error {
-	l1cli, err := ethclient.DialContext(ctx, l1Url)
-	if err != nil {
-		return err
-	}
+func DeployContracts(ctx context.Context, l1cli, l2cli *ethclient.Client) error {
 	chainID, err := l1cli.ChainID(ctx)
-	if err != nil {
-		return err
-	}
-
-	l2cli, err := ethclient.DialContext(ctx, l2Url)
 	if err != nil {
 		return err
 	}
@@ -78,53 +70,54 @@ func DeployContracts(ctx context.Context, l1Url, l2Url string) error {
 		}
 	}
 
-	// init contracts.
-	envs := params.EnvParams()
-	envs["L1_HTTP"] = l1Url
-	envs["L2_HTTP"] = l2Url
-	for k, v := range envs {
-		if err := os.Setenv(k, v); err != nil {
-			return err
-		}
-	}
-
-	return initTaikoContract(l1cli, l2cli)
+	return initOntakeContracts(l1cli, l2cli)
 }
 
-func initL2Genesis(l1cli, l2cli *ethclient.Client, ownerAuth *bind.TransactOpts) error {
-	taikoL1, err := taikol1.NewTaikoL1(common.HexToAddress(os.Getenv("TAIKO_L1")), l1cli)
-	if err != nil {
-		return err
-	}
+func setL2Genesis(l1cli, l2cli *ethclient.Client, ownerAuth *bind.TransactOpts) error {
 	genesisHeader, err := l2cli.HeaderByNumber(context.Background(), big.NewInt(0))
 	if err != nil {
 		return err
 	}
-
 	fmt.Println("l2genesis hash: ", genesisHeader.Hash().String())
 
-	_, err = taikoL1.InitL2Genesis(ownerAuth, genesisHeader.Hash())
-	return err
+	switch params.CurrentVersion {
+	case params.OntakeVersion:
+		taikoL1, err := taikol1.NewTaikoL1(common.HexToAddress(os.Getenv("TAIKO_L1")), l1cli)
+		if err != nil {
+			return err
+		}
+		_, err = taikoL1.InitL2Genesis(ownerAuth, genesisHeader.Hash())
+		return err
+	case params.PacayaVersion:
+		inbox, err := taikoinbox.NewTaikoInbox(common.HexToAddress(os.Getenv("TAIKO_INBOX")), l1cli)
+		if err != nil {
+			return err
+		}
+		_, err = inbox.InitL2Genesis(ownerAuth, genesisHeader.Hash())
+		return err
+	default:
+		return fmt.Errorf("unsupported version: %s", params.CurrentVersion)
+	}
 }
 
 // InitTaikoContract init taiko contracts.
-func initTaikoContract(l1cli, l2cli *ethclient.Client) error {
+func initOntakeContracts(l1cli, l2cli *ethclient.Client) error {
 	l1ChainID, err := l1cli.ChainID(context.Background())
 	if err != nil {
 		return err
 	}
 
-	taikoToken, err := taikotoken.NewTaikoToken(common.HexToAddress(os.Getenv("TAIKO_TOKEN")), l1cli)
+	taikoToken, err := taikotoken.NewTaikoToken(params.ParamToAddress("TAIKO_TOKEN"), l1cli)
 	if err != nil {
 		return err
 	}
 
-	proverAuth, err := getAuth("L1_PROVER_PRIV_KEY", l1ChainID)
+	proverAuth, err := getAuth("L1_PROVER_PRIVATE_KEY", l1ChainID)
 	if err != nil {
 		return err
 	}
 
-	proposerAuth, err := getAuth("L1_PROPOSER_PRIV_KEY", l1ChainID)
+	proposerAuth, err := getAuth("L1_PROPOSER_PRIVATE_KEY", l1ChainID)
 	if err != nil {
 		return err
 	}
@@ -134,7 +127,7 @@ func initTaikoContract(l1cli, l2cli *ethclient.Client) error {
 		return err
 	}
 
-	if err = initL2Genesis(l1cli, l2cli, ownerAuth); err != nil {
+	if err = setL2Genesis(l1cli, l2cli, ownerAuth); err != nil {
 		return err
 	}
 
@@ -198,7 +191,7 @@ func transferTaikoToken(taikoToken *taikotoken.TaikoToken, auth *bind.TransactOp
 	}
 	_, err := taikoToken.Transfer(
 		auth,
-		common.HexToAddress(os.Getenv(env)),
+		params.ParamToAddress(env),
 		balance,
 	)
 	return err
@@ -218,8 +211,16 @@ func enableProver(client *ethclient.Client, auth *bind.TransactOpts, _prover com
 }
 
 func setAllowance(client *ethclient.Client, auth *bind.TransactOpts, taikoToken *taikotoken.TaikoToken) error {
-	taikoL1 := os.Getenv("TAIKO_L1")
-	if taikoL1 == "" {
+	var taikoL1 common.Address
+	switch params.CurrentVersion {
+	case params.OntakeVersion:
+		taikoL1 = params.ParamToAddress("TAIKO_L1")
+	case params.PacayaVersion:
+		taikoL1 = params.ParamToAddress("TAIKO_INBOX")
+	default:
+		return fmt.Errorf("unsupported version: %s", params.CurrentVersion)
+	}
+	if taikoL1 == params.ZeroAddress {
 		return fmt.Errorf("TAIKO_L1 variable is empty")
 	}
 	decimal, err := taikoToken.Decimals(nil)
@@ -229,7 +230,7 @@ func setAllowance(client *ethclient.Client, auth *bind.TransactOpts, taikoToken 
 
 	var bigInt = new(big.Int).Exp(big.NewInt(1_000_000_000), new(big.Int).SetUint64(uint64(decimal)), nil)
 
-	tx, err := taikoToken.Approve(auth, common.HexToAddress(taikoL1), bigInt)
+	tx, err := taikoToken.Approve(auth, taikoL1, bigInt)
 	if err != nil {
 		return err
 	}
@@ -244,19 +245,11 @@ func setAllowance(client *ethclient.Client, auth *bind.TransactOpts, taikoToken 
 }
 
 func getAuth(key string, chainID *big.Int) (*bind.TransactOpts, error) {
-	ownerPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv(key)))
+	ownerPrivKey, err := crypto.ToECDSA(params.ParamToBytes(key))
 	if err != nil {
 		return nil, err
 	}
 	return bind.NewKeyedTransactorWithChainID(ownerPrivKey, chainID)
-}
-
-// StringToBytes32 converts the given string to [32]byte.
-func StringToBytes32(str string) [32]byte {
-	var b [32]byte
-	copy(b[:], []byte(str))
-
-	return b
 }
 
 // compress compresses the given txList bytes using zlib.

@@ -1,22 +1,13 @@
 package clients
 
 import (
-	"context"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/hive/hivesim"
-	tkflags "github.com/taikoxyz/taiko-mono/packages/taiko-client/cmd/flags"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
-	"github.com/taikoxyz/taiko-mono/packages/taiko-client/proposer"
-	"math/big"
 )
 
 type ProposerClient struct {
 	*HiveManagedClient
 
 	*rpc.Client
-	*proposer.Proposer
-	*State
 }
 
 func (p *ProposerClient) Start() error {
@@ -24,34 +15,18 @@ func (p *ProposerClient) Start() error {
 		return err
 	}
 
-	p.Proposer = &proposer.Proposer{}
-	err := NewTaikoClient(p.Proposer, tkflags.ProposerFlags)
-	if err != nil {
-		return err
-	}
-	p.Client, err = rpc.NewClient(context.Background(), p.Config.ClientConfig)
-	if err != nil {
-		return err
-	}
-
-	p.State, err = NewState(p.Client)
-	if err != nil {
-		return err
-	}
-
-	return err
+	return nil
 }
 
 func (p *ProposerClient) Shutdown() error {
 	if err := p.HiveManagedClient.Shutdown(); err != nil {
 		return err
 	}
-	p.State.Close()
 
 	return nil
 }
 
-func (p *ProposerClient) ProposeTxLists(
+/*func (p *ProposerClient) ProposeTxLists(
 	ctx context.Context,
 	t *hivesim.T,
 ) (*rawdb.L1Origin, []types.Transactions, error) {
@@ -86,4 +61,4 @@ func (p *ProposerClient) ProposeTxLists(
 	t.Logf("propose tx list, batch count: %d, txs count: %d", len(txs), total)
 
 	return canonicalL1Origin, txs, p.Proposer.ProposeTxLists(ctx, txs)
-}
+}*/

@@ -3,12 +3,9 @@ package clients
 import (
 	"context"
 	"fmt"
-	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	"math/big"
 	"net"
 	"strings"
@@ -30,13 +27,6 @@ type ExecutionClientConfig struct {
 
 type ExecutionClient struct {
 	*EthNode
-
-	latestfcu *engine.ForkchoiceStateV1
-
-	engineClient *rpc.Client
-	httpClient   *ethclient.Client
-
-	startupComplete bool
 }
 
 func (ec *ExecutionClient) EngineURL() string {
@@ -49,7 +39,7 @@ func (ec *ExecutionClient) HeaderByHash(
 ) (*types.Header, error) {
 	ctx, cancel := utils.ContextTimeoutRPC(parentCtx)
 	defer cancel()
-	return ec.httpClient.HeaderByHash(ctx, h)
+	return ec.EthClient.HeaderByHash(ctx, h)
 }
 
 func (ec *ExecutionClient) HeaderByNumber(
@@ -58,7 +48,7 @@ func (ec *ExecutionClient) HeaderByNumber(
 ) (*types.Header, error) {
 	ctx, cancel := utils.ContextTimeoutRPC(parentCtx)
 	defer cancel()
-	return ec.httpClient.HeaderByNumber(ctx, n)
+	return ec.EthClient.HeaderByNumber(ctx, n)
 }
 
 func (ec *ExecutionClient) HeaderByLabel(
@@ -68,7 +58,7 @@ func (ec *ExecutionClient) HeaderByLabel(
 	ctx, cancel := utils.ContextTimeoutRPC(parentCtx)
 	defer cancel()
 	h := new(types.Header)
-	client := ec.httpClient.Client()
+	client := ec.EthClient.Client()
 	err := client.CallContext(
 		ctx,
 		h,
@@ -85,7 +75,7 @@ func (ec *ExecutionClient) BlockByHash(
 ) (*types.Block, error) {
 	ctx, cancel := utils.ContextTimeoutRPC(parentCtx)
 	defer cancel()
-	return ec.httpClient.BlockByHash(ctx, h)
+	return ec.EthClient.BlockByHash(ctx, h)
 }
 
 func (ec *ExecutionClient) BlockByNumber(
@@ -94,7 +84,7 @@ func (ec *ExecutionClient) BlockByNumber(
 ) (*types.Block, error) {
 	ctx, cancel := utils.ContextTimeoutRPC(parentCtx)
 	defer cancel()
-	return ec.httpClient.BlockByNumber(ctx, n)
+	return ec.EthClient.BlockByNumber(ctx, n)
 }
 
 type BinaryMarshable interface {
@@ -112,7 +102,7 @@ func (ec *ExecutionClient) SendTransaction(
 	ctx, cancel := utils.ContextTimeoutRPC(parentCtx)
 	defer cancel()
 
-	client := ec.httpClient.Client()
+	client := ec.EthClient.Client()
 	return client.CallContext(ctx, nil, "eth_sendRawTransaction", hexutil.Encode(data))
 }
 

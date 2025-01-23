@@ -1,0 +1,39 @@
+#!/bin/bash
+
+if [ ! -d "$TAIKO_MONO_DIR/packages/protocol/out" ]; then
+    echo "ABI not generated in protocol package yet. Please run npm install && npx hardhat compile in ../protocol"
+    exit 1
+fi
+
+paths=(
+    "TaikoL1"
+    "LibProving"
+    "LibProposing"
+    "LibUtils"
+    "LibVerifying"
+    "TaikoL2"
+    "TaikoToken"
+    "AddressManager"
+    "GuardianProver"
+    "ProverSet"
+    "MainnetTierRouter"
+    "SgxVerifier"
+    "layer1/ForkRouter"
+)
+
+bindings_path=bindings/$TAIKO_VERSION
+
+for (( i = 0; i < ${#paths[@]}; ++i ));
+do
+    mkdir -p $bindings_path/$lower
+    latest_name=$(basename ${paths[i]})
+    lower=$(echo "${latest_name}" | tr '[:upper:]' '[:lower:]')
+    jq .abi "$TAIKO_MONO_DIR"/packages/protocol/out/${paths[i]}.sol/${latest_name}.json > $bindings_path/$lower/${latest_name}.json
+    abigen --abi $bindings_path/$lower/${latest_name}.json \
+    --pkg $lower \
+    --type ${latest_name} \
+    --out $bindings_path/$lower/${latest_name}.go
+    rm $bindings_path/$lower/${latest_name}.json
+done
+
+exit 0
