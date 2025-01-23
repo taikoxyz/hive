@@ -1,8 +1,6 @@
 #!/bin/bash
 
-# start and stop docker compose
-docker compose -f docker/docker-compose.yml up l1_node l2_$TAIKO_VERSION -d --wait
-trap "docker compose -f docker/docker-compose.yml down" EXIT SIGINT SIGTERM ERR
+cd $TAIKO_MONO_DIR && git checkout const_contracts_ontake && cd -
 
 # get docker env
 . scripts/docker_env.sh
@@ -49,6 +47,3 @@ cd "$TAIKO_MONO_DIR"/packages/protocol && forge script script/layer1/DeployProto
   --block-gas-limit 200000000
 
 cd - || exit
-
-# Get txs
-sh scripts/$TAIKO_VERSION/get_txs.sh

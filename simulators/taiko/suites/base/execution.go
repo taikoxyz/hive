@@ -54,10 +54,8 @@ func (ts BaseTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 		ts.snapSyncVerify(ctx, t, testnet, target)
 	}
 
-	latestVerified := anvil.GetTaikoDataSlotB(ctx).LastVerifiedBlockId
-
 	// Verify all l2eth nodes.
-	ts.verifyL2Nodes(ctx, t, latestVerified, nodes)
+	ts.verifyL2Nodes(ctx, t, anvil.GetLastVerifiedBlockId(ctx), nodes)
 }
 
 func waitL2LatestNumber(ctx context.Context, t *hivesim.T, targetNumber uint64, l2Eth *clients.TaikoGethClient) {

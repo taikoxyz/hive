@@ -60,7 +60,7 @@ func (r ReorgTestSpec) reorgAndVerifyFirstCluster(ctx context.Context, t *hivesi
 	}
 
 	// Get reorg point.
-	latestVerified := anvil.GetTaikoDataSlotB(ctx).LastVerifiedBlockId
+	latestVerified := anvil.GetLastVerifiedBlockId(ctx)
 	t.Logf("%s: latestVerified: %d", l2eth.ClientType(), latestVerified)
 
 	// pause driver, proposer, prover

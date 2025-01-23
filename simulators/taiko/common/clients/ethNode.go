@@ -7,7 +7,6 @@ import (
 	"math/big"
 	"taiko/bindings/ontake"
 	"taiko/bindings/pacaya"
-	"taiko/params"
 	"time"
 )
 
@@ -27,10 +26,10 @@ type EthNode struct {
 	EnginePort int64
 	EthClient  *ethclient.Client
 
-	*ontake.OntakeL1Clients
-	*pacaya.PacayaL1Clients
-	*ontake.OntakeL2Clients
-	*pacaya.PacayaL2Clients
+	OntakeL1 *ontake.OntakeL1Clients
+	PacayaL1 *pacaya.PacayaL1Clients
+	OntakeL2 *ontake.OntakeL2Clients
+	PacayaL2 *pacaya.PacayaL2Clients
 }
 
 func (ec *EthNode) Start() (err error) {
@@ -50,27 +49,21 @@ func (ec *EthNode) Start() (err error) {
 }
 
 func (ec *EthNode) InitL1Clients() (err error) {
-	switch params.CurrentVersion {
-	case params.OntakeVersion:
-		ec.OntakeL1Clients, err = ontake.NewOntakeL1Clients(ec.EthClient)
-	case params.PacayaVersion:
-		ec.PacayaL1Clients, err = pacaya.NewPacayaL1Clients(ec.EthClient)
-	default:
-		return fmt.Errorf("unsupported version: %s", params.CurrentVersion)
+	ec.OntakeL1, err = ontake.NewOntakeL1Clients(ec.EthClient)
+	if err != nil {
+		return err
 	}
-	return
+	ec.PacayaL1, err = pacaya.NewPacayaL1Clients(ec.EthClient)
+	return err
 }
 
 func (ec *EthNode) InitL2Clients() (err error) {
-	switch params.CurrentVersion {
-	case params.OntakeVersion:
-		ec.OntakeL2Clients, err = ontake.NewOntakeL2Clients(ec.EthClient)
-	case params.PacayaVersion:
-		ec.PacayaL2Clients, err = pacaya.NewPacayaL2Clients(ec.EthClient)
-	default:
-		return fmt.Errorf("unsupported version: %s", params.CurrentVersion)
+	ec.OntakeL2, err = ontake.NewOntakeL2Clients(ec.EthClient)
+	if err != nil {
+		return err
 	}
-	return
+	ec.PacayaL2, err = pacaya.NewPacayaL2Clients(ec.EthClient)
+	return err
 }
 
 func (ec *EthNode) HTTPClient() *ethclient.Client {

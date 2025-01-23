@@ -13,7 +13,7 @@ func (ts BaseTestSpec) fullSyncVerify(ctx context.Context, t *hivesim.T, testnet
 		anvil = nodes[0].AnvilClient
 	)
 	// Get latest verified number.
-	latestVerified := anvil.GetTaikoDataSlotB(ctx).LastVerifiedBlockId
+	latestVerified := anvil.GetLastVerifiedBlockId(ctx)
 	t.Logf("fullSyncVerify: latestVerified: %d", latestVerified)
 
 	for _, node := range nodes[1:] {

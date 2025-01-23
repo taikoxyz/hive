@@ -20,10 +20,11 @@ type OntakeL1Clients struct {
 	GuardianProverMinority *guardianprover.GuardianProver
 	ProverSet              *proverset.ProverSet
 	ForkRouter             *forkrouter.ForkRouter
+	ForkHeight             uint64
 }
 
 func NewOntakeL1Clients(l1Cli *ethclient.Client) (*OntakeL1Clients, error) {
-	taikoL1, err := taikol1.NewTaikoL1(params.ParamToAddress("TAIKO_L1"), l1Cli)
+	taikoL1, err := taikol1.NewTaikoL1(params.ParamToAddress("TAIKO_INBOX"), l1Cli)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +34,7 @@ func NewOntakeL1Clients(l1Cli *ethclient.Client) (*OntakeL1Clients, error) {
 		return nil, err
 	}
 
-	libProposing, err := libproposing.NewLibProposing(params.ParamToAddress("TAIKO_L1"), l1Cli)
+	libProposing, err := libproposing.NewLibProposing(params.ParamToAddress("TAIKO_INBOX"), l1Cli)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +54,7 @@ func NewOntakeL1Clients(l1Cli *ethclient.Client) (*OntakeL1Clients, error) {
 		return nil, err
 	}
 
-	forkRouter, err := forkrouter.NewForkRouter(params.ParamToAddress("TAIKO_L1"), l1Cli)
+	forkRouter, err := forkrouter.NewForkRouter(params.ParamToAddress("TAIKO_INBOX"), l1Cli)
 	if err != nil {
 		return nil, err
 	}
@@ -66,6 +67,7 @@ func NewOntakeL1Clients(l1Cli *ethclient.Client) (*OntakeL1Clients, error) {
 		GuardianProverMinority: guardianProverMinority,
 		ProverSet:              proverSet,
 		ForkRouter:             forkRouter,
+		ForkHeight:             0,
 	}, nil
 }
 
@@ -74,7 +76,7 @@ type OntakeL2Clients struct {
 }
 
 func NewOntakeL2Clients(l2Cli *ethclient.Client) (*OntakeL2Clients, error) {
-	taikoL2, err := taikol2.NewTaikoL2(params.ParamToAddress("TAIKO_L2"), l2Cli)
+	taikoL2, err := taikol2.NewTaikoL2(params.ParamToAddress("TAIKO_ANCHOR"), l2Cli)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +90,6 @@ func NewOntakeL2Clients(l2Cli *ethclient.Client) (*OntakeL2Clients, error) {
 type OntakeClients struct {
 	*OntakeL1Clients
 	*OntakeL2Clients
-	ForkHeight uint64
 }
 
 func NewOntakeClients(l1cli, l2cli *ethclient.Client) (*OntakeClients, error) {

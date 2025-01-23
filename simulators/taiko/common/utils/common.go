@@ -80,24 +80,20 @@ func setL2Genesis(l1cli, l2cli *ethclient.Client, ownerAuth *bind.TransactOpts) 
 	}
 	fmt.Println("l2genesis hash: ", genesisHeader.Hash().String())
 
-	switch params.CurrentVersion {
-	case params.OntakeVersion:
-		taikoL1, err := taikol1.NewTaikoL1(common.HexToAddress(os.Getenv("TAIKO_L1")), l1cli)
-		if err != nil {
-			return err
-		}
-		_, err = taikoL1.InitL2Genesis(ownerAuth, genesisHeader.Hash())
+	taikoL1, err := taikol1.NewTaikoL1(common.HexToAddress(os.Getenv("TAIKO_L1")), l1cli)
+	if err != nil {
 		return err
-	case params.PacayaVersion:
-		inbox, err := taikoinbox.NewTaikoInbox(common.HexToAddress(os.Getenv("TAIKO_INBOX")), l1cli)
-		if err != nil {
-			return err
-		}
-		_, err = inbox.InitL2Genesis(ownerAuth, genesisHeader.Hash())
-		return err
-	default:
-		return fmt.Errorf("unsupported version: %s", params.CurrentVersion)
 	}
+	_, err = taikoL1.InitL2Genesis(ownerAuth, genesisHeader.Hash())
+	if err != nil {
+		return err
+	}
+	inbox, err := taikoinbox.NewTaikoInbox(common.HexToAddress(os.Getenv("TAIKO_INBOX")), l1cli)
+	if err != nil {
+		return err
+	}
+	_, err = inbox.InitL2Genesis(ownerAuth, genesisHeader.Hash())
+	return err
 }
 
 // InitTaikoContract init taiko contracts.
@@ -211,15 +207,7 @@ func enableProver(client *ethclient.Client, auth *bind.TransactOpts, _prover com
 }
 
 func setAllowance(client *ethclient.Client, auth *bind.TransactOpts, taikoToken *taikotoken.TaikoToken) error {
-	var taikoL1 common.Address
-	switch params.CurrentVersion {
-	case params.OntakeVersion:
-		taikoL1 = params.ParamToAddress("TAIKO_L1")
-	case params.PacayaVersion:
-		taikoL1 = params.ParamToAddress("TAIKO_INBOX")
-	default:
-		return fmt.Errorf("unsupported version: %s", params.CurrentVersion)
-	}
+	taikoL1 := params.ParamToAddress("TAIKO_INBOX")
 	if taikoL1 == params.ZeroAddress {
 		return fmt.Errorf("TAIKO_L1 variable is empty")
 	}

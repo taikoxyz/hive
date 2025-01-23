@@ -1,12 +1,7 @@
 #!/bin/bash
 
-if [ "$TAIKO_VERSION" == "" ]; then
-    echo "TAIKO_VERSION is not set"
-    exit 1
-fi
-
-params_path=params/$TAIKO_VERSION
-mkdir -p $params_path && rm -f $params_path/.env
+params_path=params
+rm -f $params_path/.env
 
 L1_PROPOSER_PRIV_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 L1_PROVER_PRIV_KEY=0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba

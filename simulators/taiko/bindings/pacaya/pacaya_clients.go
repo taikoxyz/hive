@@ -16,6 +16,7 @@ type PacayaL1Clients struct {
 	TaikoToken *taikotoken.TaikoToken
 	ProverSet  *proverset.ProverSet
 	ForkRouter *forkrouter.ForkRouter
+	ForkHeight uint64
 }
 
 func NewPacayaL1Clients(l1Cli *ethclient.Client) (*PacayaL1Clients, error) {
@@ -44,6 +45,7 @@ func NewPacayaL1Clients(l1Cli *ethclient.Client) (*PacayaL1Clients, error) {
 		TaikoToken: taikoToken,
 		ProverSet:  proverSet,
 		ForkRouter: forkRouter,
+		ForkHeight: 10,
 	}, nil
 }
 
@@ -66,7 +68,6 @@ func NewPacayaL2Clients(l2cli *ethclient.Client) (*PacayaL2Clients, error) {
 type PacayaClients struct {
 	*PacayaL1Clients
 	*PacayaL2Clients
-	ForkHeight uint64
 }
 
 func NewPacayaClients(l1cli, l2cli *ethclient.Client) (*PacayaClients, error) {

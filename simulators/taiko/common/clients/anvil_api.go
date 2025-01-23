@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"taiko/bindings/ontake/taikol1"
 	"time"
 )
 
@@ -66,12 +65,17 @@ func (a *AnvilClient) RevertSnapshot(snapshotID string) {
 	}
 }
 
-func (a *AnvilClient) GetTaikoDataSlotB(ctx context.Context) *taikol1.TaikoDataSlotB {
-	_, slotB, err := a.TaikoL1.GetStateVariables(&bind.CallOpts{Context: ctx})
+func (a *AnvilClient) GetLastVerifiedBlockId(ctx context.Context) (id uint64) {
+	state2, err := a.PacayaL1.TaikoInbox.GetStats2(&bind.CallOpts{Context: ctx})
 	if err != nil {
-		a.Fatal(err)
+		_, slotB, err := a.OntakeL1.TaikoL1.GetStateVariables(&bind.CallOpts{Context: ctx})
+		if err != nil {
+			a.Fatal(err)
+		}
+		return slotB.LastVerifiedBlockId
 	}
-	return &slotB
+
+	return state2.LastVerifiedBatchId
 }
 
 func (a *AnvilClient) WaitLatestVerifiedNumber(ctx context.Context, timeout time.Duration, verifiedNumber uint64) error {
@@ -80,8 +84,7 @@ func (a *AnvilClient) WaitLatestVerifiedNumber(ctx context.Context, timeout time
 	for times > 0 && verifiedNumber >= current {
 		select {
 		case <-time.Tick(time.Second):
-			slotB := a.GetTaikoDataSlotB(ctx)
-			if number := slotB.LastVerifiedBlockId; number >= current {
+			if number := a.GetLastVerifiedBlockId(ctx); number >= current {
 				current = number + 1
 				times = timeout / time.Second
 				break

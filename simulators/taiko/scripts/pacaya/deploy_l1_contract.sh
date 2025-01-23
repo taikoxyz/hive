@@ -1,8 +1,6 @@
 #!/bin/bash
 
-# start and stop docker compose
-docker compose -f docker/docker-compose.yml up l1_node l2_$TAIKO_VERSION -d --wait
-trap "docker compose -f docker/docker-compose.yml down" EXIT SIGINT SIGTERM ERR
+cd $TAIKO_MONO_DIR && git checkout const_contracts_pacaya_fork && cd -
 
 # get docker env
 . scripts/docker_env.sh
@@ -20,6 +18,7 @@ export PAUSE_TAIKO_L1="false"
 export PAUSE_BRIDGE="false"
 export OLD_FORK_TAIKO_INBOX=0x0000000000000000000000000000000000000000
 export TAIKO_TOKEN=0x0000000000000000000000000000000000000000
+export SHARED_ADDRESS_MANAGER=0x0000000000000000000000000000000000000000
 export SHARED_RESOLVER=0x0000000000000000000000000000000000000000
 export PROPOSER=0x0000000000000000000000000000000000000000
 export PROPOSER_ONE=0x0000000000000000000000000000000000000000
@@ -50,6 +49,3 @@ cd "$TAIKO_MONO_DIR"/packages/protocol && forge script script/layer1/based/Deplo
   --block-gas-limit 200000000
 
 cd - || exit
-
-# Get txs
-sh scripts/$TAIKO_VERSION/get_txs.sh
