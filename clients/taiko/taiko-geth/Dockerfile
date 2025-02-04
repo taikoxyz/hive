@@ -1,5 +1,5 @@
 ARG baseimage=us-docker.pkg.dev/evmchain/images/taiko-geth
-ARG tag=taiko
+ARG tag=devnet-genesis-pacaya
 
 FROM $baseimage:$tag AS builder
 
