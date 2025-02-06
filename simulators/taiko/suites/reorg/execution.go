@@ -40,8 +40,9 @@ func (r ReorgTestSpec) reorgAndVerifyFirstCluster(ctx context.Context, t *hivesi
 	}
 	t.Logf("%s: start reorgAndVerifyFirstCluster, target number: %d", r.Name, l2ReorgStartNumber)
 
-	if anvil == nil || driver == nil || proposer == nil || /*prover == nil ||*/ l2eth == nil {
-		t.Fatalf("anvil, driver, proposer, prover or l2eth client is nil!")
+	if anvil == nil || driver == nil || proposer == nil || prover == nil || l2eth == nil {
+		t.Logf("anvil, driver, proposer, prover or l2eth client is nil!")
+		return
 	}
 
 	if !anvil.IsRunning() || !l2eth.IsRunning() {

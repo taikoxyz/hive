@@ -33,6 +33,12 @@ func (ts BaseTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 			t.Fatalf("BaseTestSpec failed to start %d node: %v", i, err)
 		}
 	}
+
+	// For Debug
+	if ts.IsDebug() {
+		time.Sleep(time.Minute * 120)
+	}
+
 	waitL2LatestNumber(ctx, t, target, nodes[0].L2EthClient)
 
 	// Start the other cluster's l2eth and driver nodes.
@@ -40,11 +46,6 @@ func (ts BaseTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 		if err := node.DriverClient.Start(); err != nil {
 			t.Fatalf("BaseTestSpec failed to start %d node: %v", i, err)
 		}
-	}
-
-	// For Debug
-	if ts.IsDebug() {
-		time.Sleep(time.Minute * 120)
 	}
 
 	// Verify the synced blocks.

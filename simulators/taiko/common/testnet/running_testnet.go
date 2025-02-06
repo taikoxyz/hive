@@ -145,7 +145,7 @@ func StartTestnet(
 		// eventually start
 		prep.prepareAnvilNode(testnet, config, anvilDef)
 		prep.prepareExecutionNode(index, testnet, config, executionDef, config.Eth1Consensus)
-		prep.prepareBeaconNode(testnet, config, clientsByRole[clients.Beacon])
+		prep.prepareBeaconNode(index, testnet, config, clientsByRole[clients.Beacon])
 		prep.prepareValidatorClient(testnet, clientsByRole[clients.Validator])
 		prep.prepareBlobScanClient(index, testnet, config, clientsByRole)
 

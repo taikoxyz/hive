@@ -20,6 +20,7 @@ type BlobTestSpec struct {
 
 func (r BlobTestSpec) GetTestnetConfig() *testnet.Config {
 	cfg := r.BaseTestSpec.GetTestnetConfig()
+	cfg.Network = "taiko_blob_test"
 
 	// enable blob tx.
 	params.SetEnvParams("L1_BLOB_ALLOWED", "true")

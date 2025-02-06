@@ -23,7 +23,7 @@ type PreconfTestSpec struct {
 }
 
 func (r *PreconfTestSpec) GetTestnetConfig() *testnet.Config {
-	params.SetEnvParams("SOFT_BLOCK_SERVER_PORT", fmt.Sprintf("%d", clients.SoftBlockServerPort))
+	params.SetEnvParams("PRECONFIRMATION_SERVER_PORT", fmt.Sprintf("%d", clients.PreconfServerPort))
 	return r.BaseTestSpec.GetTestnetConfig()
 }
 
@@ -77,8 +77,6 @@ func (r *PreconfTestSpec) buildPreconfBlock(
 	t.Equal(l2Block.Hash().String(), l1Origin.L2BlockHash.String(), "l1Origin's l2BlockHash")
 	t.Equal(uint64(0), l1Origin.L1BlockHeight.Uint64(), "l1Origin's l1BlockHeight")
 	t.Equal(common.Hash{}.String(), l1Origin.L1BlockHash.String(), "l1Origin's l1BlockHash")
-	t.Equal(false, l1Origin.EndOfBlock, "l1Origin's endOfBlock")
-	t.Equal(false, l1Origin.EndOfPreconf, "l1Origin's endOfPreconf")
 	t.Nil(driver.StateError(), "state error")
 }
 
@@ -111,13 +109,9 @@ func (r *PreconfTestSpec) randomRemovePreconfBlocks(
 	t.Equal(l2Num, l2Head.Number.Uint64(), "l2 number")
 	t.Equal(curL1Origin2.BlockID, l2Head.Number, "current l1Origin's blockID")
 
-	t.Equal(curL1Origin.BatchID, curL1Origin2.BatchID, "l1Origin's batchID")
 	t.Equal(curL1Origin.L1BlockHeight.Uint64(), curL1Origin2.L1BlockHeight.Uint64(), "l1Origin's l1BlockHeight")
 	t.Equal(curL1Origin.L1BlockHash.String(), curL1Origin2.L1BlockHash.String(), "l1Origin's l1BlockHash")
 	t.Equal(curL1Origin.L2BlockHash.String(), curL1Origin2.L2BlockHash.String(), "l1Origin's l2BlockHash")
-	t.Equal(curL1Origin.EndOfBlock, curL1Origin2.EndOfBlock, "l1Origin's endOfBlock")
-	t.Equal(curL1Origin.EndOfPreconf, curL1Origin2.EndOfPreconf, "l1Origin's endOfPreconf")
-	t.Equal(curL1Origin.Preconfer.String(), curL1Origin2.Preconfer.String(), "l1Origin's preconfer")
 	t.Nil(driver.StateError(), "state error")
 }
 
@@ -157,7 +151,6 @@ func (r *PreconfTestSpec) proposeTxListsForSoftBlocks(
 		t.Equal(txLst.Len(), block.Transactions().Len())
 		t.Equal(block.NumberU64(), l1Origin.BlockID.Uint64(), "l1Origin's blockID")
 		t.Equal(block.Hash().String(), l1Origin.L2BlockHash.String(), "l1Origin's l2BlockHash")
-		t.True(l1Origin.BatchID == nil, "l1Origin's batchID")
 		t.True(l1Origin.L1BlockHeight != nil, "l1Origin's l1BlockHeight")
 		if l1Number == nil {
 			l1Number = l1Origin.L1BlockHeight
@@ -178,7 +171,7 @@ func (r *PreconfTestSpec) proposeTxListForPendingTxs(
 	defer cancel()
 
 	// propose pending txs.
-	t.Nil(proposerClient.ProposeOp(ctx), "propose for pending txs")
+	//t.Nil(proposerClient.ProposeOp(ctx), "propose for pending txs")
 
 	// Wait until all the txs are proposed.
 

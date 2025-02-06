@@ -48,7 +48,7 @@ func TestRunner(t *testing.T) {
 		simOpt  = libhive.SimEnv{LogDir: t.TempDir(), ClientList: simClients}
 		ctx     = context.Background()
 	)
-	if err := runner.Build(ctx, allClients, simList, nil); err != nil {
+	if err := runner.Build(ctx, allClients, simList, true); err != nil {
 		t.Fatal("Build() failed:", err)
 	}
 	if _, err := runner.Run(context.Background(), "sim-1", simOpt); err != nil {

@@ -2,7 +2,6 @@ package clients
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/beacon/engine"
@@ -11,12 +10,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/go-resty/resty/v2"
-	tkflags "github.com/taikoxyz/taiko-mono/packages/taiko-client/cmd/flags"
-	tkutils "github.com/taikoxyz/taiko-mono/packages/taiko-client/cmd/utils"
-	"github.com/taikoxyz/taiko-mono/packages/taiko-client/driver"
 	preconfblocks "github.com/taikoxyz/taiko-mono/packages/taiko-client/driver/preconf_blocks"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
-	"github.com/urfave/cli/v2"
 	"os"
 	"taiko/common/utils"
 	"taiko/params"
@@ -26,31 +21,17 @@ type DriverClient struct {
 	*HiveManagedClient
 
 	*rpc.Client
-	*driver.Driver
-
 	*State
 }
 
-func (d *DriverClient) Start() error {
+func (d *DriverClient) Start() (err error) {
 	if err := d.HiveManagedClient.Start(); err != nil {
 		return err
 	}
 
 	d.Logf("driver client, L1_BEACON: %s", os.Getenv("L1_BEACON"))
 
-	d.Driver = &driver.Driver{}
-	err := NewTaikoClient(d.Driver, tkflags.DriverFlags)
-	if err != nil {
-		return err
-	}
-
-	data, err := json.Marshal(d.Config.ClientConfig)
-	if err != nil {
-		return err
-	}
-	d.Logf("driver's client config: %s", string(data))
-
-	d.Client, err = rpc.NewClient(context.Background(), d.Config.ClientConfig)
+	d.Client, err = rpc.NewClient(context.Background(), GetClientConfig())
 	if err != nil {
 		return err
 	}
@@ -67,13 +48,15 @@ func (d *DriverClient) Shutdown() error {
 	if err := d.HiveManagedClient.Shutdown(); err != nil {
 		return err
 	}
-	d.State.Close()
+	if d.State != nil {
+		d.State.Close()
+	}
 
 	return nil
 }
 
 func (d *DriverClient) PreconfServerURL() string {
-	return fmt.Sprintf("http://%s:%v", d.NetworkIP(), d.Config.PreconfBlockServerPort)
+	return fmt.Sprintf("http://%s:%v", d.NetworkIP(), PreconfServerPort)
 }
 
 func (d *DriverClient) BuildPreconfBlock(
@@ -129,7 +112,8 @@ func buildPreconfBlock(
 	executableData.ExecutionPayload.Transactions = [][]byte{txBytes}
 
 	var txBatch = &preconfblocks.BuildPreconfBlockRequestBody{
-		ExecutableData:  executableData.ExecutionPayload,
+		// TODO
+		//ExecutableData:  executableData.ExecutionPayload,
 		AnchorBlockID:   l1Head.Number.Uint64(),
 		AnchorStateRoot: l1Head.Root,
 		AnchorInput:     [32]byte{},
@@ -176,18 +160,4 @@ func removePreconfBlocks(softURL string, newLastBlockID uint64) error {
 		return errors.New(res.String())
 	}
 	return nil
-}
-
-func NewTaikoClient[T tkutils.SubcommandApplication](client T, flags []cli.Flag) error {
-	app := cli.NewApp()
-	app.Commands = []*cli.Command{
-		{
-			Name:  "client",
-			Flags: flags,
-			Action: func(c *cli.Context) error {
-				return client.InitFromCli(context.Background(), c)
-			},
-		},
-	}
-	return app.Run([]string{"taiko-client", "client"})
 }

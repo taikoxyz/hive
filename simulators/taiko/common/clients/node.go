@@ -6,17 +6,16 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/hive/hivesim"
 	"github.com/pkg/errors"
-	"strings"
 	"taiko/common/utils"
 	"taiko/params"
 )
 
 const (
-	EthHttpPort         = 8545
-	EthWSPort           = 8546
-	EthEngineRPC        = 8551
-	BeaconPort          = 3500
-	SoftBlockServerPort = 7000
+	EthHttpPort       = 8545
+	EthWSPort         = 8546
+	EthEngineRPC      = 8551
+	BeaconPort        = 3500
+	PreconfServerPort = 7000
 )
 
 // A node bundles together:
@@ -89,17 +88,19 @@ func (n *Node) Start() error {
 	}
 
 	// Deploy contracts if needed
-	if n.Index == 0 && (n.DriverClient != nil || n.ProposerClient != nil || n.ProverClient != nil) {
+	if n.Index == 0 && ((n.L1EthClient != nil || n.AnvilClient != nil) && n.L2EthClient != nil) {
 		l1API := EthExposeAPI(n.AnvilClient)
 		if n.L1EthClient != nil {
 			l1API = n.L1EthClient
 		}
 		params.SetEnvParams("L1_HTTP", l1API.HttpURL())
 		params.SetEnvParams("L2_HTTP", l1API.HttpURL())
-		fmt.Printf("Deploying contracts in %s node, url: %s\n", l1API.ClientType(), l1API.HttpURL())
+
+		n.Logf("Deploying contracts in %s node, url: %s\n", l1API.ClientType(), l1API.HttpURL())
 		if err := utils.DeployContracts(context.Background(), l1API.HTTPClient(), n.L2EthClient.HTTPClient()); err != nil {
 			return errors.Wrap(err, fmt.Sprintf("%s: failed to deploy contracts", l1API.ClientType()))
 		}
+		n.Logf("Deployed contracts in %s node, url: %s\n", l1API.ClientType(), l1API.HttpURL())
 	}
 
 	// Start mining.
@@ -250,30 +251,4 @@ func (all Nodes) Running() Nodes {
 		}
 	}
 	return res
-}
-
-func (all Nodes) FilterByCL(filters []string) Nodes {
-	ret := make(Nodes, 0)
-	for _, n := range all {
-		for _, filter := range filters {
-			if strings.Contains(n.BeaconClient.ClientName(), filter) {
-				ret = append(ret, n)
-				break
-			}
-		}
-	}
-	return ret
-}
-
-func (all Nodes) FilterByEL(filters []string) Nodes {
-	ret := make(Nodes, 0)
-	for _, n := range all {
-		for _, filter := range filters {
-			if strings.Contains(n.L1EthClient.ClientType(), filter) {
-				ret = append(ret, n)
-				break
-			}
-		}
-	}
-	return ret
 }

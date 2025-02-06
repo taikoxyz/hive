@@ -18,35 +18,35 @@ import (
 	"os"
 	"taiko/bindings/ontake/proverset"
 	"taiko/bindings/ontake/taikol1"
-	"taiko/bindings/ontake/taikotoken"
 	"taiko/bindings/pacaya/taikoinbox"
+	"taiko/bindings/pacaya/taikotoken"
 	"taiko/params"
 )
 
 func DeployContracts(ctx context.Context, l1cli, l2cli *ethclient.Client) error {
 	chainID, err := l1cli.ChainID(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get chainID: %v", err)
 	}
 
 	sk, err := crypto.HexToECDSA("ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get private key: %v", err)
 	}
 	auth, err := bind.NewKeyedTransactorWithChainID(sk, chainID)
 	if err != nil {
-		return err
+		return fmt.Errorf("chainID: %s, err: %v", chainID.String(), err)
 	}
 
 	signedTxs := make([]*types.Transaction, 0, len(params.ContractTxs))
 	for _, tx := range params.ContractTxs {
 		signedTx, err := auth.Signer(auth.From, tx)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to sign tx: %v", err)
 		}
 
 		if err := l1cli.SendTransaction(ctx, signedTx); err != nil {
-			return err
+			return fmt.Errorf("failed to send tx, %s: %v", signedTx.Hash().String(), err)
 		}
 		fmt.Println("successfully send tx, hash: ", signedTx.Hash().String())
 		signedTxs = append(signedTxs, signedTx)
@@ -80,7 +80,7 @@ func setL2Genesis(l1cli, l2cli *ethclient.Client, ownerAuth *bind.TransactOpts) 
 	}
 	fmt.Println("l2genesis hash: ", genesisHeader.Hash().String())
 
-	taikoL1, err := taikol1.NewTaikoL1(common.HexToAddress(os.Getenv("TAIKO_L1")), l1cli)
+	taikoL1, err := taikol1.NewTaikoL1(common.HexToAddress(os.Getenv("TAIKO_INBOX")), l1cli)
 	if err != nil {
 		return err
 	}
@@ -108,23 +108,18 @@ func initOntakeContracts(l1cli, l2cli *ethclient.Client) error {
 		return err
 	}
 
-	proverAuth, err := getAuth("L1_PROVER_PRIVATE_KEY", l1ChainID)
+	proverAuth, err := getAuth("L1_PROVER_PRIV_KEY", l1ChainID)
 	if err != nil {
-		return err
-	}
-
-	proposerAuth, err := getAuth("L1_PROPOSER_PRIVATE_KEY", l1ChainID)
-	if err != nil {
-		return err
+		return fmt.Errorf("failed to get prover auth: %v", err)
 	}
 
 	ownerAuth, err := getAuth("L1_CONTRACT_OWNER_PRIVATE_KEY", l1ChainID)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get owner auth: %v", err)
 	}
 
 	if err = setL2Genesis(l1cli, l2cli, ownerAuth); err != nil {
-		return err
+		return fmt.Errorf("failed to set l2 genesis: %v", err)
 	}
 
 	decimal, err := taikoToken.Decimals(nil)
@@ -149,24 +144,18 @@ func initOntakeContracts(l1cli, l2cli *ethclient.Client) error {
 	}
 
 	if os.Getenv("IS_GUARDIAN") == "true" {
-		_, err = taikoToken.Transfer(ownerAuth, proposerAuth.From, proverBalance)
+		_, err = taikoToken.Transfer(ownerAuth, proverAuth.From, proverBalance)
 		if err != nil {
 			return err
 		}
-		if err = transferTaikoToken(taikoToken, ownerAuth, "GUARDIAN_PROVER_MINORITY", proverBalance); err != nil {
+		if err = transferTaikoToken(taikoToken, ownerAuth, params.ParamToAddress("GUARDIAN_PROVER_MINORITY"), proverBalance); err != nil {
 			return err
 		}
-		if err = transferTaikoToken(taikoToken, ownerAuth, "GUARDIAN_PROVER_CONTRACT", proverBalance); err != nil {
+		if err = transferTaikoToken(taikoToken, ownerAuth, params.ParamToAddress("GUARDIAN_PROVER_CONTRACT"), proverBalance); err != nil {
 			return err
 		}
 	} else {
-		if err = transferTaikoToken(taikoToken, ownerAuth, "PROVER_SET", proverBalance); err != nil {
-			return err
-		}
-		if err = enableProver(l1cli, ownerAuth, proposerAuth.From, true); err != nil {
-			return err
-		}
-		if err = enableProver(l1cli, ownerAuth, proverAuth.From, true); err != nil {
+		if err = transferTaikoToken(taikoToken, ownerAuth, proverAuth.From, proverBalance); err != nil {
 			return err
 		}
 	}
@@ -181,13 +170,13 @@ func initOntakeContracts(l1cli, l2cli *ethclient.Client) error {
 	return nil
 }
 
-func transferTaikoToken(taikoToken *taikotoken.TaikoToken, auth *bind.TransactOpts, env string, balance *big.Int) error {
-	if os.Getenv(env) == "" {
-		return fmt.Errorf("%s varibale is empty", env)
+func transferTaikoToken(taikoToken *taikotoken.TaikoToken, auth *bind.TransactOpts, to common.Address, balance *big.Int) error {
+	if to == (common.Address{}) {
+		return nil
 	}
 	_, err := taikoToken.Transfer(
 		auth,
-		params.ParamToAddress(env),
+		to,
 		balance,
 	)
 	return err
@@ -196,7 +185,7 @@ func transferTaikoToken(taikoToken *taikotoken.TaikoToken, auth *bind.TransactOp
 func enableProver(client *ethclient.Client, auth *bind.TransactOpts, _prover common.Address, _isProver bool) error {
 	proverSet := os.Getenv("PROVER_SET")
 	if proverSet == "" {
-		return fmt.Errorf("PROVER_SET variable is empty")
+		return nil
 	}
 	prover, err := proverset.NewProverSet(common.HexToAddress(proverSet), client)
 	if err != nil {
@@ -209,7 +198,7 @@ func enableProver(client *ethclient.Client, auth *bind.TransactOpts, _prover com
 func setAllowance(client *ethclient.Client, auth *bind.TransactOpts, taikoToken *taikotoken.TaikoToken) error {
 	taikoL1 := params.ParamToAddress("TAIKO_INBOX")
 	if taikoL1 == params.ZeroAddress {
-		return fmt.Errorf("TAIKO_L1 variable is empty")
+		return fmt.Errorf("TAIKO_INBOX variable is empty")
 	}
 	decimal, err := taikoToken.Decimals(nil)
 	if err != nil {

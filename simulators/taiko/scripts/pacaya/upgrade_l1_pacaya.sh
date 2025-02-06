@@ -2,8 +2,8 @@
 
 cd $TAIKO_MONO_DIR && git checkout const_contracts_pacaya_fork && cd -
 
-# get docker env
 . scripts/docker_env.sh
+. scripts/l1_env.sh
 
 # Get deployed contract address.
 DEPLOYMENT_JSON=$(cat ${TAIKO_MONO_DIR}/packages/protocol/deployments/deploy_l1.json)
@@ -37,4 +37,4 @@ cd "$TAIKO_MONO_DIR"/packages/protocol &&
 cd - || exit
 
 # Get txs
-sh scripts/$TAIKO_VERSION/get_txs.sh
+sh scripts/get_txs.sh

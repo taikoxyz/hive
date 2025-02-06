@@ -1,6 +1,7 @@
 package ontake
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"taiko/bindings/ontake/forkrouter"
 	"taiko/bindings/ontake/guardianprover"
@@ -49,9 +50,12 @@ func NewOntakeL1Clients(l1Cli *ethclient.Client) (*OntakeL1Clients, error) {
 		return nil, err
 	}
 
-	proverSet, err := proverset.NewProverSet(params.ParamToAddress("PROVER_SET"), l1Cli)
-	if err != nil {
-		return nil, err
+	var proverSet *proverset.ProverSet
+	if params.ParamToAddress("PROVER_SET") != (common.Address{}) {
+		proverSet, err = proverset.NewProverSet(params.ParamToAddress("PROVER_SET"), l1Cli)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	forkRouter, err := forkrouter.NewForkRouter(params.ParamToAddress("TAIKO_INBOX"), l1Cli)

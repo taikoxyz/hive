@@ -25,6 +25,7 @@ func main() {
 		dockerPull            = flag.Bool("docker.pull", false, "Refresh base images when building images.")
 		dockerOutput          = flag.Bool("docker.output", false, "Relay all docker output to stderr.")
 		simPattern            = flag.String("sim", "", "Regular `expression` selecting the simulators to run.")
+		simBuild              = flag.String("sim.build", "false", "build sim images")
 		simTestPattern        = flag.String("sim.limit", "", "Regular `expression` selecting tests/suites (interpreted by simulators).")
 		simParallelism        = flag.Int("sim.parallelism", 1, "Max `number` of parallel clients/containers (interpreted by simulators).")
 		simRandomSeed         = flag.Int("sim.randomseed", 0, "Randomness seed number (interpreted by simulators).")
@@ -138,7 +139,7 @@ func main() {
 	}
 
 	// Build clients and simulators.
-	if err := runner.Build(ctx, clientList, simList); err != nil {
+	if err = runner.Build(ctx, clientList, simList, *simBuild == "true"); err != nil {
 		fatal(err)
 	}
 	if *simDevMode {

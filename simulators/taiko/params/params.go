@@ -6,6 +6,7 @@ import (
 	"crypto/ecdsa"
 	_ "embed"
 	"encoding/json"
+	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -48,6 +49,7 @@ func init() {
 	}
 	for k, v := range vals {
 		envParams[k] = v
+		fmt.Printf("%s=%s\n", k, v)
 		// set envs
 		_ = os.Setenv(k, v)
 	}

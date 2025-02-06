@@ -145,7 +145,7 @@ func NewHiveFramework(config *HiveConfig) (*HiveFramework, error) {
 }
 
 func (h *HiveFramework) build(ctx context.Context) error {
-	return h.runner.Build(ctx, h.clientList, h.simList)
+	return h.runner.Build(ctx, h.clientList, h.simList, true)
 }
 
 func (h *HiveFramework) Run(ctx context.Context) (int, error) {

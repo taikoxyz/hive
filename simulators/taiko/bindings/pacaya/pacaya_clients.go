@@ -30,9 +30,12 @@ func NewPacayaL1Clients(l1Cli *ethclient.Client) (*PacayaL1Clients, error) {
 		return nil, err
 	}
 
-	proverSet, err := proverset.NewProverSet(common.HexToAddress(params.ParamByKey("PROVER_SET")), l1Cli)
-	if err != nil {
-		return nil, err
+	var proverSet *proverset.ProverSet
+	if params.ParamToAddress("PROVER_SET") != (common.Address{}) {
+		proverSet, err = proverset.NewProverSet(params.ParamToAddress("PROVER_SET"), l1Cli)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	forkRouter, err := forkrouter.NewForkRouter(common.HexToAddress(params.ParamByKey("TAIKO_INBOX")), l1Cli)
