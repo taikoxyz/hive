@@ -1,12 +1,38 @@
 #!/bin/bash
 
-cd $TAIKO_MONO_DIR && git checkout const_contracts_pacaya_fork && cd -
+HIVE_TAIKO_PATH=$PWD
+OLD_FORK_TAIKO_MONO=${OLD_FORK_TAIKO_MONO:-$HOME/projects/taiko/tmp/taiko-mono}
+TAIKO_MONO_DIR=${TAIKO_MONO_DIR:-$HOME/projects/taiko/taiko-mono}
 
-. scripts/docker_env.sh
-. scripts/deploy_env.sh
+echo "HIVE_TAIKO_PATH: $HIVE_TAIKO_PATH"
+
+# stop docker compose
+docker compose -f $HIVE_TAIKO_PATH/docker/docker-compose.yml up l1_node l2_pacaya -d --wait
+trap "docker compose -f $HIVE_TAIKO_PATH/docker/docker-compose.yml down" EXIT SIGINT SIGTERM ERR
+
+# load l1 chain deploy contracts environment variables
+source scripts/deploy_env.sh
+
+# load docker environment variables
+source scripts/docker_env.sh
+
+echo "Start deploy l1 ontake contracts ..."
+# Deploy v1.9.1 protocol at first
+cd ${OLD_FORK_TAIKO_MONO}/packages/protocol &&
+  forge script script/layer1/DeployProtocolOnL1.s.sol:DeployProtocolOnL1 \
+    --fork-url "$L1_PROBE_URL" \
+    --broadcast \
+    --ffi \
+    -vvvvv \
+    --evm-version cancun \
+    --private-key "$PRIVATE_KEY" \
+    --block-gas-limit 200000000 \
+    --legacy &&
+
+cd - || exit
 
 # Get deployed contract address.
-DEPLOYMENT_JSON=$(cat ${TAIKO_MONO_DIR}/packages/protocol/deployments/deploy_l1.json)
+DEPLOYMENT_JSON=$(cat ${OLD_FORK_TAIKO_MONO}/packages/protocol/deployments/deploy_l1.json)
 export OLD_FORK=0x1291Be112d480055DaFd8a610b7d1e203891C274
 export TAIKO_INBOX=$(echo "$DEPLOYMENT_JSON" | jq '.taiko' | sed 's/\"//g')
 export ROLLUP_RESOLVER=$(echo "$DEPLOYMENT_JSON" | jq '.rollup_address_manager' | sed 's/\"//g')
@@ -22,10 +48,10 @@ export ERC20_VAULT=$(echo "$DEPLOYMENT_JSON" | jq '.erc20_vault' | sed 's/\"//g'
 export ERC721_VAULT=$(echo "$DEPLOYMENT_JSON" | jq '.erc721_vault' | sed 's/\"//g')
 export ERC1155_VAULT=$(echo "$DEPLOYMENT_JSON" | jq '.erc1155_vault' | sed 's/\"//g')
 
-echo "Start upgrade l1 contracts to pacaya hardfork ..."
-cd "$TAIKO_MONO_DIR"/packages/protocol &&
+echo "Start upgrade l1 pacaya contracts ..."
+cd ${TAIKO_MONO_DIR}/packages/protocol &&
   PRIVATE_KEY=$PRIVATE_KEY forge script script/layer1/devnet/UpgradeDevnetPacayaL1.s.sol:UpgradeDevnetPacayaL1 \
-    --fork-url "$L1_HTTP" \
+    --fork-url "$L1_PROBE_URL" \
     --broadcast \
     --ffi \
     -vvvvv \
@@ -36,6 +62,8 @@ cd "$TAIKO_MONO_DIR"/packages/protocol &&
 
 cd - || exit
 
+# Get envs
+sh scripts/get_env.sh
+
 # Get txs
 sh scripts/get_txs.sh
-

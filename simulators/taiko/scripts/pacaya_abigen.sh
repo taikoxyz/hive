@@ -1,27 +1,23 @@
 #!/bin/bash
 
+TAIKO_MONO_DIR=${TAIKO_MONO_DIR:-$HOME/projects/taiko/taiko-mono}
+
 if [ ! -d "$TAIKO_MONO_DIR/packages/protocol/out" ]; then
     echo "ABI not generated in protocol package yet. Please run npm install && npx hardhat compile in ../protocol"
     exit 1
 fi
 
 paths=(
-    "TaikoL1"
-    "LibProving"
-    "LibProposing"
-    "LibUtils"
-    "LibVerifying"
-    "TaikoL2"
+    "TaikoInbox"
+    "TaikoAnchor"
     "TaikoToken"
-    "AddressManager"
-    "GuardianProver"
+    "ResolverBase"
     "ProverSet"
-    "MainnetTierRouter"
-    "SgxVerifier"
-    "layer1/ForkRouter"
+    "ForkRouter"
+    "ComposeVerifier"
 )
 
-bindings_path=bindings/$TAIKO_VERSION
+bindings_path=bindings/pacaya
 
 for (( i = 0; i < ${#paths[@]}; ++i ));
 do

@@ -4,8 +4,6 @@ import (
 	"context"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 var (
@@ -45,9 +43,4 @@ func increaseTime(timestamp uint64) error {
 	cli := l1Cli.Client()
 	err := cli.CallContext(context.Background(), nil, "evm_increaseTime", timestamp)
 	return err
-}
-
-func TestDeployContracts(t *testing.T) {
-	err := initOntakeContracts(l1Cli, l2Cli)
-	assert.NoError(t, err)
 }

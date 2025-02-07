@@ -1,28 +1,36 @@
 #!/bin/bash
 
-if [ ! -d "$TAIKO_MONO_DIR/packages/protocol/out" ]; then
+OLD_FORK_TAIKO_MONO=${OLD_FORK_TAIKO_MONO:-$HOME/projects/taiko/tmp/taiko-mono}
+
+if [ ! -d "$OLD_FORK_TAIKO_MONO/packages/protocol/out" ]; then
     echo "ABI not generated in protocol package yet. Please run npm install && npx hardhat compile in ../protocol"
     exit 1
 fi
 
 paths=(
-    "TaikoInbox"
-    "TaikoAnchor"
+    "TaikoL1"
+    "LibProving"
+    "LibProposing"
+    "LibUtils"
+    "LibVerifying"
+    "TaikoL2"
     "TaikoToken"
-    "ResolverBase"
+    "AddressManager"
+    "GuardianProver"
     "ProverSet"
-    "ForkRouter"
-    "ComposeVerifier"
+    "MainnetTierRouter"
+    "SgxVerifier"
+    "layer1/ForkRouter"
 )
 
-bindings_path=bindings/$TAIKO_VERSION
+bindings_path=bindings/ontake
 
 for (( i = 0; i < ${#paths[@]}; ++i ));
 do
     mkdir -p $bindings_path/$lower
     latest_name=$(basename ${paths[i]})
     lower=$(echo "${latest_name}" | tr '[:upper:]' '[:lower:]')
-    jq .abi "$TAIKO_MONO_DIR"/packages/protocol/out/${paths[i]}.sol/${latest_name}.json > $bindings_path/$lower/${latest_name}.json
+    jq .abi $OLD_FORK_TAIKO_MONO/packages/protocol/out/${paths[i]}.sol/${latest_name}.json > $bindings_path/$lower/${latest_name}.json
     abigen --abi $bindings_path/$lower/${latest_name}.json \
     --pkg $lower \
     --type ${latest_name} \
