@@ -196,14 +196,14 @@ func (sim *Simulation) StartClientWithOptions(testSuite SuiteID, test TestID, cl
 		opt.apply(setup)
 	}
 
-	showEnv := fmt.Sprintf("\n\n---------------->>> %s envs start ---------------->>>		", clientType)
+	showEnv := fmt.Sprintf("\n\n---------------->>> %s envs variables ---------------->>>		", clientType)
 	// Set environment variables.
 	for k, v := range setup.config.Environment {
 		_ = os.Setenv(k, v)
 		showEnv += fmt.Sprintf("%s=%s;", k, v)
 	}
 	showEnv += "L2_AUTH=http://localhost:8551;L1_HTTP=http://localhost:8545;L1_WS=ws://localhost:8545;L1_BEACON=http://localhost:8545;L2_HTTP=http://localhost:6045;L2_WS=ws://localhost:6046;L2_AUTH=http://localhost:6051"
-	showEnv += fmt.Sprintf("		<<<---------------- %s envs end ---------------->>>\n\n", clientType)
+	showEnv += fmt.Sprintf("		<<<---------------- %s envs variables <<<----------------\n\n", clientType)
 	fmt.Printf(showEnv[:len(showEnv)-1])
 
 	err := setup.postWithFiles(url, &resp)
