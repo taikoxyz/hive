@@ -116,7 +116,6 @@ func buildPreconfBlock(
 		//ExecutableData:  executableData.ExecutionPayload,
 		AnchorBlockID:   l1Head.Number.Uint64(),
 		AnchorStateRoot: l1Head.Root,
-		AnchorInput:     [32]byte{},
 		SignalSlots:     [][32]byte{},
 	}
 	payload, err := rlp.EncodeToBytes(txBatch)
