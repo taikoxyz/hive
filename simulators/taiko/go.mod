@@ -260,6 +260,6 @@ require (
 
 replace github.com/ethereum/go-ethereum v1.14.11 => github.com/taikoxyz/taiko-geth v1.12.1-0.20250213074119-a3e2b34b4857
 
-replace github.com/ethereum-optimism/optimism v1.7.4 => github.com/taikoxyz/optimism v0.0.0-20250128202721-1b986d622e1a
+replace github.com/ethereum-optimism/optimism v1.7.4 => github.com/taikoxyz/optimism v0.0.0-20250205084634-ae44cf8bc8e2
 
 replace github.com/ethereum/hive v0.0.0-20250211191156-a6ae16310601 => github.com/taikoxyz/hive v0.0.0-20250213134055-d565d6b778c4
