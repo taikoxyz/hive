@@ -6,7 +6,7 @@ toolchain go1.23.2
 
 require (
 	github.com/ethereum/go-ethereum v1.14.11
-	github.com/ethereum/hive v0.0.0-20250204093923-5c0b70f953fe
+	github.com/ethereum/hive v0.0.0-20250211191156-a6ae16310601
 	github.com/go-resty/resty/v2 v2.16.5
 	github.com/joho/godotenv v1.5.1
 	github.com/lithammer/dedent v1.1.0
@@ -84,7 +84,7 @@ require (
 	github.com/flynn/noise v1.1.0 // indirect
 	github.com/francoispqt/gojay v1.2.13 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
-	github.com/fsouza/go-dockerclient v1.11.2 // indirect
+	github.com/fsouza/go-dockerclient v1.11.0 // indirect
 	github.com/getsentry/sentry-go v0.27.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -246,7 +246,6 @@ require (
 	gopkg.in/inconshreveable/log15.v2 v2.0.0-20200109203555-b30bc20e4fd1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
-	gotest.tools/v3 v3.5.1 // indirect
 	k8s.io/apimachinery v0.30.4 // indirect
 	k8s.io/client-go v0.30.4 // indirect
 	k8s.io/klog/v2 v2.120.1 // indirect
@@ -262,4 +261,4 @@ replace github.com/ethereum/go-ethereum v1.14.11 => github.com/taikoxyz/taiko-ge
 
 replace github.com/ethereum-optimism/optimism v1.7.4 => github.com/taikoxyz/optimism v0.0.0-20250128202721-1b986d622e1a
 
-replace github.com/ethereum/hive v0.0.0-20250204093923-5c0b70f953fe => github.com/taikoxyz/hive v0.0.0-20250205082714-68b4a1712d5f
+replace github.com/ethereum/hive v0.0.0-20250211191156-a6ae16310601 => github.com/taikoxyz/hive v0.0.0-20250213134055-d565d6b778c4
