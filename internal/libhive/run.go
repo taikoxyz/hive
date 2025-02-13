@@ -43,8 +43,10 @@ func NewRunner(inv Inventory, b Builder, cb ContainerBackend) *Runner {
 
 // Build builds client and simulator images.
 func (r *Runner) Build(ctx context.Context, clientList []ClientDesignator, simList []string, simBuild bool) error {
-	if err := r.container.Build(ctx, r.builder); err != nil {
-		return err
+	if simBuild {
+		if err := r.container.Build(ctx, r.builder); err != nil {
+			return err
+		}
 	}
 	if err := r.buildClients(ctx, clientList); err != nil {
 		return err

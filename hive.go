@@ -139,7 +139,7 @@ func main() {
 	}
 
 	// Build clients and simulators.
-	if err = runner.Build(ctx, clientList, simList, *simBuild == "true"); err != nil {
+	if err = runner.Build(ctx, clientList, simList, strings.ToLower(*simBuild) == "true"); err != nil {
 		fatal(err)
 	}
 	if *simDevMode {

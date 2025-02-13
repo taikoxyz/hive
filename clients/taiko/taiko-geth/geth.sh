@@ -27,6 +27,7 @@ echo "Starting taiko geth..."
 nohup geth \
   --bootnodes="$HIVE_BOOTNODE" \
   --taiko \
+  --verbosity 4 \
   --datadir=/geth/data \
   --networkid="$HIVE_NETWORK_ID" \
   --verbosity="$HIVE_LOGLEVEL" \

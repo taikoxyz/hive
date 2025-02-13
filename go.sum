@@ -260,8 +260,8 @@ github.com/supranational/blst v0.3.13 h1:AYeSxdOMacwu7FBmpfloBz5pbFXDmJL33RuwnKt
 github.com/supranational/blst v0.3.13/go.mod h1:jZJtfjgudtNl4en1tzwPIV3KjUnQUvG3/j+w+fVonLw=
 github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d h1:vfofYNRScrDdvS342BElfbETmL1Aiz3i2t0zfRj16Hs=
 github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d/go.mod h1:RRCYJbIwD5jmqPI9XoAFR0OcDxqUctll6zUj/+B4S48=
-github.com/taikoxyz/taiko-geth v1.12.1-0.20250205040456-832713781df8 h1:cgZhkcg8yi6CkhMQUX9Z/Au2qQFcDwm6isibeq/iMMM=
-github.com/taikoxyz/taiko-geth v1.12.1-0.20250205040456-832713781df8/go.mod h1:+l/fr42Mma+xBnhefL/+z11/hcmJ2egl+ScIVPjhc7E=
+github.com/taikoxyz/taiko-geth v1.12.1-0.20250213074119-a3e2b34b4857 h1:T9v5ukSBFdXZoBceOFtS6kTn09QiTwh8i3pwAy+4XjY=
+github.com/taikoxyz/taiko-geth v1.12.1-0.20250213074119-a3e2b34b4857/go.mod h1:+l/fr42Mma+xBnhefL/+z11/hcmJ2egl+ScIVPjhc7E=
 github.com/tklauser/go-sysconf v0.3.12 h1:0QaGUFOdQaIVdPgfITYzaTegZvdCjmYO52cSFAEVmqU=
 github.com/tklauser/go-sysconf v0.3.12/go.mod h1:Ho14jnntGE1fpdOqQEEaiKRpvIavV0hSfmBq8nJbHYI=
 github.com/tklauser/numcpus v0.6.1 h1:ng9scYS7az0Bk4OZLvrNXNSAO2Pxr1XXRAPyjhIx+Fk=
