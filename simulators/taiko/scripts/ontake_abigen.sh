@@ -20,7 +20,6 @@ paths=(
     "ProverSet"
     "MainnetTierRouter"
     "SgxVerifier"
-    "layer1/ForkRouter"
 )
 
 bindings_path=bindings/ontake

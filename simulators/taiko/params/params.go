@@ -31,14 +31,17 @@ var ConfigContent []byte
 //go:embed genesis.json
 var GenesisContent []byte
 
+type Auths struct {
+	Address    common.Address
+	SecretKey  string
+	PrivateKey *ecdsa.PrivateKey
+}
+
 var (
 	envParams   = hivesim.Params{}
 	ContractTxs = make([]*types.Transaction, 0)
-	PrivateKeys []*ecdsa.PrivateKey
 	L1Auths     []*bind.TransactOpts
-	L2Auths     []*bind.TransactOpts
-
-	ZeroAddress = common.Address{}
+	ChainAuths  []*Auths
 )
 
 func init() {
@@ -81,19 +84,17 @@ func init() {
 		if err != nil {
 			panic(err)
 		}
-		PrivateKeys = append(PrivateKeys, priv)
+		ChainAuths = append(ChainAuths, &Auths{
+			Address:    crypto.PubkeyToAddress(priv.PublicKey),
+			SecretKey:  privateKeyHex,
+			PrivateKey: priv,
+		})
 
 		auth, err := bind.NewKeyedTransactorWithChainID(priv, big.NewInt(32382))
 		if err != nil {
 			panic(err)
 		}
 		L1Auths = append(L1Auths, auth)
-
-		auth, err = bind.NewKeyedTransactorWithChainID(priv, big.NewInt(167001))
-		if err != nil {
-			panic(err)
-		}
-		L2Auths = append(L2Auths, auth)
 	}
 }
 

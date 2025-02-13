@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/zlib"
 	"context"
-	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -18,12 +17,18 @@ import (
 	"os"
 	"taiko/bindings/ontake/proverset"
 	"taiko/bindings/ontake/taikol1"
-	"taiko/bindings/pacaya/taikoinbox"
 	"taiko/bindings/pacaya/taikotoken"
 	"taiko/params"
 )
 
-func DeployContracts(ctx context.Context, l1cli, l2cli *ethclient.Client) error {
+type ERC20API interface {
+	Transfer(auth *bind.TransactOpts, to common.Address, value *big.Int) (*types.Transaction, error)
+	Approve(opts *bind.TransactOpts, spender common.Address, amount *big.Int) (*types.Transaction, error)
+	BalanceOf(opts *bind.CallOpts, account common.Address) (*big.Int, error)
+	Allowance(opts *bind.CallOpts, owner common.Address, spender common.Address) (*big.Int, error)
+}
+
+func DeployContracts(ctx context.Context, l1cli *ethclient.Client) error {
 	chainID, err := l1cli.ChainID(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get chainID: %v", err)
@@ -70,7 +75,7 @@ func DeployContracts(ctx context.Context, l1cli, l2cli *ethclient.Client) error 
 		}
 	}
 
-	return initOntakeContracts(l1cli, l2cli)
+	return initOntakeContracts(l1cli)
 }
 
 func setL2Genesis(l1cli, l2cli *ethclient.Client, ownerAuth *bind.TransactOpts) error {
@@ -80,37 +85,19 @@ func setL2Genesis(l1cli, l2cli *ethclient.Client, ownerAuth *bind.TransactOpts) 
 	}
 	fmt.Println("l2genesis hash: ", genesisHeader.Hash().String())
 
-	taikoL1, err := taikol1.NewTaikoL1(common.HexToAddress(os.Getenv("TAIKO_INBOX")), l1cli)
+	taikoL1, err := taikol1.NewTaikoL1(params.ParamToAddress("TAIKO_INBOX"), l1cli)
 	if err != nil {
 		return err
 	}
 	_, err = taikoL1.InitL2Genesis(ownerAuth, genesisHeader.Hash())
-	if err != nil {
-		return err
-	}
-	inbox, err := taikoinbox.NewTaikoInbox(common.HexToAddress(os.Getenv("TAIKO_INBOX")), l1cli)
-	if err != nil {
-		return err
-	}
-	_, err = inbox.InitL2Genesis(ownerAuth, genesisHeader.Hash())
 	return err
 }
 
 // InitTaikoContract init taiko contracts.
-func initOntakeContracts(l1cli, l2cli *ethclient.Client) error {
+func initOntakeContracts(l1cli *ethclient.Client) error {
 	l1ChainID, err := l1cli.ChainID(context.Background())
 	if err != nil {
 		return err
-	}
-
-	taikoToken, err := taikotoken.NewTaikoToken(params.ParamToAddress("TAIKO_TOKEN"), l1cli)
-	if err != nil {
-		return err
-	}
-
-	proverAuth, err := getAuth("L1_PROVER_PRIV_KEY", l1ChainID)
-	if err != nil {
-		return fmt.Errorf("failed to get prover auth: %v", err)
 	}
 
 	ownerAuth, err := getAuth("L1_CONTRACT_OWNER_PRIVATE_KEY", l1ChainID)
@@ -118,107 +105,108 @@ func initOntakeContracts(l1cli, l2cli *ethclient.Client) error {
 		return fmt.Errorf("failed to get owner auth: %v", err)
 	}
 
-	if err = setL2Genesis(l1cli, l2cli, ownerAuth); err != nil {
-		return fmt.Errorf("failed to set l2 genesis: %v", err)
-	}
-
-	decimal, err := taikoToken.Decimals(nil)
+	taikoToken, err := taikotoken.NewTaikoToken(params.ParamToAddress("TAIKO_TOKEN"), l1cli)
 	if err != nil {
 		return err
 	}
-	allow := new(big.Int).Exp(big.NewInt(1_000_000_100), new(big.Int).SetUint64(uint64(decimal)), nil)
-	fmt.Println(decimal, allow.String())
 
-	// Transfer some tokens to provers.
+	// Transfer some tokens to proposers.
 	balance, err := taikoToken.BalanceOf(nil, ownerAuth.From)
 	if err != nil {
 		return err
 	}
-	if balance.Cmp(common.Big0) <= 0 {
-		return errors.New("balance is less than or equal to 0")
-	}
-
-	proverBalance := new(big.Int).Div(balance, common.Big32)
-	if proverBalance.Cmp(common.Big0) <= 0 {
-		return errors.New("prover balance is less than or equal to 0")
-	}
+	bls := new(big.Int).Div(balance, common.Big256)
 
 	if os.Getenv("IS_GUARDIAN") == "true" {
-		_, err = taikoToken.Transfer(ownerAuth, proverAuth.From, proverBalance)
+		if err = erc20Transfer(l1cli, taikoToken, ownerAuth, params.ParamToAddress("GUARDIAN_PROVER_MINORITY"), bls); err != nil {
+			return err
+		}
+		if err = erc20Transfer(l1cli, taikoToken, ownerAuth, params.ParamToAddress("GUARDIAN_PROVER_CONTRACT"), bls); err != nil {
+			return err
+		}
+	}
+
+	proverSetAddr := params.ParamToAddress("PROVER_SET")
+	taikoInboxAddr := params.ParamToAddress("TAIKO_INBOX")
+
+	if proverSetAddr != (common.Address{}) {
+		proverSet, err := proverset.NewProverSet(proverSetAddr, l1cli)
 		if err != nil {
 			return err
 		}
-		if err = transferTaikoToken(taikoToken, ownerAuth, params.ParamToAddress("GUARDIAN_PROVER_MINORITY"), proverBalance); err != nil {
+		for _, auth := range params.L1Auths {
+			// Enable prover set.
+			if err = enableProverSet(l1cli, proverSet, ownerAuth, auth.From); err != nil {
+				return err
+			}
+		}
+		// Transfer some tokens to proposers.
+		if err = erc20Transfer(l1cli, taikoToken, ownerAuth, proverSetAddr, bls); err != nil {
 			return err
 		}
-		if err = transferTaikoToken(taikoToken, ownerAuth, params.ParamToAddress("GUARDIAN_PROVER_CONTRACT"), proverBalance); err != nil {
+		if err = erc20Approve(l1cli, taikoToken, ownerAuth, taikoInboxAddr, bls); err != nil {
 			return err
 		}
 	} else {
-		if err = transferTaikoToken(taikoToken, ownerAuth, proverAuth.From, proverBalance); err != nil {
-			return err
+		for _, auth := range params.L1Auths {
+			// Transfer some tokens to proposers.
+			if err = erc20Transfer(l1cli, taikoToken, ownerAuth, auth.From, bls); err != nil {
+				return err
+			}
+			if err = erc20Approve(l1cli, taikoToken, auth, taikoInboxAddr, bls); err != nil {
+				return err
+			}
 		}
 	}
 
-	if err = setAllowance(l1cli, proverAuth, taikoToken); err != nil {
-		return err
-	}
-	if err = setAllowance(l1cli, ownerAuth, taikoToken); err != nil {
-		return err
-	}
-
 	return nil
 }
 
-func transferTaikoToken(taikoToken *taikotoken.TaikoToken, auth *bind.TransactOpts, to common.Address, balance *big.Int) error {
+func erc20Transfer(l1cli *ethclient.Client, token ERC20API, auth *bind.TransactOpts, to common.Address, balance *big.Int) error {
 	if to == (common.Address{}) {
 		return nil
 	}
-	_, err := taikoToken.Transfer(
-		auth,
-		to,
-		balance,
-	)
+	tx, err := token.Transfer(auth, to, balance)
+	if _, err = bind.WaitMined(context.Background(), l1cli, tx); err != nil {
+		return err
+	}
+
+	bls, err := token.BalanceOf(nil, to)
+	if err != nil {
+		return err
+	}
+	if bls.Cmp(balance) < 0 {
+		return fmt.Errorf("failed to transfer, to: %s, expect: %s, actual: %s", to.String(), balance.String(), bls.String())
+	}
+
 	return err
 }
 
-func enableProver(client *ethclient.Client, auth *bind.TransactOpts, _prover common.Address, _isProver bool) error {
-	proverSet := os.Getenv("PROVER_SET")
-	if proverSet == "" {
+func erc20Approve(l1cli *ethclient.Client, token ERC20API, auth *bind.TransactOpts, spender common.Address, amount *big.Int) error {
+	if spender == (common.Address{}) {
 		return nil
 	}
-	prover, err := proverset.NewProverSet(common.HexToAddress(proverSet), client)
+	tx, err := token.Approve(auth, spender, amount)
+	_, err = bind.WaitMined(context.Background(), l1cli, tx)
+
+	bls, err := token.Allowance(nil, auth.From, spender)
 	if err != nil {
 		return err
 	}
-	_, err = prover.EnableProver(auth, _prover, _isProver)
+	if bls.Cmp(amount) < 0 {
+		return fmt.Errorf("failed to approve, spender: %s, expect: %s, actual: %s", spender.String(), amount.String(), bls.String())
+	}
+
 	return err
 }
 
-func setAllowance(client *ethclient.Client, auth *bind.TransactOpts, taikoToken *taikotoken.TaikoToken) error {
-	taikoL1 := params.ParamToAddress("TAIKO_INBOX")
-	if taikoL1 == params.ZeroAddress {
-		return fmt.Errorf("TAIKO_INBOX variable is empty")
-	}
-	decimal, err := taikoToken.Decimals(nil)
+func enableProverSet(l1cli *ethclient.Client, proverSet *proverset.ProverSet, auth *bind.TransactOpts, prover common.Address) error {
+	tx, err := proverSet.EnableProver(auth, prover, true)
 	if err != nil {
 		return err
 	}
-
-	var bigInt = new(big.Int).Exp(big.NewInt(1_000_000_000), new(big.Int).SetUint64(uint64(decimal)), nil)
-
-	tx, err := taikoToken.Approve(auth, taikoL1, bigInt)
-	if err != nil {
-		return err
-	}
-	receipt, err := bind.WaitMined(context.Background(), client, tx)
-	if err != nil {
-		return err
-	}
-	if receipt.Status != types.ReceiptStatusSuccessful {
-		return fmt.Errorf("approve failed, tx hash: %s", tx.Hash().String())
-	}
-	return nil
+	_, err = bind.WaitMined(context.Background(), l1cli, tx)
+	return err
 }
 
 func getAuth(key string, chainID *big.Int) (*bind.TransactOpts, error) {
@@ -262,7 +250,11 @@ func CreateL2Txs(
 	send bool,
 ) (types.Transactions, error) {
 	var txs types.Transactions
-	for _, auth := range params.L2Auths {
+	for _, atr := range params.ChainAuths {
+		auth, err := bind.NewKeyedTransactorWithChainID(atr.PrivateKey, l2cli.ChainID)
+		if err != nil {
+			return nil, err
+		}
 		nonce, err := l2cli.PendingNonceAt(ctx, auth.From)
 		if err != nil {
 			return nil, fmt.Errorf("cannot get nonce: %v", err)

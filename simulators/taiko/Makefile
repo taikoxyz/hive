@@ -1,12 +1,18 @@
-.PHONY: hive_alpine_dependency hive_taiko_dependency taiko
+.PHONY: taiko log_geth log_driver log_proposer log_prover
 
-all: hive_alpine_dependency hive_taiko_dependency taiko
-
-hive_alpine_dependency:
-	docker build --no-cache -t hive_alpine_dependency:latest --target hive_alpine_dependency .
-
-hive_taiko_dependency:
-	docker build --no-cache -t hive_taiko_dependency:latest --target hive_taiko_dependency .
+all: taiko
 
 taiko:
 	docker build --no-cache -t hive/simulators/taiko:latest .
+
+log_geth:
+	docker ps -a | grep "taiko-geth" | awk '{print $1}' | xargs docker logs -f
+
+log_driver:
+	docker ps -a | grep "driver" | awk '{print $1}' | xargs docker logs -f
+
+log_proposer:
+	docker ps -a | grep "proposer" | awk '{print $1}' | xargs docker logs -f
+
+log_prover:
+	docker ps -a | grep "prover" | awk '{print $1}' | xargs docker logs -f

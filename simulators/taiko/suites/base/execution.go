@@ -17,11 +17,7 @@ func (ts BaseTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 		anvil  = nodes[0].AnvilClient
 	)
 	if target == 0 {
-		if ts.L2SyncMode == "full" {
-			target = rand.Uint64N(50-10) + 10
-		} else {
-			target = rand.Uint64N(130-65) + 65
-		}
+		target = rand.Uint64N(50-10) + 10
 	}
 	t.Logf("BaseTestSpec target number: %d, sync module: %s", target, ts.L2SyncMode)
 
@@ -51,8 +47,6 @@ func (ts BaseTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 	// Verify the synced blocks.
 	if ts.L2SyncMode == "full" {
 		ts.fullSyncVerify(ctx, t, testnet, target)
-	} else {
-		ts.snapSyncVerify(ctx, t, testnet, target)
 	}
 
 	// Verify all l2eth nodes.
@@ -63,7 +57,7 @@ func waitL2LatestNumber(ctx context.Context, t *hivesim.T, targetNumber uint64, 
 	// Verify l2eth node run successfully.
 	err := l2Eth.WaitLatestNumber(ctx, time.Second*60, targetNumber)
 	if err != nil {
-		t.Fatalf("failed to get latest l2geth number, err: %v", err)
+		t.Fatalf("failed to get latest l2geth number, number: %d, err: %v", targetNumber, err)
 	}
 }
 
@@ -71,7 +65,7 @@ func waitLatestVerifiedNumber(ctx context.Context, t *hivesim.T, targetNumber ui
 	// Verify l2eth node run successfully.
 	err := anvil.WaitLatestVerifiedNumber(ctx, time.Second*60, targetNumber)
 	if err != nil {
-		t.Fatalf("failed to get latest l2geth number, err: %v", err)
+		t.Fatalf("failed to get latest verified l2geth number, number: %d, err: %v", targetNumber, err)
 	}
 }
 

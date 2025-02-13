@@ -88,7 +88,7 @@ func (n *Node) Start() error {
 	}
 
 	// Deploy contracts if needed
-	if n.Index == 0 && ((n.L1EthClient != nil || n.AnvilClient != nil) && n.L2EthClient != nil) {
+	if n.Index == 0 && (n.L1EthClient != nil || n.AnvilClient != nil) {
 		l1API := EthExposeAPI(n.AnvilClient)
 		if n.L1EthClient != nil {
 			l1API = n.L1EthClient
@@ -97,7 +97,7 @@ func (n *Node) Start() error {
 		params.SetEnvParams("L2_HTTP", l1API.HttpURL())
 
 		n.Logf("Deploying contracts in %s node, url: %s\n", l1API.ClientType(), l1API.HttpURL())
-		if err := utils.DeployContracts(context.Background(), l1API.HTTPClient(), n.L2EthClient.HTTPClient()); err != nil {
+		if err := utils.DeployContracts(context.Background(), l1API.HTTPClient()); err != nil {
 			return errors.Wrap(err, fmt.Sprintf("%s: failed to deploy contracts", l1API.ClientType()))
 		}
 		n.Logf("Deployed contracts in %s node, url: %s\n", l1API.ClientType(), l1API.HttpURL())

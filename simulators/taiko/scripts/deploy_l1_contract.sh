@@ -47,6 +47,7 @@ export SIGNAL_SERVICE=$(echo "$DEPLOYMENT_JSON" | jq '.signal_service' | sed 's/
 export ERC20_VAULT=$(echo "$DEPLOYMENT_JSON" | jq '.erc20_vault' | sed 's/\"//g')
 export ERC721_VAULT=$(echo "$DEPLOYMENT_JSON" | jq '.erc721_vault' | sed 's/\"//g')
 export ERC1155_VAULT=$(echo "$DEPLOYMENT_JSON" | jq '.erc1155_vault' | sed 's/\"//g')
+export QUOTA_MANAGER=0x0000000000000000000000000000000000000000
 
 echo "Start upgrade l1 pacaya contracts ..."
 cd ${TAIKO_MONO_DIR}/packages/protocol &&
@@ -67,3 +68,9 @@ sh scripts/get_env.sh
 
 # Get txs
 sh scripts/get_txs.sh
+
+# build ontake abigen
+sh scripts/ontake_abigen.sh
+
+# build pacaya abigen
+sh scripts/pacaya_abigen.sh

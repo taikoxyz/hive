@@ -124,7 +124,7 @@ func buildPreconfBlock(
 		return nil, err
 	}
 
-	sig, err := crypto.Sign(crypto.Keccak256(payload), params.PrivateKeys[0])
+	sig, err := crypto.Sign(crypto.Keccak256(payload), params.ChainAuths[0].PrivateKey)
 	if err != nil {
 		return nil, err
 	}

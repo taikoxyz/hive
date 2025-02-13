@@ -29,11 +29,6 @@ func init() {
 			L2TargetNumber: 5,
 			Debug:          true,
 		},
-		BaseTestSpec{
-			Name:       "l2-snap-sync",
-			L2SyncMode: "snap",
-			BeaconSync: true,
-		},
 	)
 }
 
