@@ -250,7 +250,7 @@ func CreateL2Txs(
 	send bool,
 ) (types.Transactions, error) {
 	var txs types.Transactions
-	for _, atr := range params.ChainAuths {
+	for _, atr := range params.ChainAuths[5:] {
 		auth, err := bind.NewKeyedTransactorWithChainID(atr.PrivateKey, l2cli.ChainID)
 		if err != nil {
 			return nil, err

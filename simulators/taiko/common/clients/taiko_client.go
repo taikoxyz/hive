@@ -3,12 +3,10 @@ package clients
 import (
 	"context"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
 	tkutils "github.com/taikoxyz/taiko-mono/packages/taiko-client/cmd/utils"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"github.com/urfave/cli/v2"
-	"math/big"
 	"os"
 	"sync"
 	"sync/atomic"
@@ -20,13 +18,6 @@ type State struct {
 	L1Head atomic.Pointer[types.Header]
 	L2Head atomic.Pointer[types.Header]
 
-	ProposedBlockID chan *big.Int
-
-	LatestL1Origin    atomic.Pointer[rawdb.L1Origin]
-	CanonicalL1Origin atomic.Pointer[rawdb.L1Origin]
-
-	err atomic.Value
-
 	ctx    context.Context
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
@@ -36,12 +27,9 @@ func NewState(rpcCli *rpc.Client) (state *State, err error) {
 	subCtx, cancel := context.WithCancel(context.Background())
 
 	state = &State{
-		Client:            rpcCli,
-		L1Head:            atomic.Pointer[types.Header]{},
-		L2Head:            atomic.Pointer[types.Header]{},
-		ProposedBlockID:   make(chan *big.Int, 1),
-		LatestL1Origin:    atomic.Pointer[rawdb.L1Origin]{},
-		CanonicalL1Origin: atomic.Pointer[rawdb.L1Origin]{},
+		Client: rpcCli,
+		L1Head: atomic.Pointer[types.Header]{},
+		L2Head: atomic.Pointer[types.Header]{},
 
 		ctx:    subCtx,
 		cancel: cancel,
@@ -57,14 +45,6 @@ func (s *State) Close() {
 		s.cancel()
 	}
 	s.wg.Wait()
-}
-
-func (s *State) StateError() error {
-	if val := s.err.Load(); val == nil {
-		return nil
-	} else {
-		return val.(error)
-	}
 }
 
 func (s *State) loop() {
@@ -93,19 +73,6 @@ func (s *State) loop() {
 			s.L1Head.Store(head)
 		case head := <-l2HeadCh:
 			s.L2Head.Store(head)
-			l1Origin, err := s.L2.L1OriginByID(ctx, head.Number)
-			if err != nil {
-				s.err.Store(err)
-				continue
-			}
-			s.LatestL1Origin.Store(l1Origin)
-
-			l1Origin, err = s.L2.HeadL1Origin(ctx)
-			if err != nil {
-				s.err.Store(err)
-				continue
-			}
-			s.CanonicalL1Origin.Store(l1Origin)
 		}
 	}
 }

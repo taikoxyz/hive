@@ -2,9 +2,8 @@ package clients
 
 import (
 	"context"
-	"errors"
+	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -12,15 +11,14 @@ import (
 	"github.com/go-resty/resty/v2"
 	preconfblocks "github.com/taikoxyz/taiko-mono/packages/taiko-client/driver/preconf_blocks"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
+	"math/big"
 	"os"
 	"taiko/common/utils"
-	"taiko/params"
 )
 
 type DriverClient struct {
 	*HiveManagedClient
 
-	*rpc.Client
 	*State
 }
 
@@ -70,93 +68,91 @@ func (d *DriverClient) BuildPreconfBlock(
 	}
 
 	// Create and send a batch of txs.
-	signedTxs, err := buildPreconfBlock(context.Background(), d.Client, d.PreconfServerURL(), l2BlockID, l1Head)
+	_, signedTxs, err := buildPreconfBlock(context.Background(), d.Client, d.PreconfServerURL(), l1Head, l2BlockID)
 	if err != nil {
 		return nil, nil, err
 	}
 	defer d.Logf("%s: build soft block end, transaction length: %d", d.ClientType(), signedTxs.Len())
 
-	return l1Head, signedTxs, d.StateError()
-}
-
-func (d *DriverClient) RemovePreconfBlocks(newLastBlockID uint64) error {
-	d.Logf("%s: remove soft block, target height: %d", d.ClientType(), newLastBlockID)
-	defer d.Logf("%s: remove soft block end", d.ClientType())
-
-	return removePreconfBlocks(d.PreconfServerURL(), newLastBlockID)
+	return l1Head, signedTxs, nil
 }
 
 func buildPreconfBlock(
 	ctx context.Context,
-	rpcCli *rpc.Client,
-	preconfServerURL string,
+	rpccli *rpc.Client,
+	preconfURL string,
+	anchoredL1Block *types.Header,
 	l2BlockID uint64,
-	l1Head *types.Header,
-) (types.Transactions, error) {
+) (*types.Header, types.Transactions, error) {
+	l2cli := rpccli.L2
+
 	// Create and send a batch of txs.
-	signedTxs, err := utils.CreateL2Txs(context.Background(), rpcCli.L2, true)
+	signedTxs, err := utils.CreateL2Txs(context.Background(), l2cli, true)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	txBytes, err := utils.EncodeAndCompressTxList(signedTxs)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	l2Block, err := rpcCli.L2.BlockByNumber(context.Background(), nil)
+	preconferPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	executableData := engine.BlockToExecutableData(l2Block, nil, nil)
-	executableData.ExecutionPayload.Transactions = [][]byte{txBytes}
+	parent, err := l2cli.HeaderByNumber(ctx, big.NewInt(0).SetUint64(l2BlockID))
+	if err != nil {
+		return nil, nil, err
+	}
 
-	var txBatch = &preconfblocks.BuildPreconfBlockRequestBody{
-		// TODO
-		//ExecutableData:  executableData.ExecutionPayload,
-		AnchorBlockID:   l1Head.Number.Uint64(),
-		AnchorStateRoot: l1Head.Root,
+	preconfCfg, err := rpccli.GetProtocolConfigs(nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	reqBody := &preconfblocks.BuildPreconfBlockRequestBody{
+		ExecutableData: &preconfblocks.ExecutableData{
+			ParentHash:   parent.Hash(),
+			FeeRecipient: crypto.PubkeyToAddress(preconferPrivKey.PublicKey),
+			Number:       l2BlockID,
+			GasLimit:     uint64(preconfCfg.BlockMaxGasLimit()),
+			Timestamp:    anchoredL1Block.Time,
+			Transactions: txBytes,
+		},
+		AnchorBlockID:   anchoredL1Block.Number.Uint64(),
+		AnchorStateRoot: anchoredL1Block.Root,
 		SignalSlots:     [][32]byte{},
-	}
-	payload, err := rlp.EncodeToBytes(txBatch)
-	if err != nil {
-		return nil, err
+		BaseFeeConfig:   preconfCfg.BaseFeeConfig(),
 	}
 
-	sig, err := crypto.Sign(crypto.Keccak256(payload), params.ChainAuths[0].PrivateKey)
+	payload, err := rlp.EncodeToBytes(reqBody)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	txBatch.Signature = common.Bytes2Hex(sig)
+
+	sig, err := crypto.Sign(crypto.Keccak256(payload), preconferPrivKey)
+	if err != nil {
+		return nil, nil, err
+	}
+	reqBody.Signature = common.Bytes2Hex(sig)
 
 	// Try to propose a soft block with batch ID 0
 	res, err := resty.New().
 		R().
 		SetBody(&preconfblocks.BuildPreconfBlockRequestBody{}).
-		Post(preconfServerURL + "/preconfBlocks")
+		Post(preconfURL + "/preconfBlocks")
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if !res.IsSuccess() {
-		return append(l2Block.Transactions(), signedTxs...), errors.New(res.String())
+		return nil, nil, fmt.Errorf("failed to build preconf block: %v", res.Error())
 	}
 
-	return signedTxs, nil
-}
+	var body *preconfblocks.BuildPreconfBlockResponseBody
+	if err = json.Unmarshal(res.Body(), &body); err != nil {
+		return nil, nil, err
+	}
 
-func removePreconfBlocks(softURL string, newLastBlockID uint64) error {
-	// Remove soft blocks
-	res, err := resty.New().
-		R().
-		SetBody(&preconfblocks.RemovePreconfBlocksRequestBody{
-			NewLastBlockID: newLastBlockID,
-		}).
-		Delete(softURL + "/preconfBlocks")
-	if err != nil {
-		return err
-	}
-	if !res.IsSuccess() {
-		return errors.New(res.String())
-	}
-	return nil
+	return body.BlockHeader, signedTxs, nil
 }

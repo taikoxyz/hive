@@ -12,7 +12,6 @@ import (
 type ProposerClient struct {
 	*HiveManagedClient
 
-	*rpc.Client
 	*State
 }
 
