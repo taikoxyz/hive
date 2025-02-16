@@ -70,21 +70,12 @@ type TaikoGethClient struct {
 }
 
 func (t *TaikoGethClient) L1OriginByID(ctx context.Context, blockID *big.Int) (*L1Origin, error) {
-	rpcClient := t.EthClient.Client()
 	var res *L1Origin
-	if err := rpcClient.CallContext(ctx, &res, "taiko_l1OriginByID", hexutil.EncodeBig(blockID)); err != nil {
+	if err := t.EthClient.CallContext(ctx, &res, "taiko_l1OriginByID", hexutil.EncodeBig(blockID)); err != nil {
 		return nil, err
 	}
 
 	return res, nil
-}
-
-func (t *TaikoGethClient) Start() error {
-	if err := t.EthNode.Start(); err != nil {
-		return err
-	}
-
-	return t.EthNode.InitL2Clients()
 }
 
 type L2EthClients []*TaikoGethClient

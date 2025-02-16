@@ -28,12 +28,8 @@ type ERC20API interface {
 	Allowance(opts *bind.CallOpts, owner common.Address, spender common.Address) (*big.Int, error)
 }
 
-func DeployContracts(ctx context.Context, l1cli *ethclient.Client) error {
-	chainID, err := l1cli.ChainID(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get chainID: %v", err)
-	}
-
+func DeployContracts(ctx context.Context, l1cli *rpc.EthClient) error {
+	chainID := l1cli.ChainID
 	sk, err := crypto.HexToECDSA("ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
 	if err != nil {
 		return fmt.Errorf("failed to get private key: %v", err)
@@ -94,11 +90,8 @@ func setL2Genesis(l1cli, l2cli *ethclient.Client, ownerAuth *bind.TransactOpts) 
 }
 
 // InitTaikoContract init taiko contracts.
-func initOntakeContracts(l1cli *ethclient.Client) error {
-	l1ChainID, err := l1cli.ChainID(context.Background())
-	if err != nil {
-		return err
-	}
+func initOntakeContracts(l1cli *rpc.EthClient) error {
+	l1ChainID := l1cli.ChainID
 
 	ownerAuth, err := getAuth("L1_CONTRACT_OWNER_PRIVATE_KEY", l1ChainID)
 	if err != nil {
@@ -162,7 +155,7 @@ func initOntakeContracts(l1cli *ethclient.Client) error {
 	return nil
 }
 
-func erc20Transfer(l1cli *ethclient.Client, token ERC20API, auth *bind.TransactOpts, to common.Address, balance *big.Int) error {
+func erc20Transfer(l1cli *rpc.EthClient, token ERC20API, auth *bind.TransactOpts, to common.Address, balance *big.Int) error {
 	if to == (common.Address{}) {
 		return nil
 	}
@@ -182,7 +175,7 @@ func erc20Transfer(l1cli *ethclient.Client, token ERC20API, auth *bind.TransactO
 	return err
 }
 
-func erc20Approve(l1cli *ethclient.Client, token ERC20API, auth *bind.TransactOpts, spender common.Address, amount *big.Int) error {
+func erc20Approve(l1cli *rpc.EthClient, token ERC20API, auth *bind.TransactOpts, spender common.Address, amount *big.Int) error {
 	if spender == (common.Address{}) {
 		return nil
 	}
@@ -200,7 +193,7 @@ func erc20Approve(l1cli *ethclient.Client, token ERC20API, auth *bind.TransactOp
 	return err
 }
 
-func enableProverSet(l1cli *ethclient.Client, proverSet *proverset.ProverSet, auth *bind.TransactOpts, prover common.Address) error {
+func enableProverSet(l1cli *rpc.EthClient, proverSet *proverset.ProverSet, auth *bind.TransactOpts, prover common.Address) error {
 	tx, err := proverSet.EnableProver(auth, prover, true)
 	if err != nil {
 		return err

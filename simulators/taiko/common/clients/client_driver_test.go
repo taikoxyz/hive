@@ -7,7 +7,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/assert"
 	preconfblocks "github.com/taikoxyz/taiko-mono/packages/taiko-client/driver/preconf_blocks"
@@ -20,35 +19,14 @@ import (
 )
 
 var (
-	rpccli   *rpc.Client
-	l1Cli    *ethclient.Client
-	l2Cli    *ethclient.Client
-	l1Ontake *ontake.OntakeL1Clients
-	l1Pacaya *pacaya.PacayaL1Clients
+	rpccli       *rpc.Client
+	l1Cli, l2Cli *rpc.EthClient
+	l1Ontake     *ontake.OntakeL1Clients
+	l1Pacaya     *pacaya.PacayaL1Clients
 )
 
 func init() {
 	var err error
-	l1Cli, err = ethclient.Dial("ws://localhost:8545")
-	if err != nil {
-		panic(err)
-	}
-
-	l2Cli, err = ethclient.Dial("ws://localhost:6046")
-	if err != nil {
-		panic(err)
-	}
-
-	l1Ontake, err = ontake.NewOntakeL1Clients(l1Cli)
-	if err != nil {
-		panic(err)
-	}
-
-	l1Pacaya, err = pacaya.NewPacayaL1Clients(l1Cli)
-	if err != nil {
-		panic(err)
-	}
-
 	rpccli, err = rpc.NewClient(context.Background(), &rpc.ClientConfig{
 		L1Endpoint:        "ws://localhost:8545",
 		L2Endpoint:        "ws://localhost:6046",
@@ -58,6 +36,17 @@ func init() {
 		L2EngineEndpoint:  "http://localhost:6051",
 		JwtSecret:         "c49690b5a9bc72c7b451b48c5fee2b542e66559d840a133d090769abc56e39e7",
 	})
+	if err != nil {
+		panic(err)
+	}
+
+	l1Cli, l2Cli = rpccli.L1, rpccli.L2
+	l1Ontake, err = ontake.NewOntakeL1Clients(l1Cli)
+	if err != nil {
+		panic(err)
+	}
+
+	l1Pacaya, err = pacaya.NewPacayaL1Clients(l2Cli)
 	if err != nil {
 		panic(err)
 	}

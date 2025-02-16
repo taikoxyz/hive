@@ -21,10 +21,3 @@ type AnvilClient struct {
 	reorgCh    chan struct{}
 	reorgCache map[uint64]*L1BlockInfo
 }
-
-func (a *AnvilClient) Start() error {
-	if err := a.EthNode.Start(); err != nil {
-		return err
-	}
-	return a.EthNode.InitL1Clients()
-}

@@ -2,7 +2,8 @@ package pacaya
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
+	ethparams "github.com/ethereum/go-ethereum/params"
+	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"taiko/bindings/pacaya/forkrouter"
 	"taiko/bindings/pacaya/proverset"
 	"taiko/bindings/pacaya/taikoanchor"
@@ -16,10 +17,9 @@ type PacayaL1Clients struct {
 	TaikoToken *taikotoken.TaikoToken
 	ProverSet  *proverset.ProverSet
 	ForkRouter *forkrouter.ForkRouter
-	ForkHeight uint64
 }
 
-func NewPacayaL1Clients(l1Cli *ethclient.Client) (*PacayaL1Clients, error) {
+func NewPacayaL1Clients(l1Cli *rpc.EthClient) (*PacayaL1Clients, error) {
 	taikoInbox, err := taikoinbox.NewTaikoInbox(common.HexToAddress(params.ParamByKey("TAIKO_INBOX")), l1Cli)
 	if err != nil {
 		return nil, err
@@ -48,22 +48,32 @@ func NewPacayaL1Clients(l1Cli *ethclient.Client) (*PacayaL1Clients, error) {
 		TaikoToken: taikoToken,
 		ProverSet:  proverSet,
 		ForkRouter: forkRouter,
-		ForkHeight: 10,
 	}, nil
 }
 
 type PacayaL2Clients struct {
 	TaikoAnchor *taikoanchor.TaikoAnchor
+	ForkHeight  uint64
 }
 
-func NewPacayaL2Clients(l2cli *ethclient.Client) (*PacayaL2Clients, error) {
+func NewPacayaL2Clients(l2cli *rpc.EthClient) (*PacayaL2Clients, error) {
 	taikoAnchor, err := taikoanchor.NewTaikoAnchor(common.HexToAddress(params.ParamByKey("TAIKO_ANCHOR")), l2cli)
 	if err != nil {
 		return nil, err
 	}
 
+	forkHeight := uint64(0)
+	switch l2cli.ChainID.Uint64() {
+	case ethparams.HeklaNetworkID.Uint64(),
+		ethparams.TaikoMainnetNetworkID.Uint64(),
+		ethparams.PreconfDevnetNetworkID.Uint64():
+	default:
+		forkHeight = 10
+	}
+
 	return &PacayaL2Clients{
 		TaikoAnchor: taikoAnchor,
+		ForkHeight:  forkHeight,
 	}, nil
 }
 
@@ -73,7 +83,7 @@ type PacayaClients struct {
 	*PacayaL2Clients
 }
 
-func NewPacayaClients(l1cli, l2cli *ethclient.Client) (*PacayaClients, error) {
+func NewPacayaClients(l1cli, l2cli *rpc.EthClient) (*PacayaClients, error) {
 	l1Clients, err := NewPacayaL1Clients(l1cli)
 	if err != nil {
 		return nil, err
@@ -88,8 +98,4 @@ func NewPacayaClients(l1cli, l2cli *ethclient.Client) (*PacayaClients, error) {
 		PacayaL1Clients: l1Clients,
 		PacayaL2Clients: l2Clients,
 	}, nil
-}
-
-func (p *PacayaClients) SetForkHeight(height uint64) {
-	p.ForkHeight = height
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"math/big"
 	"net"
 	"strings"
@@ -33,6 +34,10 @@ func (ec *ExecutionClient) EngineURL() string {
 	return fmt.Sprintf("http://%v:%d", ec.NetworkIP(), EthEngineRPC)
 }
 
+func (ec *ExecutionClient) HTTPClient() *rpc.EthClient {
+	return ec.EthClient
+}
+
 func (ec *ExecutionClient) HeaderByHash(
 	parentCtx context.Context,
 	h common.Hash,
@@ -58,7 +63,7 @@ func (ec *ExecutionClient) HeaderByLabel(
 	ctx, cancel := utils.ContextTimeoutRPC(parentCtx)
 	defer cancel()
 	h := new(types.Header)
-	client := ec.EthClient.Client()
+	client := ec.EthClient
 	err := client.CallContext(
 		ctx,
 		h,
@@ -102,7 +107,7 @@ func (ec *ExecutionClient) SendTransaction(
 	ctx, cancel := utils.ContextTimeoutRPC(parentCtx)
 	defer cancel()
 
-	client := ec.EthClient.Client()
+	client := ec.EthClient
 	return client.CallContext(ctx, nil, "eth_sendRawTransaction", hexutil.Encode(data))
 }
 

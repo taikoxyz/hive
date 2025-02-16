@@ -50,7 +50,7 @@ func (ts BaseTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 	}
 
 	// Verify all l2eth nodes.
-	ts.verifyL2Nodes(ctx, t, anvil.GetLastVerifiedBlockId(ctx), nodes)
+	ts.verifyL2Nodes(ctx, t, anvil.GetLastVerifiedBlockId(ctx, anvil.EthClient), nodes)
 }
 
 func waitL2LatestNumber(ctx context.Context, t *hivesim.T, targetNumber uint64, l2Eth *clients.TaikoGethClient) {

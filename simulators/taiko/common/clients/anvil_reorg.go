@@ -3,12 +3,12 @@ package clients
 import (
 	"context"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"math/big"
 	"time"
 )
 
-func (a *AnvilClient) StartRecordReorgPoints(ctx context.Context, l2cli *ethclient.Client) {
+func (a *AnvilClient) StartRecordReorgPoints(ctx context.Context, l2cli *rpc.EthClient) {
 
 	a.reorgCache = make(map[uint64]*L1BlockInfo)
 	a.reorgCh = make(chan struct{})

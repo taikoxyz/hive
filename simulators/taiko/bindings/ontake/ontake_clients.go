@@ -2,7 +2,7 @@ package ontake
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"taiko/bindings/ontake/forkrouter"
 	"taiko/bindings/ontake/guardianprover"
 	"taiko/bindings/ontake/libproposing"
@@ -21,10 +21,9 @@ type OntakeL1Clients struct {
 	GuardianProverMinority *guardianprover.GuardianProver
 	ProverSet              *proverset.ProverSet
 	ForkRouter             *forkrouter.ForkRouter
-	ForkHeight             uint64
 }
 
-func NewOntakeL1Clients(l1Cli *ethclient.Client) (*OntakeL1Clients, error) {
+func NewOntakeL1Clients(l1Cli *rpc.EthClient) (*OntakeL1Clients, error) {
 	taikoL1, err := taikol1.NewTaikoL1(params.ParamToAddress("TAIKO_INBOX"), l1Cli)
 	if err != nil {
 		return nil, err
@@ -71,7 +70,6 @@ func NewOntakeL1Clients(l1Cli *ethclient.Client) (*OntakeL1Clients, error) {
 		GuardianProverMinority: guardianProverMinority,
 		ProverSet:              proverSet,
 		ForkRouter:             forkRouter,
-		ForkHeight:             0,
 	}, nil
 }
 
@@ -79,7 +77,7 @@ type OntakeL2Clients struct {
 	TaikoL2 *taikol2.TaikoL2
 }
 
-func NewOntakeL2Clients(l2Cli *ethclient.Client) (*OntakeL2Clients, error) {
+func NewOntakeL2Clients(l2Cli *rpc.EthClient) (*OntakeL2Clients, error) {
 	taikoL2, err := taikol2.NewTaikoL2(params.ParamToAddress("TAIKO_ANCHOR"), l2Cli)
 	if err != nil {
 		return nil, err
@@ -96,7 +94,7 @@ type OntakeClients struct {
 	*OntakeL2Clients
 }
 
-func NewOntakeClients(l1cli, l2cli *ethclient.Client) (*OntakeClients, error) {
+func NewOntakeClients(l1cli, l2cli *rpc.EthClient) (*OntakeClients, error) {
 	l1Clients, err := NewOntakeL1Clients(l1cli)
 	if err != nil {
 		return nil, err
@@ -111,8 +109,4 @@ func NewOntakeClients(l1cli, l2cli *ethclient.Client) (*OntakeClients, error) {
 		OntakeL1Clients: l1Clients,
 		OntakeL2Clients: l2Clients,
 	}, nil
-}
-
-func (o *OntakeClients) SetForkHeight(height uint64) {
-	o.ForkHeight = height
 }

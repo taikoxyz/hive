@@ -3,10 +3,8 @@ package clients
 import (
 	"context"
 	"fmt"
-	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"math/big"
-	"taiko/bindings/ontake"
-	"taiko/bindings/pacaya"
 	"time"
 )
 
@@ -15,7 +13,7 @@ type EthExposeAPI interface {
 	HttpURL() string
 	WSURL() string
 	EngineURL() string
-	HTTPClient() *ethclient.Client
+	HTTPClient() *rpc.EthClient
 }
 
 type EthNode struct {
@@ -24,12 +22,12 @@ type EthNode struct {
 	HttpPort   int64
 	WSPort     int64
 	EnginePort int64
-	EthClient  *ethclient.Client
+	EthClient  *rpc.EthClient
 
-	OntakeL1 *ontake.OntakeL1Clients
-	PacayaL1 *pacaya.PacayaL1Clients
-	OntakeL2 *ontake.OntakeL2Clients
-	PacayaL2 *pacaya.PacayaL2Clients
+	//OntakeL1 *ontake.OntakeL1Clients
+	//PacayaL1 *pacaya.PacayaL1Clients
+	//OntakeL2 *ontake.OntakeL2Clients
+	//PacayaL2 *pacaya.PacayaL2Clients
 }
 
 func (ec *EthNode) Start() (err error) {
@@ -39,15 +37,19 @@ func (ec *EthNode) Start() (err error) {
 		}
 	}
 
-	// Connect to eth client
-	ec.EthClient, err = ethclient.Dial(ec.HttpURL())
-	if err != nil {
-		return err
+	// try 20 times until the eth client is connected.
+	for times := 0; times < 20; times++ {
+		ec.EthClient, err = rpc.NewEthClient(context.Background(), ec.HttpURL(), time.Second)
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Second)
 	}
 
-	return ec.EthIsReady(context.Background(), time.Second*20)
+	return err
 }
 
+/*
 func (ec *EthNode) InitL1Clients() (err error) {
 	ec.OntakeL1, err = ontake.NewOntakeL1Clients(ec.EthClient)
 	if err != nil {
@@ -64,9 +66,9 @@ func (ec *EthNode) InitL2Clients() (err error) {
 	}
 	ec.PacayaL2, err = pacaya.NewPacayaL2Clients(ec.EthClient)
 	return err
-}
+}*/
 
-func (ec *EthNode) HTTPClient() *ethclient.Client {
+func (ec *EthNode) HTTPClient() *rpc.EthClient {
 	return ec.EthClient
 }
 
@@ -89,22 +91,6 @@ func (ec *EthNode) EngineURL() string {
 		ec.EnginePort = EthEngineRPC
 	}
 	return fmt.Sprintf("http://%v:%d", ec.NetworkIP(), ec.EnginePort)
-}
-
-func (ec *EthNode) EthIsReady(ctx context.Context, timeout time.Duration) error {
-	for ; ; <-time.Tick(time.Second) {
-		ec.Logf("waiting for %s to be ready", ec.ClientType())
-		select {
-		case <-time.After(timeout):
-			return fmt.Errorf("reach timeout but %s is not ready", ec.ClientType())
-		default:
-			_, err := ec.EthClient.ChainID(ctx)
-			if err != nil {
-				continue
-			}
-			return nil
-		}
-	}
 }
 
 func (ec *EthNode) WaitLatestNumber(ctx context.Context, timeout time.Duration, number uint64) error {

@@ -37,6 +37,7 @@ func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 	}
 
 	driver := node.DriverClient
+	//pacayaTokens, err := pacaya.NewPacayaClients(driver.L1, driver.L2)
 
 	// Wait until l2 height touched pacaya fork.
 	for driver.L2Head.Load().Number.Uint64() < driver.PacayaClients.ForkHeight {
