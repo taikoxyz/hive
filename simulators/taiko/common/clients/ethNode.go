@@ -23,11 +23,6 @@ type EthNode struct {
 	WSPort     int64
 	EnginePort int64
 	EthClient  *rpc.EthClient
-
-	//OntakeL1 *ontake.OntakeL1Clients
-	//PacayaL1 *pacaya.PacayaL1Clients
-	//OntakeL2 *ontake.OntakeL2Clients
-	//PacayaL2 *pacaya.PacayaL2Clients
 }
 
 func (ec *EthNode) Start() (err error) {
@@ -37,7 +32,7 @@ func (ec *EthNode) Start() (err error) {
 		}
 	}
 
-	// try 20 times until the eth client is connected.
+	// Try 20 times until the eth client is ready to connect.
 	for times := 0; times < 20; times++ {
 		ec.EthClient, err = rpc.NewEthClient(context.Background(), ec.HttpURL(), time.Second)
 		if err == nil {
@@ -48,25 +43,6 @@ func (ec *EthNode) Start() (err error) {
 
 	return err
 }
-
-/*
-func (ec *EthNode) InitL1Clients() (err error) {
-	ec.OntakeL1, err = ontake.NewOntakeL1Clients(ec.EthClient)
-	if err != nil {
-		return err
-	}
-	ec.PacayaL1, err = pacaya.NewPacayaL1Clients(ec.EthClient)
-	return err
-}
-
-func (ec *EthNode) InitL2Clients() (err error) {
-	ec.OntakeL2, err = ontake.NewOntakeL2Clients(ec.EthClient)
-	if err != nil {
-		return err
-	}
-	ec.PacayaL2, err = pacaya.NewPacayaL2Clients(ec.EthClient)
-	return err
-}*/
 
 func (ec *EthNode) HTTPClient() *rpc.EthClient {
 	return ec.EthClient

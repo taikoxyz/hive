@@ -53,7 +53,6 @@ func NewPacayaL1Clients(l1Cli *rpc.EthClient) (*PacayaL1Clients, error) {
 
 type PacayaL2Clients struct {
 	TaikoAnchor *taikoanchor.TaikoAnchor
-	ForkHeight  uint64
 }
 
 func NewPacayaL2Clients(l2cli *rpc.EthClient) (*PacayaL2Clients, error) {
@@ -62,18 +61,8 @@ func NewPacayaL2Clients(l2cli *rpc.EthClient) (*PacayaL2Clients, error) {
 		return nil, err
 	}
 
-	forkHeight := uint64(0)
-	switch l2cli.ChainID.Uint64() {
-	case ethparams.HeklaNetworkID.Uint64(),
-		ethparams.TaikoMainnetNetworkID.Uint64(),
-		ethparams.PreconfDevnetNetworkID.Uint64():
-	default:
-		forkHeight = 10
-	}
-
 	return &PacayaL2Clients{
 		TaikoAnchor: taikoAnchor,
-		ForkHeight:  forkHeight,
 	}, nil
 }
 
@@ -98,4 +87,16 @@ func NewPacayaClients(l1cli, l2cli *rpc.EthClient) (*PacayaClients, error) {
 		PacayaL1Clients: l1Clients,
 		PacayaL2Clients: l2Clients,
 	}, nil
+}
+
+func PacayaForkNumber(l2cli *rpc.EthClient) uint64 {
+	forkHeight := uint64(0)
+	switch l2cli.ChainID.Uint64() {
+	case ethparams.HeklaNetworkID.Uint64(),
+		ethparams.TaikoMainnetNetworkID.Uint64(),
+		ethparams.PreconfDevnetNetworkID.Uint64():
+	default:
+		forkHeight = 10
+	}
+	return forkHeight
 }

@@ -6,6 +6,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/hive/hivesim"
+	"taiko/bindings/ontake"
+	"taiko/bindings/ontake/taikol1"
+	"taiko/bindings/pacaya"
 	"taiko/common/clients"
 	"taiko/common/testnet"
 	tn "taiko/common/testnet"
@@ -36,8 +39,31 @@ func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 		time.Sleep(time.Minute * 120)
 	}
 
-	driver := node.DriverClient
-	//pacayaTokens, err := pacaya.NewPacayaClients(driver.L1, driver.L2)
+	var (
+		driver   = node.DriverClient
+		proposer = node.ProposerClient
+	)
+	if driver == nil || proposer == nil {
+		t.Errorf("cannot get driver or proposer client")
+		return
+	}
+
+	l1cli, l2cli := driver.L1, driver.L2
+	ontakeTokens, err := ontake.NewOntakeClients(l1cli, l2cli)
+	t.Nil(err)
+
+	eventsCh := make(chan *taikol1.TaikoL1BlockProposedV2, 3)
+	sub, err := ontakeTokens.TaikoL1.WatchBlockProposedV2(nil, eventsCh, nil)
+	t.Nil(err)
+	defer sub.Unsubscribe()
+
+	for event := range eventsCh {
+		if event.BlockId.Uint64() == pacaya.PacayaForkNumber(l2cli) {
+			// pause proposer
+			node.ProposerClient.PauseClient()
+			break
+		}
+	}
 
 	// Wait until l2 height touched pacaya fork.
 	for driver.L2Head.Load().Number.Uint64() < driver.PacayaClients.ForkHeight {
