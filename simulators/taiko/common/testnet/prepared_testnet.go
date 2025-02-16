@@ -417,7 +417,7 @@ func (p *PreparedTestnet) prepareDriverClient(
 		// Expose the eth1 ports to the host.
 		if testnet.Debug {
 			opts = append(opts, hivesim.Params{
-				"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp", clients.PreconfServerPort),
+				"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp:%d", clients.PreconfServerPort, clients.PreconfServerPort),
 			})
 		}
 

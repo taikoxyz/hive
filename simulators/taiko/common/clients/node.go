@@ -15,7 +15,7 @@ const (
 	EthWSPort         = 8546
 	EthEngineRPC      = 8551
 	BeaconPort        = 3500
-	PreconfServerPort = 7000
+	PreconfServerPort = 7001
 )
 
 // A node bundles together:

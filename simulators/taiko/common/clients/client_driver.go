@@ -14,6 +14,7 @@ import (
 	"math/big"
 	"os"
 	"taiko/common/utils"
+	"taiko/params"
 )
 
 type DriverClient struct {
@@ -29,12 +30,12 @@ func (d *DriverClient) Start() (err error) {
 
 	d.Logf("driver client, L1_BEACON: %s", os.Getenv("L1_BEACON"))
 
-	d.Client, err = rpc.NewClient(context.Background(), GetClientConfig())
+	client, err := rpc.NewClient(context.Background(), GetClientConfig())
 	if err != nil {
 		return err
 	}
 
-	d.State, err = NewState(d.Client)
+	d.State, err = NewState(client)
 	if err != nil {
 		return err
 	}
@@ -68,7 +69,7 @@ func (d *DriverClient) BuildPreconfBlock(
 	}
 
 	// Create and send a batch of txs.
-	_, signedTxs, err := buildPreconfBlock(context.Background(), d.Client, d.PreconfServerURL(), l1Head, l2BlockID)
+	_, signedTxs, err := buildPreconfBlock(context.Background(), d.Client, d.PreconfServerURL(), l1Head, l2BlockID, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -83,25 +84,29 @@ func buildPreconfBlock(
 	preconfURL string,
 	anchoredL1Block *types.Header,
 	l2BlockID uint64,
+	txs types.Transactions,
 ) (*types.Header, types.Transactions, error) {
 	l2cli := rpccli.L2
 
 	// Create and send a batch of txs.
-	signedTxs, err := utils.CreateL2Txs(context.Background(), l2cli, true)
-	if err != nil {
-		return nil, nil, err
-	}
-	txBytes, err := utils.EncodeAndCompressTxList(signedTxs)
+	/*if txs == nil {
+		signedTxs, err := utils.CreateL2Txs(context.Background(), l2cli, true)
+		if err != nil {
+			return nil, nil, err
+		}
+		txs = signedTxs
+	}*/
+	txBytes, err := utils.EncodeAndCompressTxList(txs)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	preconferPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIVATE_KEY")))
+	preconferPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIV_KEY")))
 	if err != nil {
 		return nil, nil, err
 	}
 
-	parent, err := l2cli.HeaderByNumber(ctx, big.NewInt(0).SetUint64(l2BlockID))
+	parent, err := l2cli.HeaderByNumber(ctx, big.NewInt(0).SetUint64(l2BlockID-1))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -114,7 +119,7 @@ func buildPreconfBlock(
 	reqBody := &preconfblocks.BuildPreconfBlockRequestBody{
 		ExecutableData: &preconfblocks.ExecutableData{
 			ParentHash:   parent.Hash(),
-			FeeRecipient: crypto.PubkeyToAddress(preconferPrivKey.PublicKey),
+			FeeRecipient: params.ParamToAddress("L2_SUGGESTED_FEE_RECIPIENT"),
 			Number:       l2BlockID,
 			GasLimit:     uint64(preconfCfg.BlockMaxGasLimit()),
 			Timestamp:    anchoredL1Block.Time,
@@ -131,7 +136,8 @@ func buildPreconfBlock(
 		return nil, nil, err
 	}
 
-	sig, err := crypto.Sign(crypto.Keccak256(payload), preconferPrivKey)
+	hash := crypto.Keccak256(payload)
+	sig, err := crypto.Sign(hash, preconferPrivKey)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -140,7 +146,7 @@ func buildPreconfBlock(
 	// Try to propose a soft block with batch ID 0
 	res, err := resty.New().
 		R().
-		SetBody(&preconfblocks.BuildPreconfBlockRequestBody{}).
+		SetBody(reqBody).
 		Post(preconfURL + "/preconfBlocks")
 	if err != nil {
 		return nil, nil, err
@@ -154,5 +160,5 @@ func buildPreconfBlock(
 		return nil, nil, err
 	}
 
-	return body.BlockHeader, signedTxs, nil
+	return body.BlockHeader, txs, nil
 }

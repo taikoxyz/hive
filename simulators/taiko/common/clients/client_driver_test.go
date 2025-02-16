@@ -6,8 +6,11 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/assert"
+	preconfblocks "github.com/taikoxyz/taiko-mono/packages/taiko-client/driver/preconf_blocks"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"os"
 	"taiko/bindings/ontake"
@@ -75,26 +78,61 @@ func TestCC(t *testing.T) {
 }
 
 func TestPreconfAPI(t *testing.T) {
-	l2Number, err := l2Cli.BlockNumber(context.Background())
+	l2Block, err := l2Cli.BlockByNumber(context.Background(), nil)
 	assert.NoError(t, err)
 
 	anchorL1Header, err := l1Cli.HeaderByNumber(context.Background(), nil)
 	assert.NoError(t, err)
 
-	header, txs, err := buildPreconfBlock(context.Background(), rpccli, fmt.Sprintf(""), anchorL1Header, l2Number)
+	header, txs, err := buildPreconfBlock(
+		context.Background(),
+		rpccli,
+		fmt.Sprintf("http://localhost:%d", PreconfServerPort),
+		anchorL1Header,
+		l2Block.NumberU64(),
+		nil, //[]*types.Transaction{l2Block.Transactions()[0]},
+	)
+	assert.NoError(t, err)
+	t.Log(header.Hash().String())
+
+	l2Block, err = l2Cli.BlockByHash(context.Background(), header.Hash())
 	assert.NoError(t, err)
 
-	l1Block, err := l1Cli.BlockByHash(context.Background(), header.Hash())
-	assert.NoError(t, err)
-
-	assert.Equalf(t, l1Block.Transactions().Len(), len(txs), "transaction length not match")
+	assert.Equalf(t, l2Block.Transactions().Len(), len(txs), "transaction length not match")
 
 	txsMap := make(map[common.Hash]*types.Transaction)
 	for _, tx := range txs {
 		txsMap[tx.Hash()] = tx
 	}
 
-	for _, tx := range l1Block.Transactions() {
+	for _, tx := range l2Block.Transactions() {
 		assert.Equalf(t, true, txsMap[tx.Hash()] != nil, fmt.Sprintf("tx %s not found", tx.Hash().String()))
 	}
+}
+
+func TestCC1(t *testing.T) {
+	t.Log(os.Getenv("L1_PROPOSER_PRIV_KEY"))
+	preconferPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIV_KEY")))
+	assert.NoError(t, err)
+
+	payload, err := rlp.EncodeToBytes(&preconfblocks.BuildPreconfBlockRequestBody{})
+	assert.NoError(t, err)
+
+	hash := crypto.Keccak256(payload)
+
+	sign, err := crypto.Sign(hash, preconferPrivKey)
+	assert.NoError(t, err)
+
+	pubKey, err := crypto.Ecrecover(hash, sign)
+	assert.NoError(t, err)
+	t.Log(common.Bytes2Hex(crypto.FromECDSAPub(&preconferPrivKey.PublicKey)))
+	t.Log(common.Bytes2Hex(pubKey))
+
+	isValid := crypto.VerifySignature(pubKey, hash, sign[:64])
+	t.Log(isValid)
+
+	pk, err := crypto.UnmarshalPubkey(pubKey)
+	assert.NoError(t, err)
+
+	t.Log(crypto.PubkeyToAddress(*pk).Hex())
 }

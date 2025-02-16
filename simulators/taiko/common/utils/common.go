@@ -134,7 +134,7 @@ func initOntakeContracts(l1cli *ethclient.Client) error {
 		if err != nil {
 			return err
 		}
-		for _, auth := range params.L1Auths {
+		for _, auth := range params.L1Auths[1:5] {
 			// Enable prover set.
 			if err = enableProverSet(l1cli, proverSet, ownerAuth, auth.From); err != nil {
 				return err

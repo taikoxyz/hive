@@ -13,6 +13,6 @@ ADD common.sh .
 ADD jwt.hex /tmp/jwt.hex
 
 # expose soft server port.
-EXPOSE 7000/tcp
+EXPOSE 7001/tcp
 
 ENTRYPOINT ["sh", "/taiko-client/driver.sh"]

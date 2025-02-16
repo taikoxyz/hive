@@ -7,6 +7,7 @@ import (
 	"taiko/common/clients"
 	suite_base "taiko/suites/base"
 	suite_blob "taiko/suites/blob"
+	suit_preconf "taiko/suites/preconf"
 	suite_reorg "taiko/suites/reorg"
 )
 
@@ -29,4 +30,5 @@ func main() {
 	hivesim.MustRunSuite(sim, suite_base.Suite(clientsByRole))
 	hivesim.MustRunSuite(sim, suite_reorg.Suite(clientsByRole))
 	hivesim.MustRunSuite(sim, suite_blob.Suite(clientsByRole))
+	hivesim.MustRunSuite(sim, suit_preconf.Suite(clientsByRole))
 }

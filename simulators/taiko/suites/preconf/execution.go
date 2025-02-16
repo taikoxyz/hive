@@ -31,6 +31,11 @@ func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 	node := testnet.Nodes[0]
 	t.Nil(node.Start(), "cannot start node")
 
+	// For Debug
+	if r.IsDebug() {
+		time.Sleep(time.Minute * 120)
+	}
+
 	driver := node.DriverClient
 
 	// Wait until l2 height touched pacaya fork.

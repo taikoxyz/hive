@@ -20,12 +20,12 @@ func (p *ProposerClient) Start() (err error) {
 		return err
 	}
 
-	p.Client, err = rpc.NewClient(context.Background(), GetClientConfig())
+	client, err := rpc.NewClient(context.Background(), GetClientConfig())
 	if err != nil {
 		return err
 	}
 
-	p.State, err = NewState(p.Client)
+	p.State, err = NewState(client)
 	if err != nil {
 		return err
 	}
