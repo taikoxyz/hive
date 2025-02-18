@@ -15,15 +15,17 @@ paths=(
     "ProverSet"
     "ForkRouter"
     "ComposeVerifier"
+    "layer1/TaikoWrapper"
+    "layer1/ForcedInclusionStore"
 )
 
 bindings_path=bindings/pacaya
 
 for (( i = 0; i < ${#paths[@]}; ++i ));
 do
-    mkdir -p $bindings_path/$lower
     latest_name=$(basename ${paths[i]})
     lower=$(echo "${latest_name}" | tr '[:upper:]' '[:lower:]')
+    mkdir -p $bindings_path/$lower
     jq .abi "$TAIKO_MONO_DIR"/packages/protocol/out/${paths[i]}.sol/${latest_name}.json > $bindings_path/$lower/${latest_name}.json
     abigen --abi $bindings_path/$lower/${latest_name}.json \
     --pkg $lower \

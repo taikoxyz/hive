@@ -4,6 +4,7 @@ params_path=params
 rm -f $params_path/.env
 
 OLD_FORK_TAIKO_MONO=${OLD_FORK_TAIKO_MONO:-$HOME/projects/taiko/tmp/taiko-mono}
+TAIKO_MONO_DIR=${TAIKO_MONO_DIR:-$HOME/projects/taiko/taiko-mono}
 
 L1_CONTRACT_OWNER_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 L1_PROPOSER_PRIV_KEY=0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
@@ -13,11 +14,16 @@ L2_SUGGESTED_FEE_RECIPIENT=0x70997970C51812dc3A010C7d01b50e0d17dc79C8
 
 # get deployed contract address.
 DEPLOYMENT_JSON=$(cat "$OLD_FORK_TAIKO_MONO"/packages/protocol/deployments/deploy_l1.json)
+PACAYA_DEPLOYMENT_JSON=$(cat "$TAIKO_MONO_DIR"/packages/protocol/deployments/deploy_l1.json)
 TAIKO_INBOX=$(echo "$DEPLOYMENT_JSON" | jq '.taiko' | sed 's/\"//g')
 TAIKO_TOKEN=$(echo "$DEPLOYMENT_JSON" | jq '.taiko_token' | sed 's/\"//g')
 PROVER_SET=$(echo "$DEPLOYMENT_JSON" | jq '.prover_set' | sed 's/\"//g')
 GUARDIAN_PROVER_MINORITY=$(echo "$DEPLOYMENT_JSON" | jq '.guardian_prover_minority' | sed 's/\"//g')
 GUARDIAN_PROVER_CONTRACT=$(echo "$DEPLOYMENT_JSON" | jq '.guardian_prover' | sed 's/\"//g')
+export PROVER_SET=$(echo "$DEPLOYMENT_JSON" | jq '.prover_set' | sed 's/\"//g')
+export TAIKO_WRAPPER=$(echo "$PACAYA_DEPLOYMENT_JSON" | jq '.taiko_wrapper' | sed 's/\"//g')
+export FORCED_INCLUSION_STORE=$(echo "$PACAYA_DEPLOYMENT_JSON" | jq '.forced_inclusion_store' | sed 's/\"//g')
+
 
 # show the integration test environment variables.
 # L1_BEACON_HTTP_ENDPOINT=$L1_BEACON_HTTP_ENDPOINT
@@ -39,9 +45,11 @@ PROVER_L1_NODE_VERSION=1.0.0
 PROVER_L2_NODE_VERSION=0.1.0
 PROVER_ALLOWANCE=10.0
 TAIKO_INBOX=$TAIKO_INBOX
+TAIKO_WRAPPER=$TAIKO_WRAPPER
+FORCED_INCLUSION_STORE=$FORCED_INCLUSION_STORE
 TAIKO_ANCHOR=$TAIKO_ANCHOR
 TAIKO_TOKEN=$TAIKO_TOKEN
-# PROVER_SET=$PROVER_SET
+PROVER_SET=$PROVER_SET
 GUARDIAN_PROVER_MINORITY=$GUARDIAN_PROVER_MINORITY
 GUARDIAN_PROVER_CONTRACT=$GUARDIAN_PROVER_CONTRACT
 L2_SUGGESTED_FEE_RECIPIENT=$L2_SUGGESTED_FEE_RECIPIENT

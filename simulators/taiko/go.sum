@@ -687,6 +687,8 @@ github.com/taikoxyz/taiko-geth v1.12.1-0.20250218031651-437b5c6114e3 h1:ad298ZAU
 github.com/taikoxyz/taiko-geth v1.12.1-0.20250218031651-437b5c6114e3/go.mod h1:+l/fr42Mma+xBnhefL/+z11/hcmJ2egl+ScIVPjhc7E=
 github.com/taikoxyz/taiko-mono v0.0.0-20250213114632-748181073d34 h1:D7vJhNTe0nQKKsmwz5dxdHOUEYalzODIWkzuxhdYZ1Y=
 github.com/taikoxyz/taiko-mono v0.0.0-20250213114632-748181073d34/go.mod h1:bH0X/fYuPGGZaMiEFYT6gFCKUpS/i7PEWuTodVOWr7c=
+github.com/taikoxyz/taiko-mono v0.0.0-20250218014112-b0ce6bf67f04 h1:87T5ibLRg0ZXZdjQXc/PXIzjMu0ATLrp/Sbqblq5ifA=
+github.com/taikoxyz/taiko-mono v0.0.0-20250218014112-b0ce6bf67f04/go.mod h1:C9+YZNkPlHUX/gzGoQ8RB8pq7uhrn1EnlKuWikP/ZYw=
 github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07/go.mod h1:kDXzergiv9cbyO7IOYJZWg1U88JhDg3PB6klq9Hg2pA=
 github.com/thomaso-mirodin/intmath v0.0.0-20160323211736-5dc6d854e46e h1:cR8/SYRgyQCt5cNCMniB/ZScMkhI9nk8U5C7SbISXjo=
 github.com/thomaso-mirodin/intmath v0.0.0-20160323211736-5dc6d854e46e/go.mod h1:Tu4lItkATkonrYuvtVjG0/rhy15qrNGNTjPdaphtZ/8=
