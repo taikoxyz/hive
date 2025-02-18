@@ -1,5 +1,5 @@
 ARG baseimage=ghcr.io/foundry-rs/foundry
-ARG tag=nightly
+ARG tag=stable
 
 FROM $baseimage:$tag AS builder
 
