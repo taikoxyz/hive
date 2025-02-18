@@ -3,12 +3,8 @@ package preconf
 import (
 	"context"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/hive/hivesim"
-	"taiko/bindings/ontake"
-	"taiko/bindings/ontake/taikol1"
-	"taiko/bindings/pacaya"
 	"taiko/common/clients"
 	"taiko/common/testnet"
 	tn "taiko/common/testnet"
@@ -34,79 +30,22 @@ func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 	node := testnet.Nodes[0]
 	t.Nil(node.Start(), "cannot start node")
 
-	// For Debug
-	if r.IsDebug() {
-		time.Sleep(time.Minute * 120)
-	}
-
 	var (
-		driver   = node.DriverClient
 		proposer = node.ProposerClient
+		driver   = node.DriverClient
+		l2geth   = node.L2EthClient
 	)
 	if driver == nil || proposer == nil {
 		t.Errorf("cannot get driver or proposer client")
 		return
 	}
 
-	l1cli, l2cli := driver.L1, driver.L2
-	ontakeTokens, err := ontake.NewOntakeClients(l1cli, l2cli)
-	t.Nil(err)
+	t.Nil(l2geth.WaitLatestNumber(ctx, time.Second*30, 13))
+	proposer.PauseClient()
+	driver.PauseClient()
 
-	eventsCh := make(chan *taikol1.TaikoL1BlockProposedV2, 3)
-	sub, err := ontakeTokens.TaikoL1.WatchBlockProposedV2(nil, eventsCh, nil)
-	t.Nil(err)
-	defer sub.Unsubscribe()
-
-	for event := range eventsCh {
-		if event.BlockId.Uint64() == pacaya.PacayaForkNumber(l2cli) {
-			// pause proposer
-			node.ProposerClient.PauseClient()
-			break
-		}
+	// For Debug
+	if r.IsDebug() {
+		time.Sleep(time.Minute * 120)
 	}
-
-	// Wait until l2 height touched pacaya fork.
-	for driver.L2Head.Load().Number.Uint64() < driver.PacayaClients.ForkHeight {
-		time.Sleep(1 * time.Second)
-	}
-}
-
-func (r *PreconfTestSpec) buildPreconfBlock(
-	t *hivesim.T,
-	l2EthClient *clients.TaikoGethClient,
-	driver *clients.DriverClient,
-) {
-	t.Logf("start insert new soft block")
-	defer t.Logf("successfully insert new soft block")
-
-	l2Block, err := driver.L2.BlockByNumber(context.Background(), nil)
-	t.Nil(err, "l2 latest block")
-
-	l2Num := l2Block.NumberU64()
-	l1Head, txs, err := driver.BuildPreconfBlock(
-		l2Num+1,
-		nil,
-	)
-	t.Nil(err)
-	r.anchorL1Head = l1Head
-
-	// wait l2 node.
-	t.Nil(l2EthClient.WaitTargetNumber(context.Background(), time.Second*60, l2Num+1))
-
-	l2Block, err = driver.L2.BlockByNumber(context.Background(), nil)
-	t.Nil(err, "l2 latest block")
-
-	t.Equal(l2Num+1, l2Block.NumberU64(), "block number")
-
-	// check txs count.
-	t.Equal(txs.Len()+1, l2Block.Transactions().Len(), "transaction count")
-
-	// check l1Origin variables.
-	l1Origin, err := driver.L2.L1OriginByID(context.Background(), l2Block.Number())
-	t.Nil(err, "l1 origin")
-
-	t.Equal(l2Block.Number(), l1Origin.BlockID, "l1Origin's blockID")
-	t.Equal(l2Block.Hash().String(), l1Origin.L2BlockHash.String(), "l1Origin's l2BlockHash")
-	t.Equal(uint64(0), l1Origin.L1BlockHeight.Uint64(), "l1Origin's l1BlockHeight")
-	t.Equal(common.Hash{}.String(), l1Origin.L1BlockHash.String(), "l1Origin's l1BlockHash")
 }

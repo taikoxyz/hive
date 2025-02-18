@@ -69,7 +69,7 @@ func (d *DriverClient) BuildPreconfBlock(
 	}
 
 	// Create and send a batch of txs.
-	_, signedTxs, err := buildPreconfBlock(context.Background(), d.Client, d.PreconfServerURL(), l1Head, l2BlockID, nil)
+	_, signedTxs, err := BuildPreconfBlock(context.Background(), d.Client, d.PreconfServerURL(), l1Head, l2BlockID, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -78,7 +78,7 @@ func (d *DriverClient) BuildPreconfBlock(
 	return l1Head, signedTxs, nil
 }
 
-func buildPreconfBlock(
+func BuildPreconfBlock(
 	ctx context.Context,
 	rpccli *rpc.Client,
 	preconfURL string,
@@ -89,13 +89,13 @@ func buildPreconfBlock(
 	l2cli := rpccli.L2
 
 	// Create and send a batch of txs.
-	/*if txs == nil {
+	if txs == nil {
 		signedTxs, err := utils.CreateL2Txs(context.Background(), l2cli, true)
 		if err != nil {
 			return nil, nil, err
 		}
 		txs = signedTxs
-	}*/
+	}
 	txBytes, err := utils.EncodeAndCompressTxList(txs)
 	if err != nil {
 		return nil, nil, err

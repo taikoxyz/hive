@@ -73,7 +73,7 @@ func TestPreconfAPI(t *testing.T) {
 	anchorL1Header, err := l1Cli.HeaderByNumber(context.Background(), nil)
 	assert.NoError(t, err)
 
-	header, txs, err := buildPreconfBlock(
+	header, txs, err := BuildPreconfBlock(
 		context.Background(),
 		rpccli,
 		fmt.Sprintf("http://localhost:%d", PreconfServerPort),

@@ -107,6 +107,14 @@ func ParamByKey(key string) string {
 	return envParams[key]
 }
 
+func ParamToPriv(key string) *ecdsa.PrivateKey {
+	priv, err := crypto.ToECDSA(common.FromHex(envParams[key]))
+	if err != nil {
+		return nil
+	}
+	return priv
+}
+
 func ParamToBool(key string) bool {
 	parsed, err := strconv.ParseBool(envParams[key])
 	if err != nil {

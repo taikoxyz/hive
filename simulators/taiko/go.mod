@@ -5,6 +5,7 @@ go 1.23
 toolchain go1.23.2
 
 require (
+	github.com/ethereum-optimism/optimism v1.7.4
 	github.com/ethereum/go-ethereum v1.14.11
 	github.com/ethereum/hive v0.0.0-20250211191156-a6ae16310601
 	github.com/go-resty/resty/v2 v2.16.5
@@ -76,7 +77,6 @@ require (
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/elastic/gosigar v0.14.3 // indirect
 	github.com/ethereum-optimism/go-ethereum-hdwallet v0.1.3 // indirect
-	github.com/ethereum-optimism/optimism v1.7.4 // indirect
 	github.com/ethereum-optimism/superchain-registry/superchain v0.0.0-20241213092551-33a63fce8214 // indirect
 	github.com/ethereum/c-kzg-4844 v1.0.0 // indirect
 	github.com/ethereum/go-verkle v0.2.2 // indirect
