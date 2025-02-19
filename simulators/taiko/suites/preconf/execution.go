@@ -30,6 +30,11 @@ func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 	node := testnet.Nodes[0]
 	t.Nil(node.Start(), "cannot start node")
 
+	// For Debug
+	if r.IsDebug() {
+		time.Sleep(time.Minute * 120)
+	}
+
 	var (
 		proposer = node.ProposerClient
 		driver   = node.DriverClient
@@ -43,9 +48,4 @@ func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 	t.Nil(l2geth.WaitLatestNumber(ctx, time.Second*30, 13))
 	proposer.PauseClient()
 	driver.PauseClient()
-
-	// For Debug
-	if r.IsDebug() {
-		time.Sleep(time.Minute * 120)
-	}
 }

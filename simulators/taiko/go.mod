@@ -15,7 +15,7 @@ require (
 	github.com/prysmaticlabs/prysm/v5 v5.2.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
-	github.com/taikoxyz/taiko-mono v0.0.0-20250219060016-6e07a99c3a07
+	github.com/taikoxyz/taiko-mono v0.0.0-20250219090956-05e43ab2322c
 	github.com/urfave/cli/v2 v2.27.5
 )
 
@@ -192,6 +192,7 @@ require (
 	github.com/pion/srtp/v2 v2.0.20 // indirect
 	github.com/pion/stun v0.6.1 // indirect
 	github.com/pion/transport/v2 v2.2.10 // indirect
+	github.com/pion/transport/v3 v3.0.7 // indirect
 	github.com/pion/turn/v2 v2.1.6 // indirect
 	github.com/pion/webrtc/v3 v3.3.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
