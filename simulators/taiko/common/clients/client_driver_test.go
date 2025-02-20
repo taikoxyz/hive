@@ -53,11 +53,28 @@ func init() {
 }
 
 func TestVerify(t *testing.T) {
-	tx, err := l1Ontake.TaikoL1.VerifyBlocks(params.L1Auths[0], 16)
+	l2Header, err := l2Cli.HeaderByNumber(context.Background(), nil)
+	assert.NoError(t, err)
+
+	tx, err := l1Ontake.TaikoL1.VerifyBlocks(params.L1Auths[0], 32)
 	assert.NoError(t, err)
 	receipt, err := bind.WaitMined(context.Background(), l1Cli, tx)
 	assert.NoError(t, err)
 	t.Log(receipt.Status)
+
+	if l2Header.Number.Uint64() < 10 {
+		tx, err := l1Ontake.TaikoL1.VerifyBlocks(params.L1Auths[0], 32)
+		assert.NoError(t, err)
+		receipt, err := bind.WaitMined(context.Background(), l1Cli, tx)
+		assert.NoError(t, err)
+		t.Log(receipt.Status)
+	} else {
+		tx, err := l1Pacaya.TaikoInbox.VerifyBatches(params.L1Auths[0], 32)
+		assert.NoError(t, err)
+		receipt, err := bind.WaitMined(context.Background(), l1Cli, tx)
+		assert.NoError(t, err)
+		t.Log(receipt.Status)
+	}
 }
 
 func TestCC(t *testing.T) {
