@@ -49,6 +49,6 @@ func init() {
 }
 
 func TestPreconferProposer(t *testing.T) {
-	err := preconferProposer(rpccli, preconfURL)
+	_, err := preconferProposer(rpccli, preconfURL, 5)
 	assert.NoError(t, err)
 }

@@ -13,42 +13,43 @@ import (
 	"os"
 	"taiko/bindings/pacaya"
 	"taiko/common/clients"
+	"time"
 )
 
-func preconferProposer(rpccli *rpc.Client, preconfURL string) error {
+func preconferProposer(rpccli *rpc.Client, preconfURL string, preconfs int) (*types.Header, error) {
 	// get txs from l2 node tx mempool.
 	var (
 		ctx          = context.Background()
 		l1cli, l2cli = rpccli.L1, rpccli.L2
-		txsLst       = make([]types.Transactions, 0)
 	)
 
 	anchorL1Header, err := l1cli.HeaderByNumber(ctx, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	fmt.Println("preconferProposer anchor_id", anchorL1Header.Number.Uint64())
 
-	for times := 5; times > 0; times-- {
+	var latestL2Header *types.Header
+	for ; preconfs > 0; preconfs-- {
 		l2BlockID, err := l2cli.BlockNumber(ctx)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		_, txs, err := clients.BuildPreconfBlock(ctx, rpccli, preconfURL, anchorL1Header, l2BlockID+1, nil)
+		latestL2Header, _, err = clients.BuildPreconfBlock(ctx, rpccli, preconfURL, anchorL1Header, l2BlockID+1, nil)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		txsLst = append(txsLst, txs)
+		time.Sleep(time.Second)
 	}
 
 	// propose txs.
 	_, _, err = proposeTxLists(ctx, rpccli, anchorL1Header)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return latestL2Header, nil
 }
 
 func proposeTxLists(ctx context.Context, rpccli *rpc.Client, anchorheader *types.Header) (*rawdb.L1Origin, []types.Transactions, error) {

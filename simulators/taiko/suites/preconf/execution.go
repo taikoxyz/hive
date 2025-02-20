@@ -27,25 +27,43 @@ func (r *PreconfTestSpec) GetTestnetConfig() *testnet.Config {
 }
 
 func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Testnet) {
-	node := testnet.Nodes[0]
-	t.Nil(node.Start(), "cannot start node")
-
-	// For Debug
-	if r.IsDebug() {
-		time.Sleep(time.Minute * 120)
+	// Start all the cluster's nodes.
+	for _, node := range testnet.Nodes {
+		t.Nil(node.Start(), "cannot start L2EthClient")
 	}
 
 	var (
-		proposer = node.ProposerClient
+		node     = testnet.Nodes[0]
 		driver   = node.DriverClient
+		proposer = node.ProposerClient
 		l2geth   = node.L2EthClient
 	)
-	if driver == nil || proposer == nil {
-		t.Errorf("cannot get driver or proposer client")
-		return
-	}
 
 	t.Nil(l2geth.WaitLatestNumber(ctx, time.Second*30, 13))
-	proposer.PauseClient()
-	driver.PauseClient()
+
+	// For Debug
+	if r.IsDebug() {
+		proposer.PauseClient()
+		driver.PauseClient()
+		time.Sleep(time.Minute * 120)
+	}
+
+	for times := 10; times > 0; times-- {
+		l2Header, err := preconferProposer(driver.Client, driver.PreconfServerURL(), 10)
+		t.FailIfNotNil(err, "cannot preconfirmer proposer")
+
+		// verify all the l2 geth nodes.
+		verifyL2Chain(t, testnet.Nodes, l2Header)
+	}
+}
+
+func verifyL2Chain(t *hivesim.T, nodes []*clients.Node, l2Header *types.Header) {
+	for _, node := range nodes {
+		l2geth := node.L2EthClient
+		t.FailIfNotNil(l2geth.WaitLatestNumber(context.Background(), time.Second*30, l2Header.Number.Uint64()), "cannot get latest number")
+
+		actualHeader, err := l2geth.EthClient.HeaderByNumber(context.Background(), l2Header.Number)
+		t.FailIfNotNil(err, "cannot get header by number")
+		t.Equal(l2Header.Hash(), actualHeader.Hash(), "header hash mismatch")
+	}
 }

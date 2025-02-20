@@ -5,10 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/go-resty/resty/v2"
+	"github.com/taikoxyz/taiko-mono/packages/taiko-client/bindings/encoding"
+	anchorTxConstructor "github.com/taikoxyz/taiko-mono/packages/taiko-client/driver/anchor_tx_constructor"
 	preconfblocks "github.com/taikoxyz/taiko-mono/packages/taiko-client/driver/preconf_blocks"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"math/big"
@@ -58,26 +61,6 @@ func (d *DriverClient) PreconfServerURL() string {
 	return fmt.Sprintf("http://%s:%v", d.NetworkIP(), PreconfServerPort)
 }
 
-func (d *DriverClient) BuildPreconfBlock(
-	l2BlockID uint64,
-	l1Head *types.Header,
-) (*types.Header, types.Transactions, error) {
-	d.Logf("%s: build soft block", d.ClientType())
-
-	if l1Head == nil {
-		l1Head = d.L1Head.Load()
-	}
-
-	// Create and send a batch of txs.
-	_, signedTxs, err := BuildPreconfBlock(context.Background(), d.Client, d.PreconfServerURL(), l1Head, l2BlockID, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer d.Logf("%s: build soft block end, transaction length: %d", d.ClientType(), signedTxs.Len())
-
-	return l1Head, signedTxs, nil
-}
-
 func BuildPreconfBlock(
 	ctx context.Context,
 	rpccli *rpc.Client,
@@ -87,24 +70,6 @@ func BuildPreconfBlock(
 	txs types.Transactions,
 ) (*types.Header, types.Transactions, error) {
 	l2cli := rpccli.L2
-
-	// Create and send a batch of txs.
-	if txs == nil {
-		signedTxs, err := utils.CreateL2Txs(context.Background(), l2cli, true)
-		if err != nil {
-			return nil, nil, err
-		}
-		txs = signedTxs
-	}
-	txBytes, err := utils.EncodeAndCompressTxList(txs)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	preconferPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIV_KEY")))
-	if err != nil {
-		return nil, nil, err
-	}
 
 	parent, err := l2cli.HeaderByNumber(ctx, big.NewInt(0).SetUint64(l2BlockID-1))
 	if err != nil {
@@ -116,19 +81,65 @@ func BuildPreconfBlock(
 		return nil, nil, err
 	}
 
+	// Create and send a batch of txs.
+	if txs == nil {
+
+		signedTxs, err := utils.CreateL2Txs(context.Background(), l2cli, true)
+		if err != nil {
+			return nil, nil, err
+		}
+		txs = signedTxs
+	}
+
+	baseFee, err := rpccli.CalculateBaseFee(
+		ctx,
+		parent,
+		true,
+		preconfCfg.BaseFeeConfig(),
+		anchoredL1Block.Time,
+	)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to calculate base fee: %w", err)
+	}
+
+	constructor, _ := anchorTxConstructor.New(rpccli)
+	// Assemble a TaikoAnchor.anchorV3 transaction
+	anchorTx, err := constructor.AssembleAnchorV3Tx(
+		ctx,
+		anchoredL1Block.Number,
+		anchoredL1Block.Root,
+		parent.GasUsed,
+		preconfCfg.BaseFeeConfig(),
+		[][32]byte{},
+		new(big.Int).Add(parent.Number, common.Big1),
+		baseFee,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	txBytes, err := utils.EncodeAndCompressTxList(append([]*types.Transaction{anchorTx}, txs...))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	preconferPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIV_KEY")))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	extraData := encoding.EncodeBaseFeeConfig(preconfCfg.BaseFeeConfig())
 	reqBody := &preconfblocks.BuildPreconfBlockRequestBody{
 		ExecutableData: &preconfblocks.ExecutableData{
-			ParentHash:   parent.Hash(),
-			FeeRecipient: params.ParamToAddress("L2_SUGGESTED_FEE_RECIPIENT"),
-			Number:       l2BlockID,
-			GasLimit:     uint64(preconfCfg.BlockMaxGasLimit()),
-			Timestamp:    anchoredL1Block.Time,
-			Transactions: txBytes,
+			ParentHash:    parent.Hash(),
+			FeeRecipient:  params.ParamToAddress("L2_SUGGESTED_FEE_RECIPIENT"),
+			Number:        l2BlockID,
+			GasLimit:      uint64(preconfCfg.BlockMaxGasLimit()),
+			Timestamp:     anchoredL1Block.Time,
+			Transactions:  txBytes,
+			BaseFeePerGas: baseFee.Uint64(),
+			ExtraData:     hexutil.Bytes(extraData[:]),
 		},
-		AnchorBlockID:   anchoredL1Block.Number.Uint64(),
-		AnchorStateRoot: anchoredL1Block.Root,
-		SignalSlots:     [][32]byte{},
-		BaseFeeConfig:   preconfCfg.BaseFeeConfig(),
 	}
 
 	payload, err := rlp.EncodeToBytes(reqBody)

@@ -13,7 +13,7 @@ import (
 )
 
 var testSuite = hivesim.Suite{
-	Name:        "taiko-blob",
+	Name:        "blob",
 	DisplayName: "driver blob client test",
 	Location:    "suites/blob",
 }

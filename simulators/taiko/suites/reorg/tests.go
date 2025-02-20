@@ -13,7 +13,7 @@ import (
 )
 
 var testSuite = hivesim.Suite{
-	Name:        "taiko-reorg",
+	Name:        "reorg",
 	DisplayName: "Deneb reorg",
 	Location:    "suites/reorg",
 }
@@ -24,8 +24,7 @@ func init() {
 	Tests = append(Tests,
 		ReorgTestSpec{
 			BaseTestSpec: suite_base.BaseTestSpec{
-				Name:       "taiko-reorg",
-				L2SyncMode: "full",
+				Name: "reorg",
 			},
 		},
 	)

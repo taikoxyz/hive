@@ -139,7 +139,6 @@ func PrepareTestnet(
 	)
 
 	taikoGethOpts := hivesim.Bundle(commonParams, networkParams, hivesim.Params{
-		"HIVE_NODETYPE":        cfg.L2SyncMode,
 		"HIVE_LOGLEVEL":        fmt.Sprintf("%d", cfg.LogLevel),
 		"HIVE_CHECK_LIVE_PORT": fmt.Sprintf("%d", clients.EthHttpPort),
 	})
@@ -415,9 +414,11 @@ func (p *PreparedTestnet) prepareDriverClient(
 		}
 
 		// Expose the eth1 ports to the host.
-		//opts = append(opts, hivesim.Params{
-		//	"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp:%d", clients.PreconfServerPort, clients.PreconfServerPort),
-		//})
+		/*if index == 0 {
+			opts = append(opts, hivesim.Params{
+				"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp:%d", clients.PreconfServerPort, clients.PreconfServerPort),
+			})
+		}*/
 
 		return opts, nil
 	}

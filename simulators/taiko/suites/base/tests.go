@@ -12,7 +12,7 @@ import (
 )
 
 var testSuite = hivesim.Suite{
-	Name:        "taiko",
+	Name:        "base",
 	DisplayName: "Deneb Testnet",
 	Description: `Collection of test vectors that use a L1EthClient+BeaconNode+ValidatorClient testnet for Cancun+Deneb.`,
 	Location:    "suites/base",
@@ -23,8 +23,7 @@ var Tests = make([]suites.TestSpec, 0)
 func init() {
 	Tests = append(Tests,
 		BaseTestSpec{
-			Name:           "base",
-			L2SyncMode:     "full",
+			Name:           "fullsync",
 			BeaconSync:     true,
 			L2TargetNumber: 5,
 			Debug:          false,

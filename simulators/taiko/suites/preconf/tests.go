@@ -13,7 +13,7 @@ import (
 )
 
 var testSuite = hivesim.Suite{
-	Name:        "taiko",
+	Name:        "preconf",
 	DisplayName: "driver preconf test",
 	Location:    "suites/preconf",
 }
