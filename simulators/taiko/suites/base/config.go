@@ -17,9 +17,6 @@ type BaseTestSpec struct {
 	// L2 eth target number
 	L2TargetNumber uint64
 
-	// l2 geth syncmode
-	L2SyncMode string
-
 	// driver config
 	IsGuardian bool
 	BeaconSync bool
@@ -35,11 +32,6 @@ func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
 		params.SetEnvParams("GUARDIAN_PROVER_CONTRACT", "")
 	}
 
-	syncMode := "snap"
-	if ts.L2SyncMode != "" {
-		syncMode = ts.L2SyncMode
-	}
-
 	return &testnet.Config{
 		Eth1Consensus: execution_config.ExecutionCliqueConsensus{
 			CliquePrivateKey: "2e0834786285daccd064ca17f1654f67b4aef298acbb82cef9ec422fb4975622",
@@ -48,7 +40,6 @@ func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
 		Network:    "taiko_base_test",
 		LogLevel:   3,
 		FeeReceipt: "a0Ee7A142d267C1f36714E4a8F75612F20a79720",
-		L2SyncMode: syncMode,
 		BeaconSync: ts.BeaconSync,
 		Debug:      ts.Debug,
 	}
@@ -72,7 +63,6 @@ func (ts BaseTestSpec) DebugTestSpec() suites.TestSpec {
 		ts.DisplayName,
 		ts.Description,
 		ts.L2TargetNumber,
-		ts.L2SyncMode,
 		ts.IsGuardian,
 		ts.BeaconSync,
 		true,

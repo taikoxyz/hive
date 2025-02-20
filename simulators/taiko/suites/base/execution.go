@@ -19,7 +19,7 @@ func (ts BaseTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 	if target == 0 {
 		target = rand.Uint64N(50-10) + 10
 	}
-	t.Logf("BaseTestSpec target number: %d, sync module: %s", target, ts.L2SyncMode)
+	t.Logf("BaseTestSpec target number: %d", target)
 
 	if err := nodes[0].Start(); err != nil {
 		t.Fatalf("BaseTestSpec failed to start 0 node: %v", err)
@@ -45,9 +45,7 @@ func (ts BaseTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 	}
 
 	// Verify the synced blocks.
-	if ts.L2SyncMode == "full" {
-		ts.fullSyncVerify(ctx, t, testnet, target)
-	}
+	ts.fullSyncVerify(ctx, t, testnet, target)
 
 	// Verify all l2eth nodes.
 	ts.verifyL2Nodes(ctx, t, anvil.GetLastVerifiedBlockId(ctx, anvil.EthClient), nodes)

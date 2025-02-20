@@ -15,7 +15,7 @@ require (
 	github.com/prysmaticlabs/prysm/v5 v5.2.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
-	github.com/taikoxyz/taiko-mono v0.0.0-20250219184740-e44ee25fff0e
+	github.com/taikoxyz/taiko-mono v0.0.0-20250220013525-e5e9f6a94ff4
 	github.com/urfave/cli/v2 v2.27.5
 )
 

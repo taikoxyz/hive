@@ -43,9 +43,6 @@ type Config struct {
 
 	FeeReceipt string
 
-	// l2 geth syncmode
-	L2SyncMode string
-
 	// driver variables, false: beacon sync, true: blob sync
 	BeaconSync bool
 
