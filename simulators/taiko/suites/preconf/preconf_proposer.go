@@ -10,7 +10,6 @@ import (
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/proposer"
 	"math/big"
-	"os"
 	"taiko/bindings/pacaya"
 	"taiko/common/clients"
 	"time"
@@ -25,34 +24,39 @@ func preconferProposer(rpccli *rpc.Client, preconfURL string, preconfs int) (*ty
 
 	anchorL1Header, err := l1cli.HeaderByNumber(ctx, nil)
 	if err != nil {
+		return nil, fmt.Errorf("failed to get anchor header: %v", err)
+	}
+
+	l2BlockID, err := l2cli.BlockNumber(ctx)
+	if err != nil {
 		return nil, err
 	}
-	fmt.Println("preconferProposer anchor_id", anchorL1Header.Number.Uint64())
 
 	var latestL2Header *types.Header
-	for ; preconfs > 0; preconfs-- {
-		l2BlockID, err := l2cli.BlockNumber(ctx)
-		if err != nil {
-			return nil, err
-		}
+	for idx := 1; idx <= preconfs; idx++ {
 
-		latestL2Header, _, err = clients.BuildPreconfBlock(ctx, rpccli, preconfURL, anchorL1Header, l2BlockID+1, nil)
+		latestL2Header, _, err = clients.BuildPreconfBlock(ctx, rpccli, preconfURL, anchorL1Header, l2BlockID+uint64(idx), nil)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to build preconf block: %v", err)
 		}
 		time.Sleep(time.Second)
 	}
 
-	// propose txs.
-	_, _, err = proposeTxLists(ctx, rpccli, anchorL1Header)
-	if err != nil {
+	proposerClient := &proposer.Proposer{}
+	if err := clients.NewTaikoClient(proposerClient, flags.ProposerFlags); err != nil {
 		return nil, err
+	}
+
+	// propose txs.
+	_, _, err = proposeTxLists(ctx, proposerClient, rpccli, anchorL1Header)
+	if err != nil {
+		return nil, fmt.Errorf("failed to propose txs: %v", err)
 	}
 
 	return latestL2Header, nil
 }
 
-func proposeTxLists(ctx context.Context, rpccli *rpc.Client, anchorheader *types.Header) (*rawdb.L1Origin, []types.Transactions, error) {
+func proposeTxLists(ctx context.Context, proposerClient *proposer.Proposer, rpccli *rpc.Client, anchorheader *types.Header) (*rawdb.L1Origin, []types.Transactions, error) {
 	l2cli := rpccli.L2
 	canonicalL1Origin, err := l2cli.HeadL1Origin(ctx)
 	if err != nil {
@@ -83,21 +87,15 @@ func proposeTxLists(ctx context.Context, rpccli *rpc.Client, anchorheader *types
 		total += l2Block.Transactions().Len()
 	}
 
-	_ = os.Setenv("L2_HTTP", "http://localhost:6045")
-	proposerClient := &proposer.Proposer{}
-	if err := clients.NewTaikoClient(proposerClient, flags.ProposerFlags); err != nil {
-		return nil, nil, err
-	}
-
 	builder := NewCalldataTransactionBuilder(
 		rpccli,
-		proposerClient.Config.ProposeBlockTxGasLimit,
+		proposerClient.ProposeBlockTxGasLimit,
 		config.NewChainConfig(
 			l2cli.ChainID,
 			0,
 			pacaya.PacayaForkNumber(l2cli),
 		),
-		proposerClient.Config.RevertProtectionEnabled,
+		proposerClient.RevertProtectionEnabled,
 	)
 
 	txCandidate, err := builder.BuildPacaya(ctx, txs, anchorheader)

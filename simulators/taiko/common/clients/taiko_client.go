@@ -2,7 +2,6 @@ package clients
 
 import (
 	"context"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	tkutils "github.com/taikoxyz/taiko-mono/packages/taiko-client/cmd/utils"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
@@ -10,6 +9,7 @@ import (
 	"os"
 	"sync"
 	"sync/atomic"
+	"taiko/params"
 )
 
 type State struct {
@@ -93,12 +93,15 @@ func NewTaikoClient[T tkutils.SubcommandApplication](client T, flags []cli.Flag)
 
 func GetClientConfig() *rpc.ClientConfig {
 	return &rpc.ClientConfig{
-		L1Endpoint:        os.Getenv("L1_WS"),
-		L2Endpoint:        os.Getenv("L2_WS"),
-		TaikoL1Address:    common.HexToAddress(os.Getenv("TAIKO_INBOX")),
-		TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_ANCHOR")),
-		TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN")),
-		L2EngineEndpoint:  os.Getenv("L2_AUTH"),
-		JwtSecret:         os.Getenv("JWT_SECRET"),
+		L1Endpoint:                  os.Getenv("L1_WS"),
+		L2Endpoint:                  os.Getenv("L2_WS"),
+		TaikoL1Address:              params.ParamToAddress("TAIKO_INBOX"),
+		TaikoWrapperAddress:         params.ParamToAddress("TAIKO_WRAPPER"),
+		ForcedInclusionStoreAddress: params.ParamToAddress("FORCED_INCLUSION_STORE"),
+		ProverSetAddress:            params.ParamToAddress("PROVER_SET"),
+		TaikoL2Address:              params.ParamToAddress("TAIKO_ANCHOR"),
+		TaikoTokenAddress:           params.ParamToAddress("TAIKO_TOKEN"),
+		L2EngineEndpoint:            os.Getenv("L2_AUTH"),
+		JwtSecret:                   os.Getenv("JWT_SECRET"),
 	}
 }

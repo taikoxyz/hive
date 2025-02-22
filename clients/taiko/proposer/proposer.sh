@@ -17,7 +17,7 @@ fi
 
 # Run proposer
 echo "Starting proposer..."
-nohup taiko-client proposer 2>&1 &
+nohup taiko-client proposer --verbosity 4 2>&1 &
 
 touch /taiko-client/nohup.out
 tail -f /taiko-client/nohup.out

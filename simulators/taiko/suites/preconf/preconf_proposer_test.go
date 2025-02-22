@@ -24,13 +24,16 @@ var (
 func init() {
 	var err error
 	rpccli, err = rpc.NewClient(context.Background(), &rpc.ClientConfig{
-		L1Endpoint:        "ws://localhost:8545",
-		L2Endpoint:        "ws://localhost:6046",
-		TaikoL1Address:    common.HexToAddress(os.Getenv("TAIKO_INBOX")),
-		TaikoL2Address:    common.HexToAddress(os.Getenv("TAIKO_ANCHOR")),
-		TaikoTokenAddress: common.HexToAddress(os.Getenv("TAIKO_TOKEN")),
-		L2EngineEndpoint:  "http://localhost:6051",
-		JwtSecret:         "c49690b5a9bc72c7b451b48c5fee2b542e66559d840a133d090769abc56e39e7",
+		L1Endpoint:                  "ws://localhost:8545",
+		L2Endpoint:                  "ws://localhost:6046",
+		TaikoL1Address:              common.HexToAddress(os.Getenv("TAIKO_INBOX")),
+		TaikoWrapperAddress:         common.HexToAddress(os.Getenv("TAIKO_WRAPPER")),
+		ForcedInclusionStoreAddress: common.HexToAddress(os.Getenv("FORCED_INCLUSION_STORE")),
+		ProverSetAddress:            common.HexToAddress(os.Getenv("PROVER_SET")),
+		TaikoL2Address:              common.HexToAddress(os.Getenv("TAIKO_ANCHOR")),
+		TaikoTokenAddress:           common.HexToAddress(os.Getenv("TAIKO_TOKEN")),
+		L2EngineEndpoint:            "http://localhost:6051",
+		JwtSecret:                   "c49690b5a9bc72c7b451b48c5fee2b542e66559d840a133d090769abc56e39e7",
 	})
 	if err != nil {
 		panic(err)
@@ -49,6 +52,17 @@ func init() {
 }
 
 func TestPreconferProposer(t *testing.T) {
-	_, err := preconferProposer(rpccli, preconfURL, 5)
-	assert.NoError(t, err)
+	_ = os.Setenv("L2_HTTP", "http://localhost:6045")
+	for times := 10; times > 0; times-- {
+		l2Header, err := preconferProposer(rpccli, preconfURL, 10)
+		if err != nil {
+			assert.Error(t, err)
+		}
+
+		actualHeader, err := l2Cli.HeaderByNumber(context.Background(), l2Header.Number)
+		if err != nil {
+			assert.Error(t, err)
+		}
+		assert.Equal(t, l2Header.Hash(), actualHeader.Hash(), "header hash mismatch")
+	}
 }

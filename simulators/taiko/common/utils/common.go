@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"compress/zlib"
 	"context"
+	crand "crypto/rand"
 	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"math/big"
@@ -141,7 +143,7 @@ func initOntakeContracts(l1cli *rpc.EthClient) error {
 			return err
 		}
 	} else {
-		for _, auth := range params.L1Auths {
+		for _, auth := range params.L1Auths[1:5] {
 			// Transfer some tokens to proposers.
 			if err = erc20Transfer(l1cli, taikoToken, ownerAuth, auth.From, bls); err != nil {
 				return err
@@ -272,4 +274,22 @@ func CreateL2Txs(
 		txs = append(txs, signedTx)
 	}
 	return txs, nil
+}
+
+// RandomHash generates a random blob of data and returns it as a hash.
+func RandomHash() common.Hash {
+	var hash common.Hash
+	if n, err := crand.Read(hash[:]); n != common.HashLength || err != nil {
+		panic(err)
+	}
+	return hash
+}
+
+// RandomBytes generates a random bytes.
+func RandomBytes(size int) (b []byte) {
+	b = make([]byte, size)
+	if _, err := crand.Read(b); err != nil {
+		log.Crit("Generate random bytes error", "error", err)
+	}
+	return
 }

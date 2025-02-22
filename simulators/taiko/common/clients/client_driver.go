@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/consensus/taiko"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -17,7 +18,6 @@ import (
 	"math/big"
 	"os"
 	"taiko/common/utils"
-	"taiko/params"
 )
 
 type DriverClient struct {
@@ -132,9 +132,9 @@ func BuildPreconfBlock(
 	reqBody := &preconfblocks.BuildPreconfBlockRequestBody{
 		ExecutableData: &preconfblocks.ExecutableData{
 			ParentHash:    parent.Hash(),
-			FeeRecipient:  params.ParamToAddress("L2_SUGGESTED_FEE_RECIPIENT"),
+			FeeRecipient:  crypto.PubkeyToAddress(preconferPrivKey.PublicKey),
 			Number:        l2BlockID,
-			GasLimit:      uint64(preconfCfg.BlockMaxGasLimit()),
+			GasLimit:      uint64(preconfCfg.BlockMaxGasLimit()) + taiko.AnchorV3GasLimit,
 			Timestamp:     anchoredL1Block.Time,
 			Transactions:  txBytes,
 			BaseFeePerGas: baseFee.Uint64(),
@@ -142,7 +142,7 @@ func BuildPreconfBlock(
 		},
 	}
 
-	payload, err := rlp.EncodeToBytes(reqBody)
+	payload, err := rlp.EncodeToBytes(reqBody.ExecutableData)
 	if err != nil {
 		return nil, nil, err
 	}

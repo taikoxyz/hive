@@ -2,6 +2,7 @@ package clients
 
 import (
 	"context"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/hive/hivesim"
@@ -12,6 +13,7 @@ import (
 type ProposerClient struct {
 	*HiveManagedClient
 
+	L1Auth *bind.TransactOpts
 	*State
 }
 

@@ -27,7 +27,7 @@ cd ${OLD_FORK_TAIKO_MONO}/packages/protocol &&
     --evm-version cancun \
     --private-key "$PRIVATE_KEY" \
     --block-gas-limit 200000000 \
-    --legacy &&
+    --legacy
 
 cd - || exit
 
@@ -62,6 +62,23 @@ cd ${TAIKO_MONO_DIR}/packages/protocol &&
     --legacy
 
 cd - || exit
+
+#PACAYA_DEPLOYMENT_JSON=$(cat ${TAIKO_MONO_DIR}/packages/protocol/deployments/deploy_l1.json)
+#export CONTRACT_OWNER=0x0000000000000000000000000000000000000000
+#export TAIKO_WRAPPER=$(echo "$PACAYA_DEPLOYMENT_JSON" | jq '.taiko_wrapper' | sed 's/\"//g')
+#
+#cd ${TAIKO_MONO_DIR}/packages/protocol &&
+#  PRIVATE_KEY=$PRIVATE_KEY forge script script/layer1/preconf/DeployPreconfContracts.s.sol:DeployPreconfContracts \
+#    --fork-url "$L1_PROBE_URL" \
+#    --broadcast \
+#    --ffi \
+#    -vvvvv \
+#    --evm-version cancun \
+#    --private-key "$PRIVATE_KEY" \
+#    --block-gas-limit 200000000 \
+#    --legacy
+#
+#cd - || exit
 
 # Get envs
 sh scripts/get_env.sh

@@ -7,6 +7,7 @@ import (
 	"math/rand/v2"
 	"taiko/common/clients"
 	tn "taiko/common/testnet"
+	"taiko/params"
 	"time"
 )
 
@@ -36,6 +37,9 @@ func (ts BaseTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 	}
 
 	waitL2LatestNumber(ctx, t, target, nodes[0].L2EthClient)
+
+	// verify blocks.
+	t.Nil(nodes[0].ProverClient.VerifyBlocks(params.L1Auths[0]), "failed to verify blocks")
 
 	// Start the other cluster's l2eth and driver nodes.
 	for i, node := range nodes[1:] {

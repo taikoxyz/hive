@@ -365,9 +365,11 @@ func (p *PreparedTestnet) prepareTaikoGethClient(
 		opts := []hivesim.StartOption{p.taikoGethOpts}
 
 		// Expose the eth1 ports to the host.
-		opts = append(opts, hivesim.Params{
-			"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp:%d,%d/tcp:%d,%d/tcp:%d", clients.EthHttpPort, clients.EthHttpPort-2500+index*100, clients.EthWSPort, clients.EthWSPort-2500+index*100, clients.EthEngineRPC, clients.EthEngineRPC-2500+index*100),
-		})
+		if index == 0 && testnet.Debug {
+			opts = append(opts, hivesim.Params{
+				"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp:%d,%d/tcp:%d,%d/tcp:%d", clients.EthHttpPort, clients.EthHttpPort-2500+index*100, clients.EthWSPort, clients.EthWSPort-2500+index*100, clients.EthEngineRPC, clients.EthEngineRPC-2500+index*100),
+			})
+		}
 
 		bootnode, err := testnet.L2EthClients().Running().Enodes()
 		if err != nil {
@@ -405,7 +407,7 @@ func (p *PreparedTestnet) prepareDriverClient(
 	}
 
 	cm.OptionsGenerator = func() ([]hivesim.StartOption, error) {
-		opts := []hivesim.StartOption{p.driverOpts, getTaikoClientEnvs(firstNode, node)}
+		opts := []hivesim.StartOption{p.driverOpts, getTaikoClientEnvs(index, firstNode, node)}
 		if index > 0 && cfg.BeaconSync {
 			opts = append(opts, hivesim.Params{
 				"P2P_SYNC":                 "true",
@@ -414,11 +416,11 @@ func (p *PreparedTestnet) prepareDriverClient(
 		}
 
 		// Expose the eth1 ports to the host.
-		/*if index == 0 {
+		if index == 0 && testnet.Debug {
 			opts = append(opts, hivesim.Params{
 				"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp:%d", clients.PreconfServerPort, clients.PreconfServerPort),
 			})
-		}*/
+		}
 
 		return opts, nil
 	}
@@ -447,13 +449,14 @@ func (p *PreparedTestnet) prepareProposerClient(
 		T:                    testnet.T,
 		HiveClientDefinition: proposerDef,
 		OptionsGenerator: func() ([]hivesim.StartOption, error) {
-			opts := []hivesim.StartOption{p.proposerOpts, getTaikoClientEnvs(firstNode, node)}
+			opts := []hivesim.StartOption{p.proposerOpts, getTaikoClientEnvs(index, firstNode, node)}
 			return opts, nil
 		},
 	}
 
 	node.ProposerClient = &clients.ProposerClient{
 		HiveManagedClient: cm,
+		L1Auth:            params.L1Auths[index*2+1],
 	}
 }
 
@@ -475,13 +478,14 @@ func (p *PreparedTestnet) prepareProverClient(
 		T:                    testnet.T,
 		HiveClientDefinition: proverDef,
 		OptionsGenerator: func() ([]hivesim.StartOption, error) {
-			opts := []hivesim.StartOption{p.proverOpts, getTaikoClientEnvs(firstNode, node)}
+			opts := []hivesim.StartOption{p.proverOpts, getTaikoClientEnvs(index, firstNode, node)}
 			return opts, nil
 		},
 	}
 
 	node.ProverClient = &clients.ProverClient{
 		HiveManagedClient: cm,
+		L1Auth:            params.L1Auths[index*2+2],
 	}
 }
 
@@ -580,6 +584,7 @@ func (p *PreparedTestnet) prepareBlobScanClient(
 }
 
 func getTaikoClientEnvs(
+	index int,
 	firstNode, node *clients.Node,
 ) hivesim.Params {
 	var (
@@ -589,6 +594,9 @@ func getTaikoClientEnvs(
 		blobClient   = firstNode.BlobScanClient
 		l2Client     = node.L2EthClient
 	)
+
+	params.SetEnvParams("L1_PROPOSER_PRIV_KEY", params.ChainAuths[index*2+1].SecretKey)
+	params.SetEnvParams("L1_PROVER_PRIV_KEY", params.ChainAuths[index*2+2].SecretKey)
 
 	envs := params.EnvParams()
 	envs["L2_AUTH"] = l2Client.EngineURL()
