@@ -9,13 +9,13 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ethereum/hive/hivesim"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/bindings/encoding"
 	pacayaBindings "github.com/taikoxyz/taiko-mono/packages/taiko-client/bindings/pacaya"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/config"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/utils"
 	"math/big"
-	"taiko/params"
 )
 
 // CalldataTransactionBuilder is responsible for building a TaikoL1.proposeBlock transaction with txList
@@ -34,18 +34,23 @@ type CalldataTransactionBuilder struct {
 
 // NewCalldataTransactionBuilder creates a new CalldataTransactionBuilder instance based on giving configurations.
 func NewCalldataTransactionBuilder(
+	envs hivesim.Params,
 	rpc *rpc.Client,
 	gasLimit uint64,
 	chainConfig *config.ChainConfig,
 	revertProtectionEnabled bool,
 ) *CalldataTransactionBuilder {
+	proposerPrivateKey, err := crypto.ToECDSA(common.FromHex(envs["L1_PROPOSER_PRIV_KEY"]))
+	if err != nil {
+		return nil
+	}
 	return &CalldataTransactionBuilder{
 		rpc,
-		params.ParamToPriv("L1_PROPOSER_PRIV_KEY"),
-		params.ParamToAddress("L2_SUGGESTED_FEE_RECIPIENT"),
-		params.ParamToAddress("TAIKO_INBOX"),
-		params.ParamToAddress("TAIKO_WRAPPER"),
-		params.ParamToAddress("PROVER_SET"),
+		proposerPrivateKey,
+		common.HexToAddress(envs["L2_SUGGESTED_FEE_RECIPIENT"]),
+		common.HexToAddress(envs["TAIKO_INBOX"]),
+		common.HexToAddress(envs["TAIKO_WRAPPER"]),
+		common.HexToAddress(envs["PROVER_SET"]),
 		gasLimit,
 		chainConfig,
 		revertProtectionEnabled,

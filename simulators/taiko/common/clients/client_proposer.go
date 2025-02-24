@@ -2,7 +2,6 @@ package clients
 
 import (
 	"context"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/hive/hivesim"
@@ -11,9 +10,9 @@ import (
 )
 
 type ProposerClient struct {
+	Index int
 	*HiveManagedClient
-
-	L1Auth *bind.TransactOpts
+	Envs hivesim.Params
 	*State
 }
 
@@ -22,7 +21,7 @@ func (p *ProposerClient) Start() (err error) {
 		return err
 	}
 
-	client, err := rpc.NewClient(context.Background(), GetClientConfig())
+	client, err := rpc.NewClient(context.Background(), GetClientConfig(p.Envs))
 	if err != nil {
 		return err
 	}

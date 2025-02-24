@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/hive/hivesim"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/cmd/flags"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/config"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
@@ -12,10 +13,11 @@ import (
 	"math/big"
 	"taiko/bindings/pacaya"
 	"taiko/common/clients"
+	"taiko/common/utils"
 	"time"
 )
 
-func preconferProposer(rpccli *rpc.Client, preconfURL string, preconfs int) (*types.Header, error) {
+func preconferBlock(envs hivesim.Params, rpccli *rpc.Client, preconfURL string, preconfs int) (*types.Header, *types.Header, error) {
 	// get txs from l2 node tx mempool.
 	var (
 		ctx          = context.Background()
@@ -24,40 +26,39 @@ func preconferProposer(rpccli *rpc.Client, preconfURL string, preconfs int) (*ty
 
 	anchorL1Header, err := l1cli.HeaderByNumber(ctx, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get anchor header: %v", err)
+		return nil, nil, fmt.Errorf("failed to get anchor header: %v", err)
 	}
 
 	l2BlockID, err := l2cli.BlockNumber(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var latestL2Header *types.Header
 	for idx := 1; idx <= preconfs; idx++ {
 
-		latestL2Header, _, err = clients.BuildPreconfBlock(ctx, rpccli, preconfURL, anchorL1Header, l2BlockID+uint64(idx), nil)
+		signedTxs, err := utils.CreateL2Txs(context.Background(), l2cli, true)
 		if err != nil {
-			return nil, fmt.Errorf("failed to build preconf block: %v", err)
+			return nil, nil, err
+		}
+
+		latestL2Header, _, err = clients.BuildPreconfBlock(ctx, rpccli, preconfURL, anchorL1Header, l2BlockID+uint64(idx), signedTxs)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to build preconf block: %v", err)
 		}
 		time.Sleep(time.Second)
 	}
 
-	proposerClient := &proposer.Proposer{}
-	if err := clients.NewTaikoClient(proposerClient, flags.ProposerFlags); err != nil {
-		return nil, err
-	}
-
-	// propose txs.
-	_, _, err = proposeTxLists(ctx, proposerClient, rpccli, anchorL1Header)
-	if err != nil {
-		return nil, fmt.Errorf("failed to propose txs: %v", err)
-	}
-
-	return latestL2Header, nil
+	return latestL2Header, anchorL1Header, nil
 }
 
-func proposeTxLists(ctx context.Context, proposerClient *proposer.Proposer, rpccli *rpc.Client, anchorheader *types.Header) (*rawdb.L1Origin, []types.Transactions, error) {
+func proposeBlock(ctx context.Context, envs hivesim.Params, rpccli *rpc.Client, anchorheader *types.Header) (*rawdb.L1Origin, []types.Transactions, error) {
 	l2cli := rpccli.L2
+	proposerClient := &proposer.Proposer{}
+	if err := clients.NewTaikoClient(proposerClient, flags.ProposerFlags); err != nil {
+		return nil, nil, err
+	}
+
 	canonicalL1Origin, err := l2cli.HeadL1Origin(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -75,8 +76,7 @@ func proposeTxLists(ctx context.Context, proposerClient *proposer.Proposer, rpcc
 
 	// Collect all the soft transactions.
 	var (
-		total int
-		txs   []types.Transactions
+		txs []types.Transactions
 	)
 	for number := canonicalL1Origin.BlockID.Uint64() + 1; number <= l2Number; number++ {
 		l2Block, err := l2cli.BlockByNumber(ctx, big.NewInt(int64(number)))
@@ -84,10 +84,10 @@ func proposeTxLists(ctx context.Context, proposerClient *proposer.Proposer, rpcc
 			return nil, nil, err
 		}
 		txs = append(txs, l2Block.Transactions()[1:])
-		total += l2Block.Transactions().Len()
 	}
 
 	builder := NewCalldataTransactionBuilder(
+		envs,
 		rpccli,
 		proposerClient.ProposeBlockTxGasLimit,
 		config.NewChainConfig(

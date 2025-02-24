@@ -6,6 +6,7 @@ import (
 	"math/rand/v2"
 	"taiko/common/clients"
 	tn "taiko/common/testnet"
+	"taiko/params"
 	"time"
 )
 
@@ -56,12 +57,20 @@ func (r ReorgTestSpec) reorgAndVerifyFirstCluster(ctx context.Context, t *hivesi
 		t.Fatalf("%s: failed to wait latest number, err: %v", l2eth.ClientType(), err)
 	}
 
-	if err := anvil.WaitLatestVerifiedNumber(ctx, timeout, l2ReorgStartNumber/2); err != nil {
+	for range time.Tick(time.Second) {
+		lastVerifiedBlockID := prover.GetLastVerifiedBlockId(ctx)
+		if lastVerifiedBlockID >= proposer.PacayaClients.ForkHeight {
+			break
+		}
+		t.Nil(prover.VerifyBlocks(params.L1Auths[0]), "failed to verify blocks")
+	}
+
+	if err := prover.WaitLatestVerifiedNumber(ctx, timeout, l2ReorgStartNumber/2); err != nil {
 		t.Fatalf("%s: failed to wait LatestVerifiedNumber: %d, err: %v", anvil.ClientType(), l2ReorgStartNumber/2, err)
 	}
 
 	// Get reorg point.
-	latestVerified := anvil.GetLastVerifiedBlockId(ctx, anvil.EthClient)
+	latestVerified := prover.GetLastVerifiedBlockId(ctx)
 	t.Logf("%s: latestVerified: %d", l2eth.ClientType(), latestVerified)
 
 	// pause driver, proposer, prover
@@ -77,7 +86,7 @@ func (r ReorgTestSpec) reorgAndVerifyFirstCluster(ctx context.Context, t *hivesi
 	proposer.UnpauseClient()
 	prover.UnpauseClient()
 
-	if err := anvil.WaitLatestVerifiedNumber(ctx, timeout, latestVerified+1); err != nil {
+	if err := prover.WaitLatestVerifiedNumber(ctx, timeout, latestVerified+1); err != nil {
 		t.Fatalf("%s: failed to wait LatestVerifiedNumber: %d, err: %v", anvil.ClientType(), latestVerified+1, err)
 	}
 

@@ -1,7 +1,6 @@
 package clients
 
 import (
-	"context"
 	"fmt"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/hive/hivesim"
@@ -16,6 +15,8 @@ const (
 	EthEngineRPC      = 8551
 	BeaconPort        = 3500
 	PreconfServerPort = 7001
+	GethP2PPort       = 30303
+	PreconfP2pPort    = 9222
 )
 
 // A node bundles together:
@@ -93,11 +94,9 @@ func (n *Node) Start() error {
 		if n.L1EthClient != nil {
 			l1API = n.L1EthClient
 		}
-		params.SetEnvParams("L1_HTTP", l1API.HttpURL())
-		params.SetEnvParams("L2_HTTP", l1API.HttpURL())
 
 		n.Logf("Deploying contracts in %s node, url: %s\n", l1API.ClientType(), l1API.HttpURL())
-		if err := utils.DeployContracts(context.Background(), l1API.HTTPClient()); err != nil {
+		if err := utils.DeployContracts(params.EnvParams(), l1API.HTTPClient()); err != nil {
 			return errors.Wrap(err, fmt.Sprintf("%s: failed to deploy contracts", l1API.ClientType()))
 		}
 		n.Logf("Deployed contracts in %s node, url: %s\n", l1API.ClientType(), l1API.HttpURL())

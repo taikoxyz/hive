@@ -156,8 +156,8 @@ func StartTestnet(
 		}
 		prep.prepareTaikoGethClient(index, testnet, config, taikoGeth)
 		prep.prepareDriverClient(index, testnet, config, clientsByRole[clients.Driver])
-		prep.prepareProposerClient(index, testnet, clientsByRole[clients.Proposer])
-		prep.prepareProverClient(index, testnet, clientsByRole[clients.Prover])
+		prep.prepareProposerClient(index, testnet, config, clientsByRole[clients.Proposer])
+		prep.prepareProverClient(index, testnet, config, clientsByRole[clients.Prover])
 
 		// Start the node clients if specified so
 		// Connect to the network if specified

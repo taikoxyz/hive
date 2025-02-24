@@ -9,11 +9,12 @@ import (
 
 func (ts BaseTestSpec) fullSyncVerify(ctx context.Context, t *hivesim.T, testnet *tn.Testnet, target uint64) {
 	var (
-		nodes = testnet.Nodes
-		anvil = nodes[0].AnvilClient
+		nodes  = testnet.Nodes
+		prover = nodes[0].ProverClient
 	)
+
 	// Get latest verified number.
-	latestVerified := anvil.GetLastVerifiedBlockId(ctx, anvil.EthClient)
+	latestVerified := prover.GetLastVerifiedBlockId(ctx)
 	t.Logf("fullSyncVerify: latestVerified: %d", latestVerified)
 
 	for _, node := range nodes[1:] {

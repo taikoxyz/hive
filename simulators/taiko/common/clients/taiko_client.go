@@ -2,14 +2,14 @@ package clients
 
 import (
 	"context"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/hive/hivesim"
 	tkutils "github.com/taikoxyz/taiko-mono/packages/taiko-client/cmd/utils"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"github.com/urfave/cli/v2"
-	"os"
 	"sync"
 	"sync/atomic"
-	"taiko/params"
 )
 
 type State struct {
@@ -91,17 +91,17 @@ func NewTaikoClient[T tkutils.SubcommandApplication](client T, flags []cli.Flag)
 	return app.Run([]string{"taiko-client", "client"})
 }
 
-func GetClientConfig() *rpc.ClientConfig {
+func GetClientConfig(envs hivesim.Params) *rpc.ClientConfig {
 	return &rpc.ClientConfig{
-		L1Endpoint:                  os.Getenv("L1_WS"),
-		L2Endpoint:                  os.Getenv("L2_WS"),
-		TaikoL1Address:              params.ParamToAddress("TAIKO_INBOX"),
-		TaikoWrapperAddress:         params.ParamToAddress("TAIKO_WRAPPER"),
-		ForcedInclusionStoreAddress: params.ParamToAddress("FORCED_INCLUSION_STORE"),
-		ProverSetAddress:            params.ParamToAddress("PROVER_SET"),
-		TaikoL2Address:              params.ParamToAddress("TAIKO_ANCHOR"),
-		TaikoTokenAddress:           params.ParamToAddress("TAIKO_TOKEN"),
-		L2EngineEndpoint:            os.Getenv("L2_AUTH"),
-		JwtSecret:                   os.Getenv("JWT_SECRET"),
+		L1Endpoint:                  envs["L1_WS"],
+		L2Endpoint:                  envs["L2_WS"],
+		TaikoL1Address:              common.HexToAddress(envs["TAIKO_INBOX"]),
+		TaikoWrapperAddress:         common.HexToAddress(envs["TAIKO_WRAPPER"]),
+		ForcedInclusionStoreAddress: common.HexToAddress(envs["FORCED_INCLUSION_STORE"]),
+		ProverSetAddress:            common.HexToAddress(envs["PROVER_SET"]),
+		TaikoL2Address:              common.HexToAddress(envs["TAIKO_ANCHOR"]),
+		TaikoTokenAddress:           common.HexToAddress(envs["TAIKO_TOKEN"]),
+		L2EngineEndpoint:            envs["L2_AUTH"],
+		JwtSecret:                   envs["JWT_SECRET"],
 	}
 }

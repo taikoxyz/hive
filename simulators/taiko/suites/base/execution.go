@@ -13,9 +13,10 @@ import (
 
 func (ts BaseTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Testnet) {
 	var (
-		nodes  = testnet.Nodes
-		target = ts.L2TargetNumber
-		anvil  = nodes[0].AnvilClient
+		nodes    = testnet.Nodes
+		target   = ts.L2TargetNumber
+		proposer = nodes[0].ProposerClient
+		prover   = nodes[0].ProverClient
 	)
 	if target == 0 {
 		target = rand.Uint64N(50-10) + 10
@@ -31,15 +32,19 @@ func (ts BaseTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 		}
 	}
 
-	// For Debug
-	if ts.IsDebug() {
-		time.Sleep(time.Minute * 120)
+	for range time.Tick(time.Second) {
+		lastVerifiedBlockID := prover.GetLastVerifiedBlockId(ctx)
+		if lastVerifiedBlockID >= proposer.PacayaClients.ForkHeight {
+			break
+		}
+		t.Nil(prover.VerifyBlocks(params.L1Auths[0]), "failed to verify blocks")
 	}
 
-	waitL2LatestNumber(ctx, t, target, nodes[0].L2EthClient)
-
-	// verify blocks.
-	t.Nil(nodes[0].ProverClient.VerifyBlocks(params.L1Auths[0]), "failed to verify blocks")
+	// For Debug
+	if ts.IsDebug() {
+		proposer.PauseClient()
+		time.Sleep(time.Minute * 120)
+	}
 
 	// Start the other cluster's l2eth and driver nodes.
 	for i, node := range nodes[1:] {
@@ -48,11 +53,8 @@ func (ts BaseTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 		}
 	}
 
-	// Verify the synced blocks.
-	ts.fullSyncVerify(ctx, t, testnet, target)
-
 	// Verify all l2eth nodes.
-	ts.verifyL2Nodes(ctx, t, anvil.GetLastVerifiedBlockId(ctx, anvil.EthClient), nodes)
+	ts.verifyL2Nodes(ctx, t, prover.GetLastVerifiedBlockId(ctx), nodes)
 }
 
 func waitL2LatestNumber(ctx context.Context, t *hivesim.T, targetNumber uint64, l2Eth *clients.TaikoGethClient) {
@@ -63,21 +65,16 @@ func waitL2LatestNumber(ctx context.Context, t *hivesim.T, targetNumber uint64, 
 	}
 }
 
-func waitLatestVerifiedNumber(ctx context.Context, t *hivesim.T, targetNumber uint64, anvil *clients.AnvilClient) {
-	// Verify l2eth node run successfully.
-	err := anvil.WaitLatestVerifiedNumber(ctx, time.Second*60, targetNumber)
-	if err != nil {
-		t.Fatalf("failed to get latest verified l2geth number, number: %d, err: %v", targetNumber, err)
-	}
-}
-
 func (ts BaseTestSpec) verifyL2Nodes(ctx context.Context, t *hivesim.T, latestVerified uint64, nodes []*clients.Node) {
 	var (
-		l2cli = nodes[0].L2EthClient.EthClient
-		index int
+		index  int
+		l2cli  = nodes[0].L2EthClient.EthClient
+		prover = nodes[0].ProverClient
 	)
 
-	waitLatestVerifiedNumber(ctx, t, latestVerified+1, nodes[0].AnvilClient)
+	// todo: storeForcedInclusion test.
+
+	t.FailIfNotNil(prover.WaitLatestVerifiedNumber(ctx, time.Second*60, latestVerified+1), "failed to wait latest verified number")
 
 	header, err := l2cli.HeaderByNumber(ctx, nil)
 	if err != nil {
@@ -87,8 +84,8 @@ func (ts BaseTestSpec) verifyL2Nodes(ctx context.Context, t *hivesim.T, latestVe
 
 	for i, node := range nodes[1:] {
 		l2client := node.L2EthClient
-
 		client := l2client.EthClient
+
 		hd, err := client.HeaderByNumber(ctx, new(big.Int).SetUint64(target))
 		if err != nil {
 			t.Fatalf("failed to get header from [%d]:%s, err: %v", i, node.L1EthClient.ClientType(), err)
@@ -100,6 +97,16 @@ func (ts BaseTestSpec) verifyL2Nodes(ctx context.Context, t *hivesim.T, latestVe
 				index, header.Hash().String(),
 				i, hd.Hash().String(),
 			)
+		}
+
+		for num := uint64(1); num <= target; num++ {
+			l1Origin, err := l2client.L1OriginByID(ctx, big.NewInt(0).SetUint64(num))
+			if err != nil {
+				t.Fatalf("unexpect error when get l1origin, number: %d, err: %v", num, err)
+			}
+			if l1Origin == nil {
+				t.Fatalf("l1Origin should not be null, number: %d", num)
+			}
 		}
 	}
 }

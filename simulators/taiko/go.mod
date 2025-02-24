@@ -10,12 +10,13 @@ require (
 	github.com/ethereum/hive v0.0.0-20250211191156-a6ae16310601
 	github.com/go-resty/resty/v2 v2.16.5
 	github.com/joho/godotenv v1.5.1
+	github.com/libp2p/go-libp2p v0.36.5
 	github.com/lithammer/dedent v1.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/prysmaticlabs/prysm/v5 v5.2.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
-	github.com/taikoxyz/taiko-mono v0.0.0-20250223124206-a0be0faac0ce
+	github.com/taikoxyz/taiko-mono v0.0.0-20250224090425-c7e9bfbd65f3
 	github.com/urfave/cli/v2 v2.27.5
 )
 
@@ -130,7 +131,6 @@ require (
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/libp2p/go-buffer-pool v0.1.0 // indirect
 	github.com/libp2p/go-flow-metrics v0.2.0 // indirect
-	github.com/libp2p/go-libp2p v0.36.5 // indirect
 	github.com/libp2p/go-libp2p-asn-util v0.4.1 // indirect
 	github.com/libp2p/go-libp2p-mplex v0.9.0 // indirect
 	github.com/libp2p/go-libp2p-pubsub v0.12.0 // indirect
@@ -213,7 +213,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	github.com/supranational/blst v0.3.13 // indirect
+	github.com/supranational/blst v0.3.15-0.20250213130419-105d4af00985 // indirect
 	github.com/thomaso-mirodin/intmath v0.0.0-20160323211736-5dc6d854e46e // indirect
 	github.com/tklauser/numcpus v0.7.0 // indirect
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
@@ -260,7 +260,7 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/ethereum/go-ethereum v1.14.11 => github.com/taikoxyz/taiko-geth v1.12.1-0.20250218031651-437b5c6114e3
+replace github.com/ethereum/go-ethereum v1.14.11 => github.com/taikoxyz/taiko-geth v1.12.1-0.20250224084106-afd09afd0387
 
 replace github.com/ethereum-optimism/optimism v1.7.4 => github.com/taikoxyz/optimism v0.0.0-20250205084634-ae44cf8bc8e2
 

@@ -26,12 +26,6 @@ func SuiteHydrate(
 	generateState *execution_config.GenesisState,
 ) {
 
-	// Add one more test for debug.
-	/*length := len(tests)
-	for i := 0; i < length; i++ {
-		tests = append(tests, tests[i].DebugTestSpec())
-	}*/
-
 	for _, test := range tests {
 		test := test
 		suite.Add(hivesim.TestSpec{

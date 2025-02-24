@@ -1,7 +1,9 @@
 package testnet
 
 import (
+	"github.com/ethereum/hive/hivesim"
 	"math/big"
+	"taiko/common/clients"
 	execution_config "taiko/common/config/execution"
 )
 
@@ -21,6 +23,8 @@ var (
 		"grandine",
 	}
 )
+
+type CreateConfig func(index int, nodes clients.Nodes) (hivesim.Params, error)
 
 type Config struct {
 	Eth1Consensus execution_config.ExecutionConsensus `json:"eth1_consensus,omitempty"`
@@ -48,6 +52,8 @@ type Config struct {
 
 	// driver variables
 	SoftBlockServerPort uint64
+
+	CreateConfig CreateConfig `json:"-"`
 
 	// open debug flag
 	Debug bool

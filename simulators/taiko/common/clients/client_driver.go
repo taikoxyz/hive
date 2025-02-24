@@ -10,19 +10,21 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ethereum/hive/hivesim"
 	"github.com/go-resty/resty/v2"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/bindings/encoding"
 	anchorTxConstructor "github.com/taikoxyz/taiko-mono/packages/taiko-client/driver/anchor_tx_constructor"
 	preconfblocks "github.com/taikoxyz/taiko-mono/packages/taiko-client/driver/preconf_blocks"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"math/big"
-	"os"
 	"taiko/common/utils"
+	"taiko/params"
 )
 
 type DriverClient struct {
+	Index int
 	*HiveManagedClient
-
+	Envs hivesim.Params
 	*State
 }
 
@@ -31,9 +33,9 @@ func (d *DriverClient) Start() (err error) {
 		return err
 	}
 
-	d.Logf("driver client, L1_BEACON: %s", os.Getenv("L1_BEACON"))
+	d.Logf("driver client, L1_BEACON: %s", d.Envs["L1_BEACON"])
 
-	client, err := rpc.NewClient(context.Background(), GetClientConfig())
+	client, err := rpc.NewClient(context.Background(), GetClientConfig(d.Envs))
 	if err != nil {
 		return err
 	}
@@ -81,16 +83,6 @@ func BuildPreconfBlock(
 		return nil, nil, err
 	}
 
-	// Create and send a batch of txs.
-	if txs == nil {
-
-		signedTxs, err := utils.CreateL2Txs(context.Background(), l2cli, true)
-		if err != nil {
-			return nil, nil, err
-		}
-		txs = signedTxs
-	}
-
 	baseFee, err := rpccli.CalculateBaseFee(
 		ctx,
 		parent,
@@ -123,10 +115,7 @@ func BuildPreconfBlock(
 		return nil, nil, err
 	}
 
-	preconferPrivKey, err := crypto.ToECDSA(common.FromHex(os.Getenv("L1_PROPOSER_PRIV_KEY")))
-	if err != nil {
-		return nil, nil, err
-	}
+	preconferPrivKey := params.ChainAuths[1].PrivateKey
 
 	extraData := encoding.EncodeBaseFeeConfig(preconfCfg.BaseFeeConfig())
 	reqBody := &preconfblocks.BuildPreconfBlockRequestBody{

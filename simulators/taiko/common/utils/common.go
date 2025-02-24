@@ -10,15 +10,14 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ethereum/hive/hivesim"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"math/big"
 	"math/rand/v2"
 	"os"
 	"taiko/bindings/ontake/proverset"
-	"taiko/bindings/ontake/taikol1"
 	"taiko/bindings/pacaya/taikotoken"
 	"taiko/params"
 )
@@ -30,7 +29,7 @@ type ERC20API interface {
 	Allowance(opts *bind.CallOpts, owner common.Address, spender common.Address) (*big.Int, error)
 }
 
-func DeployContracts(ctx context.Context, l1cli *rpc.EthClient) error {
+func DeployContracts(envs hivesim.Params, l1cli *rpc.EthClient) error {
 	chainID := l1cli.ChainID
 	sk, err := crypto.HexToECDSA("ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
 	if err != nil {
@@ -48,7 +47,7 @@ func DeployContracts(ctx context.Context, l1cli *rpc.EthClient) error {
 			return fmt.Errorf("failed to sign tx: %v", err)
 		}
 
-		if err := l1cli.SendTransaction(ctx, signedTx); err != nil {
+		if err := l1cli.SendTransaction(context.Background(), signedTx); err != nil {
 			return fmt.Errorf("failed to send tx, %s: %v", signedTx.Hash().String(), err)
 		}
 		fmt.Println("successfully send tx, hash: ", signedTx.Hash().String())
@@ -73,34 +72,19 @@ func DeployContracts(ctx context.Context, l1cli *rpc.EthClient) error {
 		}
 	}
 
-	return initOntakeContracts(l1cli)
-}
-
-func setL2Genesis(l1cli, l2cli *ethclient.Client, ownerAuth *bind.TransactOpts) error {
-	genesisHeader, err := l2cli.HeaderByNumber(context.Background(), big.NewInt(0))
-	if err != nil {
-		return err
-	}
-	fmt.Println("l2genesis hash: ", genesisHeader.Hash().String())
-
-	taikoL1, err := taikol1.NewTaikoL1(params.ParamToAddress("TAIKO_INBOX"), l1cli)
-	if err != nil {
-		return err
-	}
-	_, err = taikoL1.InitL2Genesis(ownerAuth, genesisHeader.Hash())
-	return err
+	return initOntakeContracts(envs, l1cli)
 }
 
 // InitTaikoContract init taiko contracts.
-func initOntakeContracts(l1cli *rpc.EthClient) error {
+func initOntakeContracts(envs hivesim.Params, l1cli *rpc.EthClient) error {
 	l1ChainID := l1cli.ChainID
 
-	ownerAuth, err := getAuth("L1_CONTRACT_OWNER_PRIVATE_KEY", l1ChainID)
+	ownerAuth, err := getAuth(envs["L1_CONTRACT_OWNER_PRIVATE_KEY"], l1ChainID)
 	if err != nil {
 		return fmt.Errorf("failed to get owner auth: %v", err)
 	}
 
-	taikoToken, err := taikotoken.NewTaikoToken(params.ParamToAddress("TAIKO_TOKEN"), l1cli)
+	taikoToken, err := taikotoken.NewTaikoToken(common.HexToAddress(envs["TAIKO_TOKEN"]), l1cli)
 	if err != nil {
 		return err
 	}
@@ -113,16 +97,16 @@ func initOntakeContracts(l1cli *rpc.EthClient) error {
 	bls := new(big.Int).Div(balance, common.Big256)
 
 	if os.Getenv("IS_GUARDIAN") == "true" {
-		if err = erc20Transfer(l1cli, taikoToken, ownerAuth, params.ParamToAddress("GUARDIAN_PROVER_MINORITY"), bls); err != nil {
+		if err = erc20Transfer(l1cli, taikoToken, ownerAuth, common.HexToAddress(envs["GUARDIAN_PROVER_MINORITY"]), bls); err != nil {
 			return err
 		}
-		if err = erc20Transfer(l1cli, taikoToken, ownerAuth, params.ParamToAddress("GUARDIAN_PROVER_CONTRACT"), bls); err != nil {
+		if err = erc20Transfer(l1cli, taikoToken, ownerAuth, common.HexToAddress(envs["GUARDIAN_PROVER_CONTRACT"]), bls); err != nil {
 			return err
 		}
 	}
 
-	proverSetAddr := params.ParamToAddress("PROVER_SET")
-	taikoInboxAddr := params.ParamToAddress("TAIKO_INBOX")
+	proverSetAddr := common.HexToAddress(envs["PROVER_SET"])
+	taikoInboxAddr := common.HexToAddress(envs["TAIKO_INBOX"])
 
 	if proverSetAddr != (common.Address{}) {
 		proverSet, err := proverset.NewProverSet(proverSetAddr, l1cli)
@@ -204,8 +188,8 @@ func enableProverSet(l1cli *rpc.EthClient, proverSet *proverset.ProverSet, auth 
 	return err
 }
 
-func getAuth(key string, chainID *big.Int) (*bind.TransactOpts, error) {
-	ownerPrivKey, err := crypto.ToECDSA(params.ParamToBytes(key))
+func getAuth(val string, chainID *big.Int) (*bind.TransactOpts, error) {
+	ownerPrivKey, err := crypto.ToECDSA(common.FromHex(val))
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +234,7 @@ func CreateL2Txs(
 		if err != nil {
 			return nil, err
 		}
-		nonce, err := l2cli.PendingNonceAt(ctx, auth.From)
+		nonce, err := l2cli.PendingNonceAt(context.Background(), auth.From)
 		if err != nil {
 			return nil, fmt.Errorf("cannot get nonce: %v", err)
 		}

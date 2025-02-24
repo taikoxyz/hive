@@ -4,12 +4,15 @@ import (
 	"context"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/stretchr/testify/assert"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
+	"net"
 	"os"
 	"taiko/bindings/ontake"
 	"taiko/bindings/pacaya"
 	"taiko/common/clients"
+	"taiko/params"
 	"testing"
 )
 
@@ -54,7 +57,7 @@ func init() {
 func TestPreconferProposer(t *testing.T) {
 	_ = os.Setenv("L2_HTTP", "http://localhost:6045")
 	for times := 10; times > 0; times-- {
-		l2Header, err := preconferProposer(rpccli, preconfURL, 10)
+		l2Header, _, err := preconferBlock(rpccli, preconfURL, 10)
 		if err != nil {
 			assert.Error(t, err)
 		}
@@ -65,4 +68,17 @@ func TestPreconferProposer(t *testing.T) {
 		}
 		assert.Equal(t, l2Header.Hash(), actualHeader.Hash(), "header hash mismatch")
 	}
+}
+
+func TestCC(t *testing.T) {
+	n := enode.NewV4(&params.ChainAuths[1].PrivateKey.PublicKey, net.ParseIP("127.0.0.1"), 30303, 30303)
+	t.Log(n.URLv4())
+	t.Log(n.String())
+}
+
+func TestDD(t *testing.T) {
+	enr := "enr:-Ja4QCZM8pihrIWZOr9A647xApl6fKJkJvTlMZwca9pJE10IK0BIKTvNc8kch2GKLc1nv0uAPDigCrImFe6yqgRC7oyGAZU67I-KgmlkgnY0h29wc3RhY2uE2ZgKAIlzZWNwMjU2azGhArpXNNj3CRcZRx5_fta53xcNxwzGYcoF5ohgGtmE8Giwg3RjcIIkBoN1ZHCCdmE"
+	node, err := enode.Parse(enode.ValidSchemes, enr)
+	assert.NoError(t, err)
+	t.Log(node.URLv4())
 }

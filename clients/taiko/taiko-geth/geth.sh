@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set default values
-HIVE_LOGLEVEL=${HIVE_LOGLEVEL:-3}
+HIVE_LOGLEVEL=${HIVE_LOGLEVEL:-4}
 HIVE_NETWORK_ID=${HIVE_NETWORK_ID:-167001}
 
 # Immediately abort the script on any error encountered
@@ -27,10 +27,9 @@ echo "Starting taiko geth..."
 nohup geth \
   --bootnodes="$HIVE_BOOTNODE" \
   --taiko \
-  --verbosity 4 \
+  --verbosity 3 \
   --datadir=/geth/data \
   --networkid="$HIVE_NETWORK_ID" \
-  --verbosity="$HIVE_LOGLEVEL" \
   --http \
   --http.api=admin,debug,eth,net,web3,txpool,miner,taiko \
   --http.addr=0.0.0.0 \
