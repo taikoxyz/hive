@@ -5,9 +5,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/hive/hivesim"
-	tkutils "github.com/taikoxyz/taiko-mono/packages/taiko-client/cmd/utils"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
-	"github.com/urfave/cli/v2"
 	"sync"
 	"sync/atomic"
 )
@@ -75,20 +73,6 @@ func (s *State) loop() {
 			s.L2Head.Store(head)
 		}
 	}
-}
-
-func NewTaikoClient[T tkutils.SubcommandApplication](client T, flags []cli.Flag) error {
-	app := cli.NewApp()
-	app.Commands = []*cli.Command{
-		{
-			Name:  "client",
-			Flags: flags,
-			Action: func(c *cli.Context) error {
-				return client.InitFromCli(context.Background(), c)
-			},
-		},
-	}
-	return app.Run([]string{"taiko-client", "client"})
 }
 
 func GetClientConfig(envs hivesim.Params) *rpc.ClientConfig {

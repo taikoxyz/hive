@@ -57,7 +57,7 @@ func init() {
 func TestPreconferProposer(t *testing.T) {
 	_ = os.Setenv("L2_HTTP", "http://localhost:6045")
 	for times := 10; times > 0; times-- {
-		l2Header, _, err := preconferBlock(rpccli, preconfURL, 10)
+		l2Header, _, err := preconferBlock(0, rpccli, preconfURL, 10)
 		if err != nil {
 			assert.Error(t, err)
 		}

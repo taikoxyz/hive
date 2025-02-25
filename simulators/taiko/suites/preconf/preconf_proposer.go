@@ -9,15 +9,14 @@ import (
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/cmd/flags"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/config"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
-	"github.com/taikoxyz/taiko-mono/packages/taiko-client/proposer"
 	"math/big"
 	"taiko/bindings/pacaya"
 	"taiko/common/clients"
-	"taiko/common/utils"
+	"taiko/params"
 	"time"
 )
 
-func preconferBlock(envs hivesim.Params, rpccli *rpc.Client, preconfURL string, preconfs int) (*types.Header, *types.Header, error) {
+func preconferBlock(index int, rpccli *rpc.Client, preconfURL string, preconfs int) (*types.Header, *types.Header, error) {
 	// get txs from l2 node tx mempool.
 	var (
 		ctx          = context.Background()
@@ -37,12 +36,7 @@ func preconferBlock(envs hivesim.Params, rpccli *rpc.Client, preconfURL string, 
 	var latestL2Header *types.Header
 	for idx := 1; idx <= preconfs; idx++ {
 
-		signedTxs, err := utils.CreateL2Txs(context.Background(), l2cli, true)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		latestL2Header, _, err = clients.BuildPreconfBlock(ctx, rpccli, preconfURL, anchorL1Header, l2BlockID+uint64(idx), signedTxs)
+		latestL2Header, err = clients.BuildPreconfBlock(ctx, rpccli, params.ChainAuths[index*2+1].PrivateKey, preconfURL, anchorL1Header, l2BlockID+uint64(idx))
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to build preconf block: %v", err)
 		}
@@ -54,8 +48,9 @@ func preconferBlock(envs hivesim.Params, rpccli *rpc.Client, preconfURL string, 
 
 func proposeBlock(ctx context.Context, envs hivesim.Params, rpccli *rpc.Client, anchorheader *types.Header) (*rawdb.L1Origin, []types.Transactions, error) {
 	l2cli := rpccli.L2
-	proposerClient := &proposer.Proposer{}
-	if err := clients.NewTaikoClient(proposerClient, flags.ProposerFlags); err != nil {
+
+	mockClient := &clients.MockClient{Envs: envs}
+	if err := clients.NewTaikoClient(mockClient, flags.ProposerFlags); err != nil {
 		return nil, nil, err
 	}
 
@@ -89,13 +84,13 @@ func proposeBlock(ctx context.Context, envs hivesim.Params, rpccli *rpc.Client, 
 	builder := NewCalldataTransactionBuilder(
 		envs,
 		rpccli,
-		proposerClient.ProposeBlockTxGasLimit,
+		mockClient.ProposeBlockTxGasLimit,
 		config.NewChainConfig(
 			l2cli.ChainID,
 			0,
 			pacaya.PacayaForkNumber(l2cli),
 		),
-		proposerClient.RevertProtectionEnabled,
+		mockClient.RevertProtectionEnabled,
 	)
 
 	txCandidate, err := builder.BuildPacaya(ctx, txs, anchorheader)
@@ -103,5 +98,10 @@ func proposeBlock(ctx context.Context, envs hivesim.Params, rpccli *rpc.Client, 
 		return nil, nil, err
 	}
 
-	return canonicalL1Origin, txs, proposerClient.SendTx(ctx, txCandidate)
+	_, err = mockClient.Send(ctx, *txCandidate)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return canonicalL1Origin, txs, nil
 }

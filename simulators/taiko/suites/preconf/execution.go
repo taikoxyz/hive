@@ -55,8 +55,6 @@ func (r *PreconfTestSpec) GetTestnetConfig() *testnet.Config {
 				return nil, err
 			}
 
-			fmt.Println("----------------------", index, nodes[i].DriverClient)
-
 			staticPeers = fmt.Sprintf("%s,/ip4/%s/tcp/%d/p2p/%s", staticPeers, nodes[i].DriverClient.NetworkIP(), clients.PreconfP2pPort, idB)
 		}
 		envs["PRECONFIRMATION_P2P_STATIC"] = staticPeers
@@ -94,16 +92,17 @@ func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 	}
 
 	for times := 0; times < 4; times++ {
-		envs := params.ClusterEnvs[times%len(testnet.Nodes)]
+		index := times % len(testnet.Nodes)
+		driver = testnet.Nodes[index].DriverClient
 
-		l2Header, anchorL1Header, err := preconferBlock(envs, driver.Client, driver.PreconfServerURL(), 5)
+		l2Header, anchorL1Header, err := preconferBlock(index, driver.Client, driver.PreconfServerURL(), 5)
 		t.FailIfNotNil(err, "cannot preconfirmer proposer")
 
 		// Verify latest preconf block.
 		verifyL2Chain(t, testnet.Nodes, l2Header)
 
 		// propose txs.
-		_, _, err = proposeBlock(ctx, envs, proposer.Client, anchorL1Header)
+		_, _, err = proposeBlock(ctx, driver.Envs, driver.Client, anchorL1Header)
 		t.FailIfNotNil(err, "cannot propose txs")
 
 		// todo: check l1Origin and head l1Origin, brefore and after

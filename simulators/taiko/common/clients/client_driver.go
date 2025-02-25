@@ -2,6 +2,7 @@ package clients
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
@@ -18,7 +19,6 @@ import (
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"math/big"
 	"taiko/common/utils"
-	"taiko/params"
 )
 
 type DriverClient struct {
@@ -66,21 +66,26 @@ func (d *DriverClient) PreconfServerURL() string {
 func BuildPreconfBlock(
 	ctx context.Context,
 	rpccli *rpc.Client,
+	privateKey *ecdsa.PrivateKey,
 	preconfURL string,
 	anchoredL1Block *types.Header,
 	l2BlockID uint64,
-	txs types.Transactions,
-) (*types.Header, types.Transactions, error) {
+) (*types.Header, error) {
 	l2cli := rpccli.L2
+
+	signedTxs, err := utils.CreateL2Txs(context.Background(), l2cli, true)
+	if err != nil {
+		return nil, err
+	}
 
 	parent, err := l2cli.HeaderByNumber(ctx, big.NewInt(0).SetUint64(l2BlockID-1))
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	preconfCfg, err := rpccli.GetProtocolConfigs(nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	baseFee, err := rpccli.CalculateBaseFee(
@@ -91,7 +96,7 @@ func BuildPreconfBlock(
 		anchoredL1Block.Time,
 	)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to calculate base fee: %w", err)
+		return nil, fmt.Errorf("failed to calculate base fee: %w", err)
 	}
 
 	constructor, _ := anchorTxConstructor.New(rpccli)
@@ -107,21 +112,19 @@ func BuildPreconfBlock(
 		baseFee,
 	)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	txBytes, err := utils.EncodeAndCompressTxList(append([]*types.Transaction{anchorTx}, txs...))
+	txBytes, err := utils.EncodeAndCompressTxList(append([]*types.Transaction{anchorTx}, signedTxs...))
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-
-	preconferPrivKey := params.ChainAuths[1].PrivateKey
 
 	extraData := encoding.EncodeBaseFeeConfig(preconfCfg.BaseFeeConfig())
 	reqBody := &preconfblocks.BuildPreconfBlockRequestBody{
 		ExecutableData: &preconfblocks.ExecutableData{
 			ParentHash:    parent.Hash(),
-			FeeRecipient:  crypto.PubkeyToAddress(preconferPrivKey.PublicKey),
+			FeeRecipient:  crypto.PubkeyToAddress(privateKey.PublicKey),
 			Number:        l2BlockID,
 			GasLimit:      uint64(preconfCfg.BlockMaxGasLimit()) + taiko.AnchorV3GasLimit,
 			Timestamp:     anchoredL1Block.Time,
@@ -133,13 +136,13 @@ func BuildPreconfBlock(
 
 	payload, err := rlp.EncodeToBytes(reqBody.ExecutableData)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	hash := crypto.Keccak256(payload)
-	sig, err := crypto.Sign(hash, preconferPrivKey)
+	sig, err := crypto.Sign(hash, privateKey)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	reqBody.Signature = common.Bytes2Hex(sig)
 
@@ -149,16 +152,16 @@ func BuildPreconfBlock(
 		SetBody(reqBody).
 		Post(preconfURL + "/preconfBlocks")
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	if !res.IsSuccess() {
-		return nil, nil, fmt.Errorf("failed to build preconf block: %v", res.Error())
+		return nil, fmt.Errorf("failed to build preconf block: %v", res.Error())
 	}
 
 	var body *preconfblocks.BuildPreconfBlockResponseBody
 	if err = json.Unmarshal(res.Body(), &body); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return body.BlockHeader, txs, nil
+	return body.BlockHeader, nil
 }

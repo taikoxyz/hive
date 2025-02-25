@@ -79,6 +79,7 @@ func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
 			}
 
 			envs["L1_PROPOSER_PRIV_KEY"] = params.ChainAuths[index*2+1].Key
+			envs["L2_SUGGESTED_FEE_RECIPIENT"] = params.ChainAuths[index*2+1].Address.String()
 			envs["L1_PROVER_PRIV_KEY"] = params.ChainAuths[index*2+2].Key
 
 			params.ClusterEnvs[index] = envs
