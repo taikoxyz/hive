@@ -48,31 +48,31 @@ make hiveview
 * Run l2-full-sync test:
 
 ```shell
-./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover,taiko/taiko-geth,taiko/driver,taiko/taiko-geth,taiko/driver --sim taiko --sim.limit "taiko-genesis/l2-full-sync"
+./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover,taiko/taiko-geth,taiko/driver,taiko/taiko-geth,taiko/driver --sim taiko --sim.limit "taiko/fullsync"
 ```
 
-* Run l2-snap-sync test:
+* Run pacaya preconf test:
 
 ```shell
-./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover,taiko/taiko-geth,taiko/driver,taiko/taiko-geth,taiko/driver --sim taiko --sim.limit "taiko-genesis/l2-snap-sync"
+./build/bin/hive --docker.output --sim taiko --sim.limit "preconf/preconf" --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/taiko-geth,taiko/driver
 ```
 
 * Run taiko-reorg test:
 
 ```shell
-./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "taiko-reorg/taiko-reorg"
+./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "reorg/reorg"
 ```
 
 * Run blob-l1-beacon test:
 
 ```shell
-./build/bin/hive --docker.output --client geth,prysm/prysm-bn,prysm/prysm-vc,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "taiko-blob/blob-l1-beacon"
+./build/bin/hive --docker.output --client geth,prysm/prysm-bn,prysm/prysm-vc,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "blob/blob-l1-beacon"
 ```
 
 * Run blob-server test:
 
 ```shell
-./build/bin/hive --docker.output --client geth,prysm/prysm-bn,prysm/prysm-vc,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover,storage/redis,storage/postgres,blobscan/blobscan-api,blobscan/blobscan-indexer --sim taiko --sim.limit "taiko-blob/blob-server"
+./build/bin/hive --docker.output --client geth,prysm/prysm-bn,prysm/prysm-vc,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover,storage/redis,storage/postgres,blobscan/blobscan-api,blobscan/blobscan-indexer --sim taiko --sim.limit "blob/blob-server"
 ```
 
 ### Hive framework
@@ -104,58 +104,59 @@ make hiveview
 
 ```go
 type ClientTestSpec struct {
-    suite_base.BaseTestSpec
+suite_base.BaseTestSpec
 }
 
 func (r ClientTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Testnet) {
-    panic("Plz add test content in this function.")
+panic("Plz add test content in this function.")
 }
 
 ```
 
 * Add `tests.go`
+
 ```go
 var testSuite = hivesim.Suite{
-    Name:        "taiko-blob",
-    DisplayName: "driver blob client test",
-    Location:    "suites/blob",
+Name:        "taiko-blob",
+DisplayName: "driver blob client test",
+Location:    "suites/blob",
 }
 
 var Tests = make([]suites.TestSpec, 0)
 
 func init() {
-    Tests = append(Tests,
-    BlobTestSpec{
-        TestL1Beacon: true,
-        BaseTestSpec: suite_base.BaseTestSpec{
-            Name: "blob-l1-beacon",
-        },
-    },
-    BlobTestSpec{
-        TestBlobServer: true,
-        BaseTestSpec: suite_base.BaseTestSpec{
-            Name: "blob-server",
-        },
-    })
+Tests = append(Tests,
+BlobTestSpec{
+TestL1Beacon: true,
+BaseTestSpec: suite_base.BaseTestSpec{
+Name: "blob-l1-beacon",
+},
+},
+BlobTestSpec{
+TestBlobServer: true,
+BaseTestSpec: suite_base.BaseTestSpec{
+Name: "blob-server",
+},
+})
 }
 
 func Suite(clients clients.ClientGroups) hivesim.Suite {
-    // Load params.yml
-    beaconConfig, err := params.UnmarshalConfig(taparams.ConfigContent, nil)
-    if err != nil {
-        panic(err)
-    }
-    
-    var genesis core.Genesis
-    // Load genesis.json
-    if err = json.Unmarshal(taparams.GenesisContent, &genesis); err != nil {
-        panic(err)
-    }
-	
-    suites.SuiteHydrate(&testSuite, clients, Tests, &execution_config.GenesisState{
-    BeaconConfig:     beaconConfig,
-    Genesis:          &genesis,
-    })
-	return testSuite
+// Load params.yml
+beaconConfig, err := params.UnmarshalConfig(taparams.ConfigContent, nil)
+if err != nil {
+panic(err)
+}
+
+var genesis core.Genesis
+// Load genesis.json
+if err = json.Unmarshal(taparams.GenesisContent, &genesis); err != nil {
+panic(err)
+}
+
+suites.SuiteHydrate(&testSuite, clients, Tests, &execution_config.GenesisState{
+BeaconConfig:     beaconConfig,
+Genesis:          &genesis,
+})
+return testSuite
 }
 ```

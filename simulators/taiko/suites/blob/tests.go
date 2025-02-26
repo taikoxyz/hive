@@ -25,13 +25,15 @@ func init() {
 		BlobTestSpec{
 			TestL1Beacon: true,
 			BaseTestSpec: suite_base.BaseTestSpec{
-				Name: "blob-l1-beacon",
+				Name:  "blob-l1-beacon",
+				Debug: false,
 			},
 		},
 		BlobTestSpec{
 			TestBlobServer: true,
 			BaseTestSpec: suite_base.BaseTestSpec{
-				Name: "blob-server",
+				Name:  "blob-server",
+				Debug: false,
 			},
 		})
 }
