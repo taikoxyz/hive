@@ -15,7 +15,6 @@ type TestSpec interface {
 	GetTestnetConfig() *testnet.Config
 	GetDisplayName() string
 	Verify(ctx context.Context, t *hivesim.T, testnet *testnet.Testnet)
-	DebugTestSpec() TestSpec
 }
 
 // SuiteHydrate Add all tests to the suite

@@ -5,10 +5,22 @@ import (
 	"github.com/ethereum/hive/hivesim"
 	"math/rand/v2"
 	"taiko/common/clients"
+	"taiko/common/testnet"
 	tn "taiko/common/testnet"
 	"taiko/params"
+	suite_base "taiko/suites/base"
 	"time"
 )
+
+type ReorgTestSpec struct {
+	suite_base.BaseTestSpec
+}
+
+func (r ReorgTestSpec) GetTestnetConfig() *testnet.Config {
+	cfg := r.BaseTestSpec.GetTestnetConfig()
+	cfg.Network = "taiko_reorg_test"
+	return cfg
+}
 
 func (r ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Testnet) {
 	node := testnet.Nodes[0]
@@ -17,7 +29,7 @@ func (r ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 	}
 
 	// For debug
-	if r.IsDebug() {
+	if r.Debug {
 		time.Sleep(time.Minute * 60)
 	}
 
@@ -41,21 +53,8 @@ func (r ReorgTestSpec) reorgAndVerifyFirstCluster(ctx context.Context, t *hivesi
 	}
 	t.Logf("%s: start reorgAndVerifyFirstCluster, target number: %d", r.Name, l2ReorgStartNumber)
 
-	if anvil == nil || driver == nil || proposer == nil || prover == nil || l2eth == nil {
-		t.Logf("anvil, driver, proposer, prover or l2eth client is nil!")
-		return
-	}
-
-	if !anvil.IsRunning() || !l2eth.IsRunning() {
-		t.Fatalf("anvil or l2eth node is not running!")
-	}
-
 	// Start recording reorg points.
 	anvil.StartRecordReorgPoints(ctx, l2eth.EthClient)
-
-	if err := l2eth.WaitLatestNumber(ctx, timeout, l2ReorgStartNumber); err != nil {
-		t.Fatalf("%s: failed to wait latest number, err: %v", l2eth.ClientType(), err)
-	}
 
 	for range time.Tick(time.Second) {
 		lastVerifiedBlockID := prover.GetLastVerifiedBlockId(ctx)
@@ -63,6 +62,10 @@ func (r ReorgTestSpec) reorgAndVerifyFirstCluster(ctx context.Context, t *hivesi
 			break
 		}
 		t.Nil(prover.VerifyBlocks(params.L1Auths[0]), "failed to verify blocks")
+	}
+
+	if err := l2eth.WaitLatestNumber(ctx, timeout, l2ReorgStartNumber); err != nil {
+		t.Fatalf("%s: failed to wait latest number, err: %v", l2eth.ClientType(), err)
 	}
 
 	if err := prover.WaitLatestVerifiedNumber(ctx, timeout, l2ReorgStartNumber/2); err != nil {

@@ -24,7 +24,8 @@ func init() {
 	Tests = append(Tests,
 		ReorgTestSpec{
 			BaseTestSpec: suite_base.BaseTestSpec{
-				Name: "reorg",
+				Name:  "reorg",
+				Debug: false,
 			},
 		},
 	)

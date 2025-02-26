@@ -7,7 +7,6 @@ import (
 	"taiko/common/testnet"
 	tn "taiko/common/testnet"
 	"taiko/params"
-	"taiko/suites"
 	suite_base "taiko/suites/base"
 	"time"
 )
@@ -31,14 +30,6 @@ func (r BlobTestSpec) GetTestnetConfig() *testnet.Config {
 	return cfg
 }
 
-func (r BlobTestSpec) DebugTestSpec() suites.TestSpec {
-	return BlobTestSpec{
-		r.TestL1Beacon,
-		r.TestBlobServer,
-		r.BaseTestSpec.DebugTestSpec().(suite_base.BaseTestSpec),
-	}
-}
-
 func (r BlobTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Testnet) {
 	node := testnet.Nodes[0]
 	if err := node.Start(); err != nil {
@@ -46,7 +37,7 @@ func (r BlobTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Test
 	}
 
 	// For debug
-	if r.IsDebug() {
+	if r.Debug {
 		time.Sleep(time.Minute * 60)
 	}
 

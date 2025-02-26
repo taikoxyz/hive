@@ -86,7 +86,7 @@ func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 	proposer.PauseClient()
 
 	// For Debug
-	if r.IsDebug() {
+	if r.Debug {
 		driver.Shutdown()
 		time.Sleep(time.Minute * 120)
 	}

@@ -28,6 +28,12 @@ func init() {
 			L2TargetNumber: 13,
 			Debug:          false,
 		},
+		ForcedInclusionTestSpec{
+			BaseTestSpec: BaseTestSpec{
+				Name:  "forced-inclusion",
+				Debug: true,
+			},
+		},
 	)
 }
 
