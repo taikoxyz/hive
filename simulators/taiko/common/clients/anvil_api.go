@@ -12,9 +12,7 @@ import (
 
 func (a *AnvilClient) MineBlock() {
 	err := a.EthClient.CallContext(context.Background(), nil, "evm_mine")
-	if err != nil {
-		a.Fatalf("failed to mine block, err: %v", err)
-	}
+	a.FailIfNotNil(err, fmt.Sprintf("failed to mine block, err: %v", err))
 }
 
 func (a *AnvilClient) StartMining() {

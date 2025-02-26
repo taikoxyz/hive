@@ -2,6 +2,7 @@ package clients
 
 import (
 	"context"
+	"fmt"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"math/big"
@@ -9,19 +10,23 @@ import (
 )
 
 func (a *AnvilClient) StartRecordReorgPoints(ctx context.Context, l2cli *rpc.EthClient) {
-
-	a.reorgCache = make(map[uint64]*L1BlockInfo)
+	if a.reorgCh != nil {
+		return
+	}
 	a.reorgCh = make(chan struct{})
 
 	var (
 		l1Number uint64
 		l1Cli    = a.EthClient
 	)
+
 	go func() {
 		tick := time.NewTicker(time.Second)
 		defer tick.Stop()
 		for {
 			select {
+			case <-ctx.Done():
+				return
 			case <-a.reorgCh:
 				return
 			case <-tick.C:
@@ -47,7 +52,6 @@ func (a *AnvilClient) StartRecordReorgPoints(ctx context.Context, l2cli *rpc.Eth
 }
 
 func (a *AnvilClient) Reorg(l2Number uint64) {
-	close(a.reorgCh)
 	a.StopMining()
 	defer a.StartMining()
 
@@ -68,31 +72,25 @@ func (a *AnvilClient) Reorg(l2Number uint64) {
 	}
 
 	blocks := make([]*types.Block, 0)
-	for num := l1Number + 1; true; num++ {
-		block, err := client.BlockByNumber(ctx, new(big.Int).SetUint64(num))
+	for l1Number += 1; true; {
+		block, err := client.BlockByNumber(ctx, new(big.Int).SetUint64(l1Number))
 		if err != nil {
 			break
 		}
 		blocks = append(blocks, block)
+		delete(a.reorgCache, l1Number)
+		l1Number++
 	}
 
 	a.RevertSnapshot(snapshot)
-	//a.SetNextBlockTimestamp(info.Header.Time + a.SecondsPerSlot + 1)
-	//a.SetNextBlockTimestamp(blocks[0].Time() + 1)
 
 	for _, block := range blocks {
 		for _, tx := range block.Transactions() {
-			if err := client.SendTransaction(ctx, tx); err != nil {
-				a.Fatalf("failed to send tx %s, err: %v", tx.Hash().Hex(), err)
-			}
+			err := client.SendTransaction(ctx, tx)
+			a.FailIfNotNil(err, fmt.Sprintf("failed to send tx %s, err: %v", tx.Hash().Hex(), err))
 		}
-		//if err := a.WaitLatestNumber(ctx, time.Second*60, block.NumberU64()); err != nil {
-		//	a.Fatalf("reorg failed to wait latest number, err: %v", err)
-		//}
-		//time.Sleep(time.Duration(a.SecondsPerSlot) * time.Second)
 		a.MineBlock()
 	}
 
-	a.reorgCh = nil
-	a.reorgCache = nil
+	a.FailIfNotNil(a.WaitLatestNumber(ctx, time.Second*30, l1Number), fmt.Sprintf("cannot wait for l1 number: %d", l1Number))
 }

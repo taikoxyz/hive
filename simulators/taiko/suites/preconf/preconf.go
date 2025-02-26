@@ -3,6 +3,7 @@ package preconf
 import (
 	"context"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/hive/hivesim"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -16,8 +17,6 @@ import (
 
 type PreconfTestSpec struct {
 	suite_base.BaseTestSpec
-
-	anchorL1Head *types.Header
 }
 
 func (r *PreconfTestSpec) GetTestnetConfig() *testnet.Config {
@@ -99,20 +98,26 @@ func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 		t.FailIfNotNil(err, "cannot preconfirmer proposer")
 
 		// Verify latest preconf block.
-		verifyL2Chain(t, testnet.Nodes, l2Header)
+		verifyL2Chain(t, true, testnet.Nodes, l2Header)
 
 		// propose txs.
 		_, _, err = proposeBlock(ctx, driver.Envs, driver.Client, anchorL1Header)
 		t.FailIfNotNil(err, "cannot propose txs")
 
-		// todo: check l1Origin and head l1Origin, brefore and after
 		// todo: multi times reorg and preconf
 		// Verify latest propose block.
-		verifyL2Chain(t, testnet.Nodes, l2Header)
+		verifyL2Chain(t, false, testnet.Nodes, l2Header)
 	}
 }
 
-func verifyL2Chain(t *hivesim.T, nodes []*clients.Node, l2Header *types.Header) {
+func verifyL2Chain(t *hivesim.T, isPreconf bool, nodes []*clients.Node, l2Header *types.Header) {
+	l2cli := nodes[0].DriverClient.Client.L2
+	l1Origin, err := l2cli.L1OriginByID(context.Background(), l2Header.Number)
+	t.FailIfNotNil(err, "cannot get l1 origin by id")
+
+	l1HeadOrigin, err := l2cli.HeadL1Origin(context.Background())
+	t.FailIfNotNil(err, "cannot get head l1 origin")
+
 	for _, node := range nodes {
 		l2geth := node.L2EthClient
 		t.FailIfNotNil(l2geth.WaitLatestNumber(context.Background(), time.Second*30, l2Header.Number.Uint64()), "cannot get latest number")
@@ -120,7 +125,27 @@ func verifyL2Chain(t *hivesim.T, nodes []*clients.Node, l2Header *types.Header) 
 		actualHeader, err := l2geth.EthClient.HeaderByNumber(context.Background(), l2Header.Number)
 		t.FailIfNotNil(err, "cannot get header by number")
 		t.Equal(l2Header.Hash().String(), actualHeader.Hash().String(), fmt.Sprintf("header hash not equal, node id: %d", node.Index))
+
+		l2cli = node.DriverClient.L2
+		l1o, err := l2cli.L1OriginByID(context.Background(), l2Header.Number)
+		t.FailIfNotNil(err, "cannot get l1 origin by id")
+
+		l1ho, err := l2cli.HeadL1Origin(context.Background())
+		t.FailIfNotNil(err, "cannot get head l1 origin")
+
+		if isPreconf {
+			t.Equal(true, l1Origin.L1BlockHeight == nil)
+			t.Equal(l1Origin.L1BlockHash.String(), common.Hash{}.String())
+		} else {
+			t.Equal(l1Origin.L1BlockHeight.Uint64(), l1o.L1BlockHeight.Uint64())
+			t.Equal(l1Origin.L1BlockHash.String(), l1o.L1BlockHash.String())
+		}
+		t.Equal(l1Origin.BlockID.Uint64(), l1o.BlockID.Uint64())
+		t.Equal(l1Origin.L2BlockHash.String(), l1o.L2BlockHash.String())
+
+		t.Equal(l1HeadOrigin.L1BlockHeight.Uint64(), l1ho.L1BlockHeight.Uint64())
+		t.Equal(l1HeadOrigin.L1BlockHash.String(), l1ho.L1BlockHash.String())
+		t.Equal(l1HeadOrigin.BlockID.Uint64(), l1ho.BlockID.Uint64())
+		t.Equal(l1HeadOrigin.L2BlockHash.String(), l1ho.L2BlockHash.String())
 	}
 }
-
-func verifyL1Origin(t *hivesim.T) {}

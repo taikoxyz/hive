@@ -28,6 +28,14 @@ func init() {
 				Debug: false,
 			},
 		},
+		&ReorgTestSpec{
+			PreconfTestSpec: PreconfTestSpec{
+				suite_base.BaseTestSpec{
+					Name:  "reorg",
+					Debug: false,
+				},
+			},
+		},
 	)
 }
 

@@ -48,7 +48,7 @@ make hiveview
 * Run l2-full-sync test:
 
 ```shell
-./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover,taiko/taiko-geth,taiko/driver,taiko/taiko-geth,taiko/driver --sim taiko --sim.limit "taiko/fullsync"
+./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover,taiko/taiko-geth,taiko/driver,taiko/taiko-geth,taiko/driver --sim taiko --sim.limit "base/fullsync"
 ```
 
 * Run pacaya preconf test:
@@ -57,7 +57,13 @@ make hiveview
 ./build/bin/hive --docker.output --sim taiko --sim.limit "preconf/preconf" --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/taiko-geth,taiko/driver
 ```
 
-* Run taiko-reorg test:
+* Run pacaya preconf reorg test:
+
+```shell
+./build/bin/hive --docker.output --sim taiko --sim.limit "preconf/reorg" --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer
+```
+
+* Run reorg-reorg test:
 
 ```shell
 ./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "reorg/reorg"
