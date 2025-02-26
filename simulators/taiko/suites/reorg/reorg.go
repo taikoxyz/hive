@@ -74,7 +74,7 @@ func (r ReorgTestSpec) reorgAndVerifyFirstCluster(ctx context.Context, t *hivesi
 
 	// Get reorg point.
 	latestVerified := prover.GetLastVerifiedBlockId(ctx)
-	t.Logf("%s: latestVerified: %d", l2eth.ClientType(), latestVerified)
+	t.Logf("get the l2chain latestVerified: %d", latestVerified)
 
 	// pause driver, proposer, prover
 	driver.PauseClient()
@@ -82,7 +82,15 @@ func (r ReorgTestSpec) reorgAndVerifyFirstCluster(ctx context.Context, t *hivesi
 	prover.PauseClient()
 
 	// Reorg l1 eth chain.
-	anvil.Reorg(latestVerified + 1)
+	anvil.Reorg(latestVerified)
+
+	/*for range time.Tick(time.Second) {
+		lastVerifiedBlockID := prover.GetLastVerifiedBlockId(ctx)
+		if lastVerifiedBlockID >= latestVerified {
+			break
+		}
+		t.Nil(prover.VerifyBlocks(params.L1Auths[0]), "failed to verify blocks")
+	}*/
 
 	// unpause driver, proposer, prover
 	driver.UnpauseClient()

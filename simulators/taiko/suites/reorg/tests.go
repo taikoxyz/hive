@@ -24,8 +24,9 @@ func init() {
 	Tests = append(Tests,
 		ReorgTestSpec{
 			BaseTestSpec: suite_base.BaseTestSpec{
-				Name:  "reorg",
-				Debug: false,
+				Name:           "reorg",
+				Debug:          false,
+				L2TargetNumber: 13,
 			},
 		},
 	)

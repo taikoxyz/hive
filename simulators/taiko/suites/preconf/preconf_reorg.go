@@ -58,11 +58,12 @@ func (r *ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *testn
 		_, _, err = proposeBlock(ctx, driver.Envs, driver.Client, anchorL1Header)
 		t.FailIfNotNil(err, "cannot propose txs")
 
+		// Verify latest propose block.
+		verifyL2Chain(t, false, testnet.Nodes, l2Header)
+
 		// Reorg to the specified l2 block.
 		anvil.Reorg(l2Header.Number.Uint64() - 1)
 
-		// todo: check l1Origin and head l1Origin, brefore and after
-		// todo: multi times reorg and preconf
 		// Verify latest propose block.
 		verifyL2Chain(t, false, testnet.Nodes, l2Header)
 	}

@@ -104,7 +104,6 @@ func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 		_, _, err = proposeBlock(ctx, driver.Envs, driver.Client, anchorL1Header)
 		t.FailIfNotNil(err, "cannot propose txs")
 
-		// todo: multi times reorg and preconf
 		// Verify latest propose block.
 		verifyL2Chain(t, false, testnet.Nodes, l2Header)
 	}

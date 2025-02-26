@@ -29,8 +29,6 @@ func (a *AnvilClient) Start() error {
 }
 
 func (a *AnvilClient) Shutdown() error {
-	if a.reorgCh != nil {
-		close(a.reorgCh)
-	}
+	close(a.reorgCh)
 	return a.EthNode.Shutdown()
 }
