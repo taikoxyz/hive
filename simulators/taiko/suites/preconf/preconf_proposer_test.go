@@ -7,7 +7,6 @@ import (
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/stretchr/testify/assert"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
-	"net"
 	"os"
 	"taiko/bindings/ontake"
 	"taiko/bindings/pacaya"
@@ -55,25 +54,25 @@ func init() {
 }
 
 func TestPreconferProposer(t *testing.T) {
-	_ = os.Setenv("L2_HTTP", "http://localhost:6045")
-	for times := 10; times > 0; times-- {
-		l2Header, _, err := preconferBlock(0, rpccli, preconfURL, 10)
-		if err != nil {
-			assert.Error(t, err)
-		}
+	head, err := rpccli.PacayaClients.ForcedInclusionStore.Head(nil)
+	assert.NoError(t, err)
+	t.Log(head)
 
-		actualHeader, err := l2Cli.HeaderByNumber(context.Background(), l2Header.Number)
-		if err != nil {
-			assert.Error(t, err)
-		}
-		assert.Equal(t, l2Header.Hash(), actualHeader.Hash(), "header hash mismatch")
-	}
+	envs := params.EnvParams()
+	envs["L1_WS"] = "ws://localhost:8545"
+
+	err = storeForcedInclusion(envs, rpccli)
+	assert.NoError(t, err)
+
+	head, err = rpccli.PacayaClients.ForcedInclusionStore.Head(nil)
+	assert.NoError(t, err)
+	t.Log(head)
 }
 
 func TestCC(t *testing.T) {
-	n := enode.NewV4(&params.ChainAuths[1].PrivateKey.PublicKey, net.ParseIP("127.0.0.1"), 30303, 30303)
-	t.Log(n.URLv4())
-	t.Log(n.String())
+	head, err := rpccli.PacayaClients.ForcedInclusionStore.Head(nil)
+	assert.NoError(t, err)
+	t.Log(head)
 }
 
 func TestDD(t *testing.T) {

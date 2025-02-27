@@ -14,6 +14,17 @@ import (
 	"time"
 )
 
+func init() {
+	Tests = append(Tests,
+		BaseTestSpec{
+			Name:           "fullsync",
+			BeaconSync:     true,
+			L2TargetNumber: 13,
+			Debug:          false,
+		},
+	)
+}
+
 type BaseTestSpec struct {
 	// Spec
 	Name        string

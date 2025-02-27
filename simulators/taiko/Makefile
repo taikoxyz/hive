@@ -2,6 +2,9 @@
 
 all: taiko
 
+deploy_contracts:
+	sh scripts/deploy_l1_contract.sh
+
 taiko:
 	docker build --no-cache -t hive/simulators/taiko:latest .
 

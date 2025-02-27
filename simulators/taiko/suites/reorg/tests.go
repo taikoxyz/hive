@@ -9,7 +9,6 @@ import (
 	execution_config "taiko/common/config/execution"
 	taparams "taiko/params"
 	"taiko/suites"
-	suite_base "taiko/suites/base"
 )
 
 var testSuite = hivesim.Suite{
@@ -20,17 +19,6 @@ var testSuite = hivesim.Suite{
 
 var Tests = make([]suites.TestSpec, 0)
 
-func init() {
-	Tests = append(Tests,
-		ReorgTestSpec{
-			BaseTestSpec: suite_base.BaseTestSpec{
-				Name:           "reorg",
-				Debug:          false,
-				L2TargetNumber: 13,
-			},
-		},
-	)
-}
 func Suite(clients clients.ClientGroups) hivesim.Suite {
 	// Load params.yml
 	beaconConfig, err := params.UnmarshalConfig(taparams.ConfigContent, nil)

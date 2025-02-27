@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	txmgrMetrics "github.com/ethereum-optimism/optimism/op-service/txmgr/metrics"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/hive/hivesim"
 	tkutils "github.com/taikoxyz/taiko-mono/packages/taiko-client/cmd/utils"
@@ -32,12 +34,17 @@ type MockClient struct {
 	txmgr.TxManager
 }
 
-func (t *MockClient) InitFromCli(ctx context.Context, c *cli.Context) error {
+func (t *MockClient) InitFromCli(ctx context.Context, c *cli.Context) (err error) {
 	cfg, err := proposer.NewConfigFromCliContext(c)
 	if err != nil {
 		return err
 	}
 	t.Config = cfg
+
+	cfg.L1ProposerPrivKey, err = crypto.ToECDSA(common.FromHex(t.Envs["L1_PROPOSER_PRIV_KEY"]))
+	if err != nil {
+		return nil
+	}
 
 	txMgrCfg := pkgFlags.InitTxmgrConfigsFromCli(
 		t.Envs["L1_WS"],

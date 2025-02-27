@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-func preconferBlock(index int, rpccli *rpc.Client, preconfURL string, preconfs int) (*types.Header, *types.Header, error) {
+func preconferBlock(index int, rpccli *rpc.Client, preconfURL string, preconfs int) (*types.Header, *types.Header, []types.Transactions, error) {
 	// get txs from l2 node tx mempool.
 	var (
 		ctx          = context.Background()
@@ -25,60 +25,53 @@ func preconferBlock(index int, rpccli *rpc.Client, preconfURL string, preconfs i
 
 	anchorL1Header, err := l1cli.HeaderByNumber(ctx, nil)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get anchor header: %v", err)
+		return nil, nil, nil, fmt.Errorf("failed to get anchor header: %v", err)
 	}
 
 	l2BlockID, err := l2cli.BlockNumber(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	var latestL2Header *types.Header
+	var (
+		latestL2Header *types.Header
+		allTxs         []types.Transactions
+	)
 	for idx := 1; idx <= preconfs; idx++ {
 
-		latestL2Header, err = clients.BuildPreconfBlock(ctx, rpccli, params.ChainAuths[index*2+1].PrivateKey, preconfURL, anchorL1Header, l2BlockID+uint64(idx))
+		var signedTxs types.Transactions
+		latestL2Header, signedTxs, err = clients.BuildPreconfBlock(ctx, rpccli, params.ChainAuths[index*2+1].PrivateKey, preconfURL, anchorL1Header, l2BlockID+uint64(idx))
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to build preconf block: %v", err)
+			return nil, nil, nil, fmt.Errorf("failed to build preconf block: %v", err)
 		}
+		allTxs = append(allTxs, signedTxs)
 		time.Sleep(time.Second)
 	}
 
-	return latestL2Header, anchorL1Header, nil
+	return latestL2Header, anchorL1Header, allTxs, nil
 }
 
-func proposeBlock(ctx context.Context, envs hivesim.Params, rpccli *rpc.Client, anchorheader *types.Header) (*rawdb.L1Origin, []types.Transactions, error) {
+func proposeBlock(ctx context.Context, envs hivesim.Params, rpccli *rpc.Client, anchorheader *types.Header) (*rawdb.L1Origin, error) {
 	l2cli := rpccli.L2
 
 	mockClient := &clients.MockClient{Envs: envs}
 	if err := clients.NewTaikoClient(mockClient, flags.ProposerFlags); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	canonicalL1Origin, err := l2cli.HeadL1Origin(ctx)
 	if err != nil {
-		return nil, nil, err
-	}
-
-	l2Number, err := l2cli.BlockNumber(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// no soft blocks need to be proposed
-	if canonicalL1Origin.BlockID.Uint64() == l2Number {
-		return nil, nil, nil
+		return nil, err
 	}
 
 	// Collect all the soft transactions.
-	var (
-		txs []types.Transactions
-	)
-	for number := canonicalL1Origin.BlockID.Uint64() + 1; number <= l2Number; number++ {
+	var allTxs []types.Transactions
+	for number := canonicalL1Origin.BlockID.Uint64() + 1; true; number++ {
 		l2Block, err := l2cli.BlockByNumber(ctx, big.NewInt(int64(number)))
 		if err != nil {
-			return nil, nil, err
+			break
 		}
-		txs = append(txs, l2Block.Transactions()[1:])
+		allTxs = append(allTxs, l2Block.Transactions()[1:])
 	}
 
 	builder := NewCalldataTransactionBuilder(
@@ -93,15 +86,15 @@ func proposeBlock(ctx context.Context, envs hivesim.Params, rpccli *rpc.Client, 
 		mockClient.RevertProtectionEnabled,
 	)
 
-	txCandidate, err := builder.BuildPacaya(ctx, txs, anchorheader)
+	txCandidate, err := builder.BuildPacaya(ctx, allTxs, anchorheader)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	_, err = mockClient.Send(ctx, *txCandidate)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return canonicalL1Origin, txs, nil
+	return canonicalL1Origin, nil
 }

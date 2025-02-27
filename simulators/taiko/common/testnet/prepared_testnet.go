@@ -214,7 +214,7 @@ func (p *PreparedTestnet) prepareAnvilNode(
 
 // Prepares an execution client object with all the necessary information
 // to start
-func (p *PreparedTestnet) prepareExecutionNode(
+func (p *PreparedTestnet) prepareGethNode(
 	index int,
 	testnet *Testnet,
 	cfg *Config,
@@ -241,7 +241,12 @@ func (p *PreparedTestnet) prepareExecutionNode(
 
 		// Expose the eth1 ports to the host.
 		opts = append(opts, hivesim.Params{
-			"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp:%d,%d/tcp:%d", clients.EthHttpPort, clients.EthHttpPort-500+index*100, clients.EthWSPort, clients.EthWSPort-500+index*100),
+			"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf(
+				"%d/tcp:%d,%d/tcp:%d,%d/tcp:%d",
+				clients.EthHttpPort, clients.EthHttpPort,
+				clients.EthWSPort, clients.EthWSPort,
+				clients.EthEngineRPC, clients.EthEngineRPC,
+			),
 		})
 
 		return opts, nil

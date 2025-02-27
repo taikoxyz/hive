@@ -12,6 +12,18 @@ import (
 	"time"
 )
 
+func init() {
+	Tests = append(Tests,
+		ReorgTestSpec{
+			BaseTestSpec: suite_base.BaseTestSpec{
+				Name:           "reorg",
+				Debug:          false,
+				L2TargetNumber: 13,
+			},
+		},
+	)
+}
+
 type ReorgTestSpec struct {
 	suite_base.BaseTestSpec
 }

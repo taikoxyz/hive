@@ -70,22 +70,22 @@ func BuildPreconfBlock(
 	preconfURL string,
 	anchoredL1Block *types.Header,
 	l2BlockID uint64,
-) (*types.Header, error) {
+) (*types.Header, types.Transactions, error) {
 	l2cli := rpccli.L2
 
 	signedTxs, err := utils.CreateL2Txs(context.Background(), l2cli, true)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	parent, err := l2cli.HeaderByNumber(ctx, big.NewInt(0).SetUint64(l2BlockID-1))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	preconfCfg, err := rpccli.GetProtocolConfigs(nil)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	baseFee, err := rpccli.CalculateBaseFee(
@@ -96,7 +96,7 @@ func BuildPreconfBlock(
 		anchoredL1Block.Time,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to calculate base fee: %w", err)
+		return nil, nil, fmt.Errorf("failed to calculate base fee: %w", err)
 	}
 
 	constructor, _ := anchorTxConstructor.New(rpccli)
@@ -112,12 +112,12 @@ func BuildPreconfBlock(
 		baseFee,
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	txBytes, err := utils.EncodeAndCompressTxList(append([]*types.Transaction{anchorTx}, signedTxs...))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	extraData := encoding.EncodeBaseFeeConfig(preconfCfg.BaseFeeConfig())
@@ -136,13 +136,13 @@ func BuildPreconfBlock(
 
 	payload, err := rlp.EncodeToBytes(reqBody.ExecutableData)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	hash := crypto.Keccak256(payload)
 	sig, err := crypto.Sign(hash, privateKey)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	reqBody.Signature = common.Bytes2Hex(sig)
 
@@ -152,16 +152,16 @@ func BuildPreconfBlock(
 		SetBody(reqBody).
 		Post(preconfURL + "/preconfBlocks")
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if !res.IsSuccess() {
-		return nil, fmt.Errorf("failed to build preconf block: %v", res.Error())
+		return nil, nil, fmt.Errorf("failed to build preconf block: %v", res.Error())
 	}
 
 	var body *preconfblocks.BuildPreconfBlockResponseBody
 	if err = json.Unmarshal(res.Body(), &body); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return body.BlockHeader, nil
+	return body.BlockHeader, signedTxs, nil
 }

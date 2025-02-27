@@ -9,7 +9,6 @@ import (
 	execution_config "taiko/common/config/execution"
 	taparams "taiko/params"
 	"taiko/suites"
-	suite_base "taiko/suites/base"
 )
 
 var testSuite = hivesim.Suite{
@@ -19,25 +18,6 @@ var testSuite = hivesim.Suite{
 }
 
 var Tests = make([]suites.TestSpec, 0)
-
-func init() {
-	Tests = append(Tests,
-		&PreconfTestSpec{
-			BaseTestSpec: suite_base.BaseTestSpec{
-				Name:  "preconf",
-				Debug: false,
-			},
-		},
-		&ReorgTestSpec{
-			PreconfTestSpec: PreconfTestSpec{
-				suite_base.BaseTestSpec{
-					Name:  "reorg",
-					Debug: false,
-				},
-			},
-		},
-	)
-}
 
 func Suite(clients clients.ClientGroups) hivesim.Suite {
 	// Load params.yml

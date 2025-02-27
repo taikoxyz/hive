@@ -20,23 +20,6 @@ var testSuite = hivesim.Suite{
 
 var Tests = make([]suites.TestSpec, 0)
 
-func init() {
-	Tests = append(Tests,
-		BaseTestSpec{
-			Name:           "fullsync",
-			BeaconSync:     true,
-			L2TargetNumber: 13,
-			Debug:          false,
-		},
-		ForcedInclusionTestSpec{
-			BaseTestSpec: BaseTestSpec{
-				Name:  "forced-inclusion",
-				Debug: true,
-			},
-		},
-	)
-}
-
 func Suite(clients clients.ClientGroups) hivesim.Suite {
 	// Load params.yml
 	beaconConfig, err := params.UnmarshalConfig(taparams.ConfigContent, nil)

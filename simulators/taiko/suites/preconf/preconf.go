@@ -15,6 +15,17 @@ import (
 	"time"
 )
 
+func init() {
+	Tests = append(Tests,
+		&PreconfTestSpec{
+			BaseTestSpec: suite_base.BaseTestSpec{
+				Name:  "preconf",
+				Debug: false,
+			},
+		},
+	)
+}
+
 type PreconfTestSpec struct {
 	suite_base.BaseTestSpec
 }
@@ -94,14 +105,14 @@ func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 		index := times % len(testnet.Nodes)
 		driver = testnet.Nodes[index].DriverClient
 
-		l2Header, anchorL1Header, err := preconferBlock(index, driver.Client, driver.PreconfServerURL(), 5)
+		l2Header, anchorL1Header, _, err := preconferBlock(index, driver.Client, driver.PreconfServerURL(), 5)
 		t.FailIfNotNil(err, "cannot preconfirmer proposer")
 
 		// Verify latest preconf block.
 		verifyL2Chain(t, true, testnet.Nodes, l2Header)
 
 		// propose txs.
-		_, _, err = proposeBlock(ctx, driver.Envs, driver.Client, anchorL1Header)
+		_, err = proposeBlock(ctx, driver.Envs, driver.Client, anchorL1Header)
 		t.FailIfNotNil(err, "cannot propose txs")
 
 		// Verify latest propose block.

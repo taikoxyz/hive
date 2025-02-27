@@ -4,6 +4,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	ethparams "github.com/ethereum/go-ethereum/params"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
+	"taiko/bindings/pacaya/forcedinclusionstore"
 	"taiko/bindings/pacaya/forkrouter"
 	"taiko/bindings/pacaya/proverset"
 	"taiko/bindings/pacaya/taikoanchor"
@@ -13,10 +14,11 @@ import (
 )
 
 type PacayaL1Clients struct {
-	TaikoInbox *taikoinbox.TaikoInbox
-	TaikoToken *taikotoken.TaikoToken
-	ProverSet  *proverset.ProverSet
-	ForkRouter *forkrouter.ForkRouter
+	TaikoInbox           *taikoinbox.TaikoInbox
+	TaikoToken           *taikotoken.TaikoToken
+	ProverSet            *proverset.ProverSet
+	ForkRouter           *forkrouter.ForkRouter
+	ForcedInclusionStore *forcedinclusionstore.ForcedInclusionStore
 }
 
 func NewPacayaL1Clients(l1Cli *rpc.EthClient) (*PacayaL1Clients, error) {
@@ -43,11 +45,17 @@ func NewPacayaL1Clients(l1Cli *rpc.EthClient) (*PacayaL1Clients, error) {
 		return nil, err
 	}
 
+	forcedInclusionStore, err := forcedinclusionstore.NewForcedInclusionStore(common.HexToAddress(params.ParamByKey("FORCED_INCLUSION_STORE")), l1Cli)
+	if err != nil {
+		return nil, err
+	}
+
 	return &PacayaL1Clients{
-		TaikoInbox: taikoInbox,
-		TaikoToken: taikoToken,
-		ProverSet:  proverSet,
-		ForkRouter: forkRouter,
+		TaikoInbox:           taikoInbox,
+		TaikoToken:           taikoToken,
+		ProverSet:            proverSet,
+		ForkRouter:           forkRouter,
+		ForcedInclusionStore: forcedInclusionStore,
 	}, nil
 }
 

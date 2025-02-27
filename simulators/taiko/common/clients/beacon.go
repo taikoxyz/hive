@@ -2,6 +2,8 @@ package clients
 
 import (
 	"fmt"
+	"github.com/ethereum-optimism/optimism/op-service/eth"
+	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 )
 
 const PortBeaconTCP = 9000
@@ -22,7 +24,22 @@ func (bn *BeaconClient) ClientName() string {
 	return name
 }
 
-type BlockV2OptimisticResponse struct {
-	Version             string `json:"version"`
-	ExecutionOptimistic bool   `json:"execution_optimistic"`
+func MakeBlobs(txListBytes []byte) ([]*eth.Blob, error) {
+	var blobs []*eth.Blob
+	for start := 0; start < len(txListBytes); start += rpc.BlobBytes {
+		end := start + rpc.BlobBytes
+		if end > len(txListBytes) {
+			end = len(txListBytes)
+		}
+
+		var blob = &eth.Blob{}
+		if err := blob.FromData(txListBytes[start:end]); err != nil {
+			return nil, err
+		}
+		blob.KZGBlob()
+
+		blobs = append(blobs, blob)
+	}
+
+	return blobs, nil
 }

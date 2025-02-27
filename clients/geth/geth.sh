@@ -29,6 +29,7 @@ fi
 
 echo "Starting geth..."
 geth \
+  --verbosity 3 \
   --bootnodes="$HIVE_BOOTNODE" \
   --http \
   --http.api=admin,debug,eth,net,web3,txpool,miner \
