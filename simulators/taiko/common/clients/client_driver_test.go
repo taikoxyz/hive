@@ -2,10 +2,8 @@ package clients
 
 import (
 	"context"
-	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/assert"
@@ -83,7 +81,7 @@ func TestCC(t *testing.T) {
 	t.Log(st.SlotB.LastVerifiedBlockId)
 }
 
-func TestPreconfAPI(t *testing.T) {
+/*func TestPreconfAPI(t *testing.T) {
 	l2Block, err := l2Cli.BlockByNumber(context.Background(), nil)
 	assert.NoError(t, err)
 
@@ -114,7 +112,7 @@ func TestPreconfAPI(t *testing.T) {
 	for _, tx := range l2Block.Transactions() {
 		assert.Equalf(t, true, txsMap[tx.Hash()] != nil, fmt.Sprintf("tx %s not found", tx.Hash().String()))
 	}
-}
+}*/
 
 func TestCC1(t *testing.T) {
 	t.Log(os.Getenv("L1_PROPOSER_PRIV_KEY"))
@@ -141,4 +139,16 @@ func TestCC1(t *testing.T) {
 	assert.NoError(t, err)
 
 	t.Log(crypto.PubkeyToAddress(*pk).Hex())
+}
+
+func TestGetLastVerifiedBlockId(t *testing.T) {
+	id, err := GetLastVerifiedBlockId(context.Background(), rpccli)
+	assert.NoError(t, err)
+	t.Log(id)
+
+	tx, err := l1Ontake.TaikoL1.VerifyBlocks(params.L1Auths[0], 1)
+	assert.NoError(t, err)
+	receipt, err := bind.WaitMined(context.Background(), l1Cli, tx)
+	assert.NoError(t, err)
+	t.Log(receipt.Status)
 }

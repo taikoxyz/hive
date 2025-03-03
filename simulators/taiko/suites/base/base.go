@@ -157,14 +157,6 @@ func (ts BaseTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 	ts.verifyL2Nodes(ctx, t, prover.GetLastVerifiedBlockId(ctx), nodes)
 }
 
-func waitL2LatestNumber(ctx context.Context, t *hivesim.T, targetNumber uint64, l2Eth *clients.TaikoGethClient) {
-	// Verify l2eth node run successfully.
-	err := l2Eth.WaitLatestNumber(ctx, time.Second*60, targetNumber)
-	if err != nil {
-		t.Fatalf("failed to get latest l2geth number, number: %d, err: %v", targetNumber, err)
-	}
-}
-
 func (ts BaseTestSpec) verifyL2Nodes(ctx context.Context, t *hivesim.T, latestVerified uint64, nodes []*clients.Node) {
 	var (
 		index  int
@@ -174,7 +166,7 @@ func (ts BaseTestSpec) verifyL2Nodes(ctx context.Context, t *hivesim.T, latestVe
 
 	// todo: storeForcedInclusion test.
 
-	t.FailIfNotNil(prover.WaitLatestVerifiedNumber(ctx, time.Second*60, latestVerified+1), "failed to wait latest verified number")
+	t.FailIfNotNil(prover.WaitLatestVerifiedNumber(ctx, time.Second*10, latestVerified+1), fmt.Sprintf("failed to wait latest verified number: %d", latestVerified+1))
 
 	header, err := l2cli.HeaderByNumber(ctx, nil)
 	if err != nil {

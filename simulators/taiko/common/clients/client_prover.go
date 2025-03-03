@@ -77,16 +77,8 @@ func (p *ProverClient) WaitLatestBatchesProved(ctx context.Context, timeout time
 }
 
 func (p *ProverClient) GetLastVerifiedBlockId(ctx context.Context) uint64 {
-	var lastVerifiedBlockID uint64
-	stateVars, err := p.Client.GetProtocolStateVariablesPacaya(&bind.CallOpts{Context: ctx})
-	if err != nil {
-		slot1, _, err := p.Client.GetProtocolStateVariablesOntake(&bind.CallOpts{Context: ctx})
-		p.FailIfNotNil(err, "failed to get protocol state variables")
-		lastVerifiedBlockID = slot1.LastSyncedBlockId
-	} else {
-		lastVerifiedBlockID = stateVars.Stats2.LastVerifiedBatchId
-	}
-
+	lastVerifiedBlockID, err := GetLastVerifiedBlockId(ctx, p.Client)
+	p.FailIfNotNil(err, "failed to get last verified block id")
 	return lastVerifiedBlockID
 }
 
@@ -110,4 +102,20 @@ func (p *ProverClient) WaitLatestVerifiedNumber(ctx context.Context, timeout tim
 		return fmt.Errorf("%s failed to reach current number %d, current number: %d", p.ClientType(), verifiedNumber, current)
 	}
 	return nil
+}
+
+func GetLastVerifiedBlockId(ctx context.Context, client *rpc.Client) (uint64, error) {
+	var lastVerifiedBlockID uint64
+	stateVars, err := client.GetProtocolStateVariablesPacaya(&bind.CallOpts{Context: ctx})
+	if err != nil {
+		slot1, _, err := client.GetProtocolStateVariablesOntake(&bind.CallOpts{Context: ctx})
+		if err != nil {
+			return 0, err
+		}
+		lastVerifiedBlockID = slot1.LastSyncedBlockId
+	} else {
+		lastVerifiedBlockID = stateVars.Stats2.LastVerifiedBatchId
+	}
+
+	return lastVerifiedBlockID, nil
 }
