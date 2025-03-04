@@ -13,10 +13,11 @@ const (
 	EthHttpPort       = 8545
 	EthWSPort         = 8546
 	EthEngineRPC      = 8551
-	BeaconPort        = 3500
-	PreconfServerPort = 7001
 	GethP2PPort       = 30303
+	PreconfServerPort = 7001
 	PreconfP2pPort    = 9222
+	BeaconPort        = 3500
+	BlobscanAPIPort   = 3001
 )
 
 // A node bundles together:

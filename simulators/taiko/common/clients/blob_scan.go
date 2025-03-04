@@ -13,7 +13,7 @@ type BlobScanClient struct {
 }
 
 func (b *BlobScanClient) BlobAPIURL() string {
-	return fmt.Sprintf("http://%s:3001", b.BlobApi.NetworkIP())
+	return fmt.Sprintf("http://%s:%d", b.BlobApi.NetworkIP(), BlobscanAPIPort)
 }
 
 func (b *BlobScanClient) PostgresURL() string {

@@ -65,7 +65,6 @@ func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
 				anvilClient  = firstNode.AnvilClient
 				l1Client     = firstNode.L1EthClient
 				beaconClient = firstNode.BeaconClient
-				blobClient   = firstNode.BlobScanClient
 				l2Client     = node.L2EthClient
 				envs         = params.EnvParams()
 			)
@@ -82,14 +81,6 @@ func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
 				envs["L1_HTTP"] = l1Client.HttpURL()
 				envs["L1_WS"] = l1Client.WSURL()
 				envs["L1_BEACON"] = beaconClient.BeaconURL()
-			}
-
-			// These variables are set for blob tests.
-			if envs["TEST_L1_BEACON"] == "true" {
-				delete(envs, "RUN_TESTS")
-			} else if envs["TEST_BLOB_SERVER"] == "true" {
-				delete(envs, "L1_BEACON")
-				envs["BLOB_SERVER"] = blobClient.BlobAPIURL()
 			}
 
 			envs["L1_PROPOSER_PRIV_KEY"] = params.ChainAuths[index*2+1].Key

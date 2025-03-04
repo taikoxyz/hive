@@ -513,7 +513,7 @@ func (p *PreparedTestnet) prepareBlobScanClient(
 	config *Config,
 	clientsByRole map[clients.Role]*hivesim.ClientDefinition,
 ) {
-	if clientsByRole[clients.BlobApi] == nil || params.ParamByKey("TEST_BLOB_SERVER") != "true" {
+	if clientsByRole[clients.BlobApi] == nil || params.ParamByKey("TEST_BLOB_SCAN") != "true" {
 		return
 	}
 
@@ -569,7 +569,7 @@ func (p *PreparedTestnet) prepareBlobScanClient(
 			// Expose the eth1 ports to the host.
 			if testnet.Debug {
 				opts = append(opts, hivesim.Params{
-					"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("3001/tcp"),
+					"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp:%d", clients.BlobscanAPIPort, clients.BlobscanAPIPort),
 				})
 			}
 
