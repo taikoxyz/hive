@@ -12,6 +12,7 @@ import (
 )
 
 func (a *AnvilClient) StartRecordReorgPoints(ctx context.Context, l2cli *rpc.EthClient) {
+	a.reorgCh = make(chan struct{})
 	go func() {
 		tick := time.NewTicker(time.Second)
 		defer tick.Stop()
@@ -41,6 +42,13 @@ func (a *AnvilClient) StartRecordReorgPoints(ctx context.Context, l2cli *rpc.Eth
 			}
 		}
 	}()
+}
+
+func (a *AnvilClient) StopRecordReorgPoints() {
+	if a.reorgCh != nil {
+		close(a.reorgCh)
+		a.reorgCh = nil
+	}
 }
 
 func (a *AnvilClient) Reorg(l2Number uint64) {
@@ -90,5 +98,5 @@ func (a *AnvilClient) Reorg(l2Number uint64) {
 
 	l1Number -= 1
 
-	a.FailIfNotNil(a.WaitLatestNumber(ctx, time.Second*30, l1Number), fmt.Sprintf("cannot wait for l1 number: %d", l1Number))
+	a.WaitLatestNumber(ctx, time.Second*30, l1Number)
 }

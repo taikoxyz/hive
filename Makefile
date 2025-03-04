@@ -34,17 +34,16 @@ test_preconf_reorg:
 
 test_preconf_forced_inclusion:
 	@echo "Running preconf/forced-inclusion test..."
-	#./build/bin/hive --docker.output --client geth,prysm/prysm-bn,prysm/prysm-vc,taiko/taiko-geth,taiko/driver,taiko/proposer --sim taiko --sim.limit "preconf/forced-inclusion"
-	./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer --sim taiko --sim.limit "preconf/forced-inclusion"
+	./build/bin/hive --docker.output --client geth,prysm/prysm-bn,prysm/prysm-vc,taiko/taiko-geth,taiko/driver,taiko/proposer --sim taiko --sim.limit "preconf/forced-inclusion"
 
 test_full_sync:
 	@echo "Running base/fullsync test..."
 	./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover,taiko/taiko-geth,taiko/driver,taiko/taiko-geth,taiko/driver --sim taiko --sim.limit "base/fullsync"
 
-test_blob_l1_beacon:
+test_blob_beacon:
 	@echo "Running blob/blob-l1-beacon test..."
 	./build/bin/hive --docker.output --client geth,prysm/prysm-bn,prysm/prysm-vc,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "blob/blob-l1-beacon"
 
-test_blob_server:
+test_blob_scan:
 	@echo "Running blob/blob-server test..."
 	./build/bin/hive --docker.output --client geth,prysm/prysm-bn,prysm/prysm-vc,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover,storage/redis,storage/postgres,blobscan/blobscan-api,blobscan/blobscan-indexer --sim taiko --sim.limit "blob/blob-server"

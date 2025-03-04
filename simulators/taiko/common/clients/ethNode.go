@@ -3,6 +3,8 @@ package clients
 import (
 	"context"
 	"fmt"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"math/big"
 	"time"
@@ -34,7 +36,7 @@ func (ec *EthNode) Start() (err error) {
 
 	// Try 20 times until the eth client is ready to connect.
 	for times := 0; times < 20; times++ {
-		ec.EthClient, err = rpc.NewEthClient(context.Background(), ec.HttpURL(), time.Second)
+		ec.EthClient, err = rpc.NewEthClient(context.Background(), ec.WSURL(), time.Second)
 		if err == nil {
 			break
 		}
@@ -69,31 +71,33 @@ func (ec *EthNode) EngineURL() string {
 	return fmt.Sprintf("http://%v:%d", ec.NetworkIP(), ec.EnginePort)
 }
 
-func (ec *EthNode) WaitLatestNumber(ctx context.Context, timeout time.Duration, number uint64) error {
+func (ec *EthNode) WaitLatestNumber(ctx context.Context, timeout time.Duration, number uint64) {
 	ec.Logf("%s: wait latest number %d", ec.ClientType(), number)
-	current, times := uint64(0), timeout/time.Second
-	for times > 0 && number >= current {
-		select {
-		case <-time.Tick(time.Second):
-			number, err := ec.EthClient.BlockNumber(ctx)
-			if err != nil {
-				ec.Logf("failed to get block number from %s, err: %v", ec.ClientType(), err)
-				continue
-			}
-			if number >= current {
-				current = number + 1
-				times = timeout / time.Second
-				break
-			} else {
-				times--
-			}
+
+	cli := ethclient.NewClient(ec.EthClient.Client)
+
+	high, err := cli.BlockNumber(ctx)
+	ec.FailIfNotNil(err, "failed to get latest number")
+
+	if high >= number {
+		return
+	}
+
+	headerCh := make(chan *types.Header, 10)
+	subCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	sub, err := cli.SubscribeNewHead(subCtx, headerCh)
+	ec.FailIfNotNil(err, "failed to subscribe to new head")
+	defer sub.Unsubscribe()
+
+	for header := range headerCh {
+		if header.Number.Uint64() >= number {
+			return
 		}
 	}
 
-	if number >= current {
-		return fmt.Errorf("%s failed to reach current number %d, current number: %d", ec.ClientType(), number, current)
-	}
-	return nil
+	ec.Fatalf("failed to wait latest number %d", number)
 }
 
 func (ec *EthNode) WaitTargetNumber(ctx context.Context, timeout time.Duration, number uint64) error {

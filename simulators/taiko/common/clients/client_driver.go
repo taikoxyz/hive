@@ -49,9 +49,8 @@ func (d *DriverClient) Start() (err error) {
 }
 
 func (d *DriverClient) Shutdown() error {
-	if err := d.HiveManagedClient.Shutdown(); err != nil {
-		return err
-	}
+	err := d.HiveManagedClient.Shutdown()
+	d.FailIfNotNil(err, fmt.Sprintf("failed to shutdown %s", d.ClientType()))
 	if d.State != nil {
 		d.State.Close()
 	}

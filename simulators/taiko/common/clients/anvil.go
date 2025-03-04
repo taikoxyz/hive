@@ -24,11 +24,10 @@ type AnvilClient struct {
 
 func (a *AnvilClient) Start() error {
 	a.reorgCache = make(map[uint64]*L1BlockInfo)
-	a.reorgCh = make(chan struct{})
 	return a.EthNode.Start()
 }
 
 func (a *AnvilClient) Shutdown() error {
-	close(a.reorgCh)
+	a.StopRecordReorgPoints()
 	return a.EthNode.Shutdown()
 }

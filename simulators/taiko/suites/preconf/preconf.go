@@ -90,7 +90,7 @@ func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 		l2geth   = node.L2EthClient
 	)
 
-	t.Nil(l2geth.WaitLatestNumber(ctx, time.Second*30, proposer.PacayaClients.ForkHeight))
+	l2geth.WaitLatestNumber(ctx, time.Second*30, proposer.PacayaClients.ForkHeight)
 
 	// stop the proposer.
 	proposer.PauseClient()
@@ -130,7 +130,7 @@ func verifyL2Chain(t *hivesim.T, isPreconf bool, nodes []*clients.Node, l2Header
 
 	for _, node := range nodes {
 		l2geth := node.L2EthClient
-		t.FailIfNotNil(l2geth.WaitLatestNumber(context.Background(), time.Second*30, l2Header.Number.Uint64()), "cannot get latest number")
+		l2geth.WaitLatestNumber(context.Background(), time.Second*30, l2Header.Number.Uint64())
 
 		actualHeader, err := l2geth.EthClient.HeaderByNumber(context.Background(), l2Header.Number)
 		t.FailIfNotNil(err, "cannot get header by number")

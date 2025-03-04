@@ -2,9 +2,11 @@ package clients
 
 import (
 	"context"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/hive/hivesim"
+	"github.com/taikoxyz/taiko-mono/packages/taiko-client/bindings/pacaya"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"math/big"
 )
@@ -78,4 +80,16 @@ func (p *ProposerClient) ProposeTxLists(
 	t.Logf("propose tx list, batch count: %d, txs count: %d", len(txs), total)
 
 	return canonicalL1Origin, txs, nil //p.Proposer.ProposeTxLists(ctx, txs)
+}
+
+func (p *ProposerClient) GetProposeEvents(ctx context.Context, start uint64) []*pacaya.TaikoInboxClientBatchProposed {
+	iter, err := p.PacayaClients.TaikoInbox.FilterBatchProposed(&bind.FilterOpts{Context: ctx, Start: start})
+	p.FailIfNotNil(err)
+
+	var events []*pacaya.TaikoInboxClientBatchProposed
+	if iter.Next() {
+		events = append(events, iter.Event)
+	}
+
+	return events
 }

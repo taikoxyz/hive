@@ -84,7 +84,7 @@ func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
 				envs["L1_BEACON"] = beaconClient.BeaconURL()
 			}
 
-			// This variables are set for blob tests.
+			// These variables are set for blob tests.
 			if envs["TEST_L1_BEACON"] == "true" {
 				delete(envs, "RUN_TESTS")
 			} else if envs["TEST_BLOB_SERVER"] == "true" {

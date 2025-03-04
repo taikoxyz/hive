@@ -47,7 +47,5 @@ func (r BlobTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Test
 		targetNumber = uint64(10)
 	)
 
-	if err := l2eth.WaitLatestNumber(ctx, timeout, targetNumber); err != nil {
-		t.Fatalf("%s: can't wait %s touch target height, err: %v", r.Name, l2eth.ClientType(), err)
-	}
+	l2eth.WaitLatestNumber(ctx, timeout, targetNumber)
 }
