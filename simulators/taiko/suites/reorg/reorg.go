@@ -94,14 +94,6 @@ func (r ReorgTestSpec) reorgAndVerifyFirstCluster(ctx context.Context, t *hivesi
 	// Reorg l1 eth chain.
 	anvil.Reorg(latestVerified)
 
-	/*for range time.Tick(time.Second) {
-		lastVerifiedBlockID := prover.GetLastVerifiedBlockId(ctx)
-		if lastVerifiedBlockID >= latestVerified {
-			break
-		}
-		t.Nil(prover.VerifyBlocks(params.L1Auths[0]), "failed to verify blocks")
-	}*/
-
 	// unpause driver, proposer, prover
 	driver.UnpauseClient()
 	proposer.UnpauseClient()

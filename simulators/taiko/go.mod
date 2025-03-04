@@ -16,7 +16,7 @@ require (
 	github.com/prysmaticlabs/prysm/v5 v5.2.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
-	github.com/taikoxyz/taiko-mono v0.0.0-20250302021523-ba59d6bb6eac
+	github.com/taikoxyz/taiko-mono v0.0.0-20250304064149-044416be6453
 	github.com/urfave/cli/v2 v2.27.5
 	golang.org/x/exp v0.0.0-20250218142911-aa4b98e5adaa
 )
@@ -260,7 +260,7 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/ethereum/go-ethereum v1.14.11 => github.com/taikoxyz/taiko-geth v1.12.1-0.20250224233845-573f8fc14467
+replace github.com/ethereum/go-ethereum v1.14.11 => github.com/taikoxyz/taiko-geth v1.12.1-0.20250304021556-03f614fb278a
 
 replace github.com/ethereum-optimism/optimism v1.7.4 => github.com/taikoxyz/optimism v0.0.0-20250205084634-ae44cf8bc8e2
 

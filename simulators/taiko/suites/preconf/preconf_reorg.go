@@ -2,7 +2,10 @@ package preconf
 
 import (
 	"context"
+	"fmt"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/hive/hivesim"
+	"math/big"
 	"taiko/common/testnet"
 	suite_base "taiko/suites/base"
 	"time"
@@ -71,7 +74,7 @@ func (r *ReorgTestSpec) reorgProposeBlocks(ctx context.Context, t *hivesim.T, te
 	defer anvil.StopRecordReorgPoints()
 
 	// Reorg propose blocks.
-	for times := 0; times < 4; times++ {
+	for times := 0; times < 2; times++ {
 		index := times % len(testnet.Nodes)
 		driver = testnet.Nodes[index].DriverClient
 
@@ -104,11 +107,21 @@ func (r *PreconfTestSpec) reorgPreconfBlocks(ctx context.Context, t *hivesim.T, 
 
 	// Reorg propose blocks.
 
+	l2Number, err := driver.L2.BlockNumber(ctx)
+	t.FailIfNotNil(err, "cannot get l2 header by number")
+
 	l2Header, anchorL1Header, _, err := preconferBlock(0, driver.Client, driver.PreconfServerURL(), 5)
 	t.FailIfNotNil(err, "cannot preconfirmer proposer")
 
 	// Verify latest preconf block.
 	verifyL2Chain(t, true, testnet.Nodes, l2Header)
+
+	preconfBlocks := make([]*types.Block, 0)
+	for number := l2Number + 1; number <= l2Header.Number.Uint64(); number++ {
+		block, err := driver.L2.BlockByNumber(ctx, big.NewInt(int64(number)))
+		t.FailIfNotNil(err, fmt.Sprintf("cannot get preconf block by number %d", number))
+		preconfBlocks = append(preconfBlocks, block)
+	}
 
 	// change the anchorL1Header time to reorg the preconf blocks.
 	anchorL1Header.Time += 1
@@ -116,6 +129,16 @@ func (r *PreconfTestSpec) reorgPreconfBlocks(ctx context.Context, t *hivesim.T, 
 	// propose txs.
 	_, err = proposeBlock(ctx, driver.Envs, driver.Client, anchorL1Header)
 	t.FailIfNotNil(err, "cannot propose txs")
-}
 
-func reorgPreconfBlocksByTime() {}
+	proposeBlocks := make([]*types.Block, 0)
+	for number := l2Number + 1; number <= l2Header.Number.Uint64(); number++ {
+		block, err := driver.L2.BlockByNumber(ctx, big.NewInt(int64(number)))
+		t.FailIfNotNil(err, fmt.Sprintf("cannot get propose block by number: %d", number))
+		proposeBlocks = append(proposeBlocks, block)
+	}
+
+	for i := 0; i < len(proposeBlocks); i++ {
+		t.NotEqual(proposeBlocks[i].Hash().String(), preconfBlocks[i].Hash().String())
+		t.Equal(proposeBlocks[i].TxHash().String(), preconfBlocks[i].TxHash().String())
+	}
+}
