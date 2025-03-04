@@ -287,7 +287,7 @@ func (p *PreparedTestnet) prepareBeaconNode(
 
 		// Expose the eth1 ports to the host.
 		opts = append(opts, hivesim.Params{
-			"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp:%d", clients.BeaconPort, clients.BeaconPort-500+index*100),
+			"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp:%d", clients.BeaconPort, clients.BeaconPort),
 		})
 
 		opts = append(opts, hivesim.Params{
