@@ -7,6 +7,7 @@ import (
 	"taiko/common/clients"
 	"taiko/common/testnet"
 	tn "taiko/common/testnet"
+	"taiko/common/utils"
 	"taiko/params"
 	suite_base "taiko/suites/base"
 	"time"
@@ -17,7 +18,6 @@ func init() {
 		ReorgTestSpec{
 			BaseTestSpec: suite_base.BaseTestSpec{
 				Name:           "reorg",
-				Debug:          false,
 				L2TargetNumber: 13,
 			},
 		},
@@ -41,7 +41,7 @@ func (r ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 	}
 
 	// For debug
-	if r.Debug {
+	if utils.GetenvBool("HIVE_TAIKO_DEBUG") {
 		time.Sleep(time.Minute * 60)
 	}
 

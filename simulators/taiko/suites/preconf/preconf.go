@@ -10,6 +10,7 @@ import (
 	"taiko/common/clients"
 	"taiko/common/testnet"
 	tn "taiko/common/testnet"
+	"taiko/common/utils"
 	"taiko/params"
 	suite_base "taiko/suites/base"
 	"time"
@@ -19,8 +20,7 @@ func init() {
 	Tests = append(Tests,
 		&PreconfTestSpec{
 			BaseTestSpec: suite_base.BaseTestSpec{
-				Name:  "preconf",
-				Debug: false,
+				Name: "preconf",
 			},
 		},
 	)
@@ -96,7 +96,7 @@ func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 	proposer.PauseClient()
 
 	// For Debug
-	if r.Debug {
+	if utils.GetenvBool("HIVE_TAIKO_DEBUG") {
 		driver.Shutdown()
 		time.Sleep(time.Minute * 120)
 	}

@@ -25,8 +25,7 @@ func init() {
 	Tests = append(Tests, &ForcedInclusionTestSpec{
 		PreconfTestSpec: PreconfTestSpec{
 			suite_base.BaseTestSpec{
-				Name:  "forced-inclusion",
-				Debug: false,
+				Name: "forced-inclusion",
 			},
 		},
 	})

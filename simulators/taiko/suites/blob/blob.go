@@ -4,13 +4,30 @@ import (
 	"context"
 	"fmt"
 	"github.com/ethereum/hive/hivesim"
-	"taiko/common/clients"
 	"taiko/common/testnet"
 	tn "taiko/common/testnet"
+	"taiko/common/utils"
 	"taiko/params"
 	suite_base "taiko/suites/base"
 	"time"
 )
+
+func init() {
+	Tests = append(Tests,
+		BlobTestSpec{
+			TestL1Beacon: true,
+			BaseTestSpec: suite_base.BaseTestSpec{
+				Name: "blob-l1-beacon",
+			},
+		},
+		BlobTestSpec{
+			TestBlobServer: true,
+			BaseTestSpec: suite_base.BaseTestSpec{
+				Name: "blob-server",
+			},
+		},
+	)
+}
 
 type BlobTestSpec struct {
 	TestL1Beacon   bool
@@ -26,38 +43,6 @@ func (r BlobTestSpec) GetTestnetConfig() *testnet.Config {
 	params.SetEnvParams("TEST_L1_BEACON", fmt.Sprintf("%v", r.TestL1Beacon))
 	params.SetEnvParams("TEST_BLOB_SCAN", fmt.Sprintf("%v", r.TestBlobServer))
 
-	cfgFun := cfg.CreateConfig
-	cfg.CreateConfig = func(index int, nodes clients.Nodes) (hivesim.Params, error) {
-		envs, err := cfgFun(index, nodes)
-		if err != nil {
-			return nil, err
-		}
-
-		var (
-			firstNode      = nodes[0]
-			beaconClient   = firstNode.BeaconClient
-			blobscanClient = firstNode.BlobScanClient
-		)
-
-		// Allow proposer use blob transaction builder.
-		envs["L1_BLOB_ALLOWED"] = "true"
-
-		// These variables are set for blob tests.
-		if envs["TEST_L1_BEACON"] == "true" {
-			delete(envs, "RUN_TESTS")
-			delete(envs, "L1_BEACON")
-			envs["BLOB_SERVER"] = beaconClient.BeaconURL()
-		}
-		if envs["TEST_BLOB_SCAN"] == "true" {
-			delete(envs, "L1_BEACON")
-			envs["BLOB_SOCIAL_SCAN_ENDPOINT"] = blobscanClient.BlobAPIURL()
-		}
-
-		params.ClusterEnvs[index] = envs
-
-		return envs, nil
-	}
-
 	return cfg
 }
 
@@ -68,7 +53,7 @@ func (r BlobTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Test
 	}
 
 	// For debug
-	if r.Debug {
+	if utils.GetenvBool("HIVE_TAIKO_DEBUG") {
 		node.DriverClient.Shutdown()
 		time.Sleep(time.Minute * 60)
 	}

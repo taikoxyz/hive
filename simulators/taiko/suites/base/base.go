@@ -10,6 +10,7 @@ import (
 	execution_config "taiko/common/config/execution"
 	"taiko/common/testnet"
 	tn "taiko/common/testnet"
+	"taiko/common/utils"
 	"taiko/params"
 	"time"
 )
@@ -20,7 +21,6 @@ func init() {
 			Name:           "fullsync",
 			BeaconSync:     true,
 			L2TargetNumber: 13,
-			Debug:          false,
 		},
 	)
 }
@@ -36,8 +36,6 @@ type BaseTestSpec struct {
 	// driver config
 	IsGuardian bool
 	BeaconSync bool
-
-	Debug bool
 }
 
 func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
@@ -57,16 +55,17 @@ func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
 		LogLevel:   3,
 		FeeReceipt: "a0Ee7A142d267C1f36714E4a8F75612F20a79720",
 		BeaconSync: ts.BeaconSync,
-		Debug:      ts.Debug,
+		Debug:      utils.GetenvBool("HIVE_TAIKO_DEBUG"),
 		CreateConfig: func(index int, nodes clients.Nodes) (hivesim.Params, error) {
 			var (
-				firstNode    = nodes[0]
-				node         = nodes[index]
-				anvilClient  = firstNode.AnvilClient
-				l1Client     = firstNode.L1EthClient
-				beaconClient = firstNode.BeaconClient
-				l2Client     = node.L2EthClient
-				envs         = params.EnvParams()
+				firstNode      = nodes[0]
+				node           = nodes[index]
+				anvilClient    = firstNode.AnvilClient
+				l1Client       = firstNode.L1EthClient
+				beaconClient   = firstNode.BeaconClient
+				blobscanClient = firstNode.BlobScanClient
+				l2Client       = node.L2EthClient
+				envs           = params.EnvParams()
 			)
 
 			envs["L2_AUTH"] = l2Client.EngineURL()
@@ -81,6 +80,18 @@ func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
 				envs["L1_HTTP"] = l1Client.HttpURL()
 				envs["L1_WS"] = l1Client.WSURL()
 				envs["L1_BEACON"] = beaconClient.BeaconURL()
+			}
+
+			// Allow proposer use blob transaction builder.
+			envs["L1_BLOB_ALLOWED"] = "true"
+			// These variables are set for blob tests.
+			if envs["TEST_L1_BEACON"] == "true" {
+				delete(envs, "RUN_TESTS")
+				//envs["BLOB_SERVER"] = beaconClient.BeaconURL()
+			}
+			if envs["TEST_BLOB_SCAN"] == "true" {
+				delete(envs, "L1_BEACON")
+				envs["BLOB_SOCIAL_SCAN_ENDPOINT"] = blobscanClient.BlobAPIURL()
 			}
 
 			envs["L1_PROPOSER_PRIV_KEY"] = params.ChainAuths[index*2+1].Key
@@ -132,7 +143,7 @@ func (ts BaseTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 	}
 
 	// For Debug
-	if ts.Debug {
+	if utils.GetenvBool("HIVE_TAIKO_DEBUG") {
 		proposer.PauseClient()
 		time.Sleep(time.Minute * 120)
 	}

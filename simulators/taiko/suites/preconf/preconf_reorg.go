@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/hive/hivesim"
 	"math/big"
 	"taiko/common/testnet"
+	"taiko/common/utils"
 	suite_base "taiko/suites/base"
 	"time"
 )
@@ -15,8 +16,7 @@ func init() {
 	Tests = append(Tests, &ReorgTestSpec{
 		PreconfTestSpec: PreconfTestSpec{
 			suite_base.BaseTestSpec{
-				Name:  "reorg",
-				Debug: false,
+				Name: "reorg",
 			},
 		},
 	})
@@ -49,7 +49,7 @@ func (r *ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *testn
 	proposer.PauseClient()
 
 	// For Debug
-	if r.Debug {
+	if utils.GetenvBool("HIVE_TAIKO_DEBUG") {
 		driver.Shutdown()
 		time.Sleep(time.Minute * 120)
 	}

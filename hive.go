@@ -36,6 +36,8 @@ func main() {
 		simDevModeAPIEndpoint = flag.String("dev.addr", "127.0.0.1:3000", "Endpoint that the simulator API listens on")
 		useCredHelper         = flag.Bool("docker.cred-helper", false, "configure docker authentication using locally-configured credential helper")
 
+		devDebug = flag.Bool("dev.debug", false, "Enable debug logging")
+
 		clientsFile = flag.String("client-file", "", `YAML `+"`file`"+` containing client configurations.`)
 
 		clients = flag.String("client", "go-ethereum", "Comma separated `list` of clients to use. simClient names in the list may be given as\n"+
@@ -114,6 +116,7 @@ func main() {
 		SimParallelism:     *simParallelism,
 		SimRandomSeed:      *simRandomSeed,
 		SimDurationLimit:   *simTimeLimit,
+		SimDevDebug:        *devDebug,
 		ClientStartTimeout: *clientTimeout,
 	}
 	runner := libhive.NewRunner(inv, builder, cb)
