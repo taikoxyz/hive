@@ -54,7 +54,7 @@ echo BUILDER=$builder_option
 echo Starting Prysm Beacon Node
 
 beacon-chain \
-  --verbosity="warn" \
+  --verbosity="$LOG" \
   --chain-id="${HIVE_TAIKO_CHAIN_ID:-7}" \
   --datadir=/data/beacon \
   --chain-config-file=/hive/input/config.yaml \
