@@ -1,5 +1,7 @@
 #!/bin/sh
 
+HIVE_LOGLEVEL=${HIVE_LOGLEVEL:-3}
+
 . /taiko-client/common.sh
 
 check_env "L1_WS"
@@ -17,7 +19,7 @@ fi
 
 # Run proposer
 echo "Starting proposer..."
-nohup taiko-client proposer --verbosity 4 2>&1 &
+nohup taiko-client proposer --verbosity $HIVE_LOGLEVEL 2>&1 &
 
 touch /taiko-client/nohup.out
 tail -f /taiko-client/nohup.out

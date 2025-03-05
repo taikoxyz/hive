@@ -61,7 +61,7 @@ func TestPreconferProposer(t *testing.T) {
 	envs := params.EnvParams()
 	envs["L1_WS"] = "ws://localhost:8545"
 
-	err = storeForcedInclusion(envs, rpccli)
+	_, err = storeForcedInclusion(envs, rpccli)
 	assert.NoError(t, err)
 
 	head, err = rpccli.PacayaClients.ForcedInclusionStore.Head(nil)

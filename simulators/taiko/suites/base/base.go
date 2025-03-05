@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/hive/hivesim"
 	"math/big"
 	"math/rand/v2"
+	"os"
 	"taiko/common/clients"
 	execution_config "taiko/common/config/execution"
 	"taiko/common/testnet"
@@ -52,7 +53,7 @@ func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
 			CliqueAddress:    "123463a4B065722E99115D6c222f267d9cABb524",
 		},
 		Network:    "taiko_base_test",
-		LogLevel:   3,
+		LogLevel:   os.Getenv("HIVE_LOGLEVEL"),
 		FeeReceipt: "a0Ee7A142d267C1f36714E4a8F75612F20a79720",
 		BeaconSync: ts.BeaconSync,
 		Debug:      utils.GetenvBool("HIVE_TAIKO_DEBUG"),

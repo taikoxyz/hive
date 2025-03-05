@@ -93,7 +93,7 @@ func PrepareTestnet(
 	networkParams := hivesim.WithInitialNetworks([]string{cfg.Network})
 
 	commonParams := hivesim.Params{
-		"HIVE_LOGLEVEL":          getLogLevelString(cfg.LogLevel),
+		"HIVE_LOGLEVEL":          cfg.LogLevel,
 		"JWT_SECRET":             "/tmp/jwt.hex",
 		"HIVE_TAIKO_FEE_RECEIPT": cfg.FeeReceipt,
 	}
@@ -138,10 +138,11 @@ func PrepareTestnet(
 		networkParams,
 	)
 
-	taikoGethOpts := hivesim.Bundle(commonParams, networkParams, hivesim.Params{
-		"HIVE_LOGLEVEL":        fmt.Sprintf("%d", cfg.LogLevel),
-		"HIVE_CHECK_LIVE_PORT": fmt.Sprintf("%d", clients.EthHttpPort),
-	})
+	taikoGethOpts := hivesim.Bundle(
+		commonParams,
+		networkParams,
+		hivesim.Params{"HIVE_CHECK_LIVE_PORT": fmt.Sprintf("%d", clients.EthHttpPort)},
+	)
 
 	taikoClientOpts := hivesim.Bundle(
 		commonParams,

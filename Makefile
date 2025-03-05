@@ -15,12 +15,12 @@ hiveview:
 	@go build -o build/bin/hiveview ./cmd/hiveview
 
 hive_alpine_dependency:
-	@echo "Build hive_alpine_dependency is not exist."
-	@if ! docker images | grep -q hive_alpine_dependency; then docker build --no-cache -t hive_alpine_dependency:latest --target hive_alpine_dependency .; fi
+	@echo "Building hive_alpine_dependency..."
+	@docker build --no-cache -t hive_alpine_dependency:latest --target hive_alpine_dependency .
 
 hive_go_dependency:
-	@echo "Build hive_go_dependency if not exist"
-	@if ! docker images | grep -q hive_go_dependency; then docker build --no-cache -t hive_go_dependency:latest --target hive_go_dependency .; fi
+	@echo "Building hive_go_dependency..."
+	@docker build --no-cache -t hive_go_dependency:latest --target hive_go_dependency .
 
 test_reorg_reorg:
 	@echo "Running reorg/reorg test..."

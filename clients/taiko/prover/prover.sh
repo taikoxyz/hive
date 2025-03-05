@@ -1,5 +1,7 @@
 #!/bin/sh
 
+HIVE_LOGLEVEL=${HIVE_LOGLEVEL:-3}
+
 . /taiko-client/common.sh
 
 check_env "L1_HTTP"
@@ -16,7 +18,7 @@ check_env "L1_PROVER_PRIV_KEY"
 
 # Run prover
 echo "Starting prover..."
-nohup taiko-client prover 2>&1 &
+nohup taiko-client prover --verbosity $HIVE_LOGLEVEL 2>&1 &
 
 touch /taiko-client/nohup.out
 tail -f /taiko-client/nohup.out

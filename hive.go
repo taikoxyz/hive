@@ -31,7 +31,7 @@ func main() {
 		simRandomSeed         = flag.Int("sim.randomseed", 0, "Randomness seed number (interpreted by simulators).")
 		simTestLimit          = flag.Int("sim.testlimit", 0, "[DEPRECATED] Max `number` of tests to execute per client (interpreted by simulators).")
 		simTimeLimit          = flag.Duration("sim.timelimit", 0, "Simulation `timeout`. Hive aborts the simulator if it exceeds this time.")
-		simLogLevel           = flag.Int("sim.loglevel", 4, "Selects log `level` of client instances. Supports values 0-5.")
+		simLogLevel           = flag.Int("sim.loglevel", 3, "Selects log `level` of client instances. Supports values 0-5.")
 		simDevMode            = flag.Bool("dev", false, "Only starts the simulator API endpoint (listening at 127.0.0.1:3000 by default) without starting any simulators.")
 		simDevModeAPIEndpoint = flag.String("dev.addr", "127.0.0.1:3000", "Endpoint that the simulator API listens on")
 		useCredHelper         = flag.Bool("docker.cred-helper", false, "configure docker authentication using locally-configured credential helper")

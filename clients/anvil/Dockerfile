@@ -3,9 +3,6 @@ ARG tag=nightly
 
 FROM $baseimage:$tag AS builder
 
-#FROM alpine:3.20.2
-#COPY --from=builder /usr/local/bin/anvil /usr/local/bin/anvil
-
 # Generate the version.txt file.
 #RUN anvil --version > /version.txt
 

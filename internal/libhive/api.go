@@ -217,11 +217,6 @@ func (api *simAPI) startClient(w http.ResponseWriter, r *http.Request) {
 
 	// Sanitize environment.
 	env := clientConfig.Environment
-	/*for k := range env {
-		if !strings.HasPrefix(k, hiveEnvvarPrefix) {
-			delete(env, k)
-		}
-	}*/
 	// Set default client loglevel to sim loglevel.
 	if env == nil {
 		env = make(map[string]string)
