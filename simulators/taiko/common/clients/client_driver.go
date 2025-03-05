@@ -10,7 +10,6 @@ import (
 	"github.com/ethereum/go-ethereum/consensus/taiko"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/hive/hivesim"
 	"github.com/go-resty/resty/v2"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/bindings/encoding"
@@ -132,18 +131,6 @@ func BuildPreconfBlock(
 			ExtraData:     hexutil.Bytes(extraData[:]),
 		},
 	}
-
-	payload, err := rlp.EncodeToBytes(reqBody.ExecutableData)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	hash := crypto.Keccak256(payload)
-	sig, err := crypto.Sign(hash, privateKey)
-	if err != nil {
-		return nil, nil, err
-	}
-	reqBody.Signature = common.Bytes2Hex(sig)
 
 	// Try to propose a soft block with batch ID 0
 	res, err := resty.New().
