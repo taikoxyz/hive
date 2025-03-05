@@ -83,11 +83,10 @@ func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
 			}
 
 			// Allow proposer use blob transaction builder.
-			envs["L1_BLOB_ALLOWED"] = "true"
 			// These variables are set for blob tests.
 			if envs["TEST_L1_BEACON"] == "true" {
 				delete(envs, "RUN_TESTS")
-				//envs["BLOB_SERVER"] = beaconClient.BeaconURL()
+				envs["L1_BLOB_ALLOWED"] = "true"
 			}
 			if envs["TEST_BLOB_SCAN"] == "true" {
 				delete(envs, "L1_BEACON")

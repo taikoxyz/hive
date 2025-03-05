@@ -1,5 +1,5 @@
 ARG baseimage=blossomlabs/blobscan-indexer
-ARG tag=latest
+ARG tag=0.3.1
 
 FROM --platform=linux/amd64 $baseimage:$tag AS builder
 

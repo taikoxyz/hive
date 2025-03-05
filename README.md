@@ -45,40 +45,83 @@ make hiveview
 
 ### Run hive test cases
 
-* Run l2-full-sync test:
+#### Run l2-full-sync test:
+
+* how it tests
+    * Start one cluster at first;
+    * Start the second and the third clusters and then wait for the l2 finalized header;
+    * Verify the latest l2 finalized header in the three cluster;
 
 ```shell
-./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover,taiko/taiko-geth,taiko/driver,taiko/taiko-geth,taiko/driver --sim taiko --sim.limit "base/fullsync"
+make test_full_sync
 ```
 
-* Run pacaya preconf test:
+#### Run pacaya preconf test:
+
+* how it tests
+    * Start one cluster at first;
+    * Wait for pacaya hardfork block high;
+    * Stop proposer;
+    * Call preconf api and create preconf blocks;
+    * Verify preconf status;
+    * Create propose block and verify propose status;
 
 ```shell
-./build/bin/hive --docker.output --sim taiko --sim.limit "preconf/preconf" --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/taiko-geth,taiko/driver
+make test_preconf_preconf
 ```
 
-* Run pacaya preconf reorg test:
+#### Run pacaya preconf reorg test:
+
+* how it tests
+    * Start one cluster at first
+    * Wait for pacaya hardfork block high
+    * Stop proposer
+    * reorg propose blocks
+        * create preconf blocks
+        * set reorg point
+        * create propose block
+        * reorg l1 chain
+        * wait for propose block recovered and verify the status same to origin.
+    * reorg preconf blocks
+        * create preconf blocks
+        * create a reorg propose block then will reorg all the preconf blocks
+        * verify reorg status
 
 ```shell
-./build/bin/hive --docker.output --sim taiko --sim.limit "preconf/reorg" --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer
+make test_preconf_reorg
 ```
 
-* Run reorg-reorg test:
+#### Run reorg-reorg test:
+
+* how it tests
+    * Normally start one cluster and wait for a random reorg l2 block
+    * Reorg l2chain to the latest finalized high
+    * Waiting for the l2chain be reorged to the latest finalized high+1
 
 ```shell
-./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "reorg/reorg"
+make test_reorg_reorg
 ```
 
-* Run blob-l1-beacon test:
+#### Run blob-l1-beacon test:
+
+* how it tests
+    * Start one cluster
+    * Let proposer use blobs to propose blocks
+    * Waiting taiko-geth tough the target number
 
 ```shell
-./build/bin/hive --docker.output --client geth,prysm/prysm-bn,prysm/prysm-vc,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "blob/blob-l1-beacon"
+make test_blob_beacon
 ```
 
-* Run blob-server test:
+#### Run blob-scan test:
+
+* how it tests
+    * Start one cluster
+    * Let proposer use blobs to propose blocks
+    * Waiting taiko-geth tough the target number
 
 ```shell
-./build/bin/hive --docker.output --client geth,prysm/prysm-bn,prysm/prysm-vc,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover,storage/redis,storage/postgres,blobscan/blobscan-api,blobscan/blobscan-indexer --sim taiko --sim.limit "blob/blob-server"
+make test_blob_scan
 ```
 
 ### Hive framework
