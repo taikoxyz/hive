@@ -96,7 +96,7 @@ func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 	proposer.PauseClient()
 
 	// For Debug
-	if utils.GetenvBool("HIVE_TAIKO_DEBUG") {
+	if utils.GetenvBool("HIVE_DEBUG") {
 		driver.Shutdown()
 		time.Sleep(time.Minute * 120)
 	}

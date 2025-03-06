@@ -41,7 +41,7 @@ func (r ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 	}
 
 	// For debug
-	if utils.GetenvBool("HIVE_TAIKO_DEBUG") {
+	if utils.GetenvBool("HIVE_DEBUG") {
 		time.Sleep(time.Minute * 60)
 	}
 

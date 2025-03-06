@@ -121,7 +121,7 @@ make test_blob_beacon
     * Waiting taiko-geth tough the target number
 
 ```shell
-make test_blob_scan
+make test_blob_server
 ```
 
 ### Hive framework

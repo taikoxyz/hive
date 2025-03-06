@@ -56,7 +56,7 @@ func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
 		LogLevel:   os.Getenv("HIVE_LOGLEVEL"),
 		FeeReceipt: "a0Ee7A142d267C1f36714E4a8F75612F20a79720",
 		BeaconSync: ts.BeaconSync,
-		Debug:      utils.GetenvBool("HIVE_TAIKO_DEBUG"),
+		Debug:      utils.GetenvBool("HIVE_DEBUG"),
 		CreateConfig: func(index int, nodes clients.Nodes) (hivesim.Params, error) {
 			var (
 				firstNode      = nodes[0]
@@ -89,9 +89,10 @@ func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
 				delete(envs, "RUN_TESTS")
 				envs["L1_BLOB_ALLOWED"] = "true"
 			}
-			if envs["TEST_BLOB_SCAN"] == "true" {
+			if envs["TEST_BLOB_SERVER"] == "true" {
 				delete(envs, "L1_BEACON")
-				envs["BLOB_SOCIAL_SCAN_ENDPOINT"] = blobscanClient.BlobAPIURL()
+				envs["L1_BLOB_ALLOWED"] = "true"
+				envs["BLOB_SERVER"] = blobscanClient.BlobAPIURL()
 			}
 
 			envs["L1_PROPOSER_PRIV_KEY"] = params.ChainAuths[index*2+1].Key
@@ -143,7 +144,7 @@ func (ts BaseTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 	}
 
 	// For Debug
-	if utils.GetenvBool("HIVE_TAIKO_DEBUG") {
+	if utils.GetenvBool("HIVE_DEBUG") {
 		proposer.PauseClient()
 		time.Sleep(time.Minute * 120)
 	}

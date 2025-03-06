@@ -77,11 +77,6 @@ func (n *Node) Start() error {
 			return err
 		}
 	}
-	if n.BlobScanClient != nil {
-		if err := n.BlobScanClient.Start(); err != nil {
-			return err
-		}
-	}
 
 	if n.L2EthClient != nil {
 		if err := n.L2EthClient.Start(); err != nil {
@@ -106,6 +101,12 @@ func (n *Node) Start() error {
 	// Start mining.
 	if n.AnvilClient != nil {
 		n.AnvilClient.StartMining()
+	}
+
+	if n.BlobScanClient != nil {
+		if err := n.BlobScanClient.Start(); err != nil {
+			return err
+		}
 	}
 
 	// Only start the first cluster's driver.

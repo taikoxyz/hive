@@ -41,7 +41,7 @@ func (r BlobTestSpec) GetTestnetConfig() *testnet.Config {
 
 	// enable blob tx.
 	params.SetEnvParams("TEST_L1_BEACON", fmt.Sprintf("%v", r.TestL1Beacon))
-	params.SetEnvParams("TEST_BLOB_SCAN", fmt.Sprintf("%v", r.TestBlobServer))
+	params.SetEnvParams("TEST_BLOB_SERVER", fmt.Sprintf("%v", r.TestBlobServer))
 
 	return cfg
 }
@@ -53,15 +53,16 @@ func (r BlobTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Test
 	}
 
 	// For debug
-	if utils.GetenvBool("HIVE_TAIKO_DEBUG") {
+	if utils.GetenvBool("HIVE_DEBUG") {
 		node.DriverClient.Shutdown()
-		time.Sleep(time.Minute * 60)
+		node.ProposerClient.Shutdown()
+		time.Sleep(time.Minute * 120)
 	}
 
 	var (
 		l2eth        = node.L2EthClient
 		timeout      = time.Second * 60
-		targetNumber = uint64(10)
+		targetNumber = uint64(13)
 	)
 
 	l2eth.WaitLatestNumber(ctx, timeout, targetNumber)

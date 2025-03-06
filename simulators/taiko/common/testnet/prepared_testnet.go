@@ -514,27 +514,11 @@ func (p *PreparedTestnet) prepareBlobScanClient(
 	config *Config,
 	clientsByRole map[clients.Role]*hivesim.ClientDefinition,
 ) {
-	if clientsByRole[clients.BlobApi] == nil || params.ParamByKey("TEST_BLOB_SCAN") != "true" {
+	if clientsByRole[clients.BlobApi] == nil {
 		return
 	}
 
-	firstNode := testnet.Nodes[0]
-
-	redis := &clients.HiveManagedClient{
-		T:                    testnet.T,
-		Network:              config.Network,
-		HiveClientDefinition: clientsByRole[clients.Redis],
-		OptionsGenerator: func() ([]hivesim.StartOption, error) {
-			opts := []hivesim.StartOption{p.blobOpts}
-			// Expose the eth1 ports to the host.
-			if testnet.Debug {
-				opts = append(opts, hivesim.Params{
-					"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("6379/tcp"),
-				})
-			}
-			return opts, nil
-		},
-	}
+	node := testnet.Nodes[index]
 	mysql := &clients.HiveManagedClient{
 		T:                    testnet.T,
 		Network:              config.Network,
@@ -560,19 +544,16 @@ func (p *PreparedTestnet) prepareBlobScanClient(
 			opts := []hivesim.StartOption{p.blobOpts}
 			opts = append(opts, hivesim.Params{
 				"CHAIN_ID":                 fmt.Sprintf("%d", testnet.executionGenesis.ChainID()),
-				"DATABASE_URL":             firstNode.BlobScanClient.PostgresURL(),
-				"REDIS_URI":                firstNode.BlobScanClient.RedisURL(),
+				"DATABASE_URL":             node.BlobScanClient.PostgresURL(),
 				"SECRET_KEY":               "supersecret",
 				"POSTGRES_STORAGE_ENABLED": "true",
 				"NETWORK_NAME":             "devnet",
 			})
 
 			// Expose the eth1 ports to the host.
-			if testnet.Debug {
-				opts = append(opts, hivesim.Params{
-					"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp:%d", clients.BlobscanAPIPort, clients.BlobscanAPIPort),
-				})
-			}
+			opts = append(opts, hivesim.Params{
+				"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp:%d", clients.BlobscanAPIPort, clients.BlobscanAPIPort),
+			})
 
 			return opts, nil
 		},
@@ -585,9 +566,9 @@ func (p *PreparedTestnet) prepareBlobScanClient(
 			opts := []hivesim.StartOption{p.blobOpts}
 			opts = append(opts, hivesim.Params{
 				"SECRET_KEY":              "supersecret",
-				"BLOBSCAN_API_ENDPOINT":   firstNode.BlobScanClient.BlobAPIURL(),
-				"BEACON_NODE_ENDPOINT":    firstNode.BeaconClient.BeaconURL(),
-				"EXECUTION_NODE_ENDPOINT": firstNode.L1EthClient.HttpURL(),
+				"BLOBSCAN_API_ENDPOINT":   node.BlobScanClient.BlobAPIURL(),
+				"BEACON_NODE_ENDPOINT":    node.BeaconClient.BeaconURL(),
+				"EXECUTION_NODE_ENDPOINT": node.L1EthClient.HttpURL(),
 				"NETWORK_NAME":            "devnet",
 			})
 			return opts, nil
@@ -595,7 +576,6 @@ func (p *PreparedTestnet) prepareBlobScanClient(
 	}
 
 	testnet.Nodes[index].BlobScanClient = &clients.BlobScanClient{
-		Redis:       redis,
 		Mysql:       mysql,
 		BlobApi:     blobApi,
 		BlobIndexer: blobIndexer,
