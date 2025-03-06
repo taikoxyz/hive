@@ -82,26 +82,24 @@ func (p *ProverClient) GetLastVerifiedBlockId(ctx context.Context) uint64 {
 	return lastVerifiedBlockID
 }
 
-func (p *ProverClient) WaitLatestVerifiedNumber(ctx context.Context, timeout time.Duration, verifiedNumber uint64) error {
+func (p *ProverClient) WaitLatestVerifiedNumber(ctx context.Context, timeout time.Duration, verifiedNumber uint64) {
 	p.Logf("%s: wait latest verified number %d", p.ClientType(), verifiedNumber)
-	current, times := uint64(0), timeout/time.Second
-	for times > 0 && verifiedNumber >= current {
+
+	tmAfter := time.After(timeout)
+	tmTicker := time.NewTicker(time.Second)
+	defer tmTicker.Stop()
+	for {
 		select {
-		case <-time.Tick(time.Second):
-			if number := p.GetLastVerifiedBlockId(ctx); number >= current {
-				current = number + 1
-				times = timeout / time.Second
-				break
-			} else {
-				times--
+		case <-ctx.Done():
+			return
+		case <-tmAfter:
+			p.FailIfNotNil("failed to wait latest verified number %d", verifiedNumber)
+		case <-tmTicker.C:
+			if number := p.GetLastVerifiedBlockId(ctx); number >= verifiedNumber {
+				return
 			}
 		}
 	}
-
-	if verifiedNumber >= current {
-		return fmt.Errorf("%s failed to reach current number %d, current number: %d", p.ClientType(), verifiedNumber, current)
-	}
-	return nil
 }
 
 func GetLastVerifiedBlockId(ctx context.Context, client *rpc.Client) (uint64, error) {

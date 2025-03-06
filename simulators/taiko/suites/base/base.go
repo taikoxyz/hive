@@ -167,9 +167,7 @@ func (ts BaseTestSpec) verifyL2Nodes(ctx context.Context, t *hivesim.T, latestVe
 		prover = nodes[0].ProverClient
 	)
 
-	// todo: storeForcedInclusion test.
-
-	t.FailIfNotNil(prover.WaitLatestVerifiedNumber(ctx, time.Second*10, latestVerified+1), fmt.Sprintf("failed to wait latest verified number: %d", latestVerified+1))
+	prover.WaitLatestVerifiedNumber(ctx, time.Second*10, latestVerified+1)
 
 	header, err := l2cli.HeaderByNumber(ctx, nil)
 	if err != nil {

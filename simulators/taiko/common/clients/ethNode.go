@@ -6,7 +6,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
-	"math/big"
 	"time"
 )
 
@@ -84,32 +83,20 @@ func (ec *EthNode) WaitLatestNumber(ctx context.Context, timeout time.Duration, 
 	}
 
 	headerCh := make(chan *types.Header, 10)
-	subCtx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
-	sub, err := cli.SubscribeNewHead(subCtx, headerCh)
+	sub, err := cli.SubscribeNewHead(ctx, headerCh)
 	ec.FailIfNotNil(err, "failed to subscribe to new head")
 	defer sub.Unsubscribe()
 
-	for header := range headerCh {
-		if header.Number.Uint64() >= number {
-			return
-		}
-	}
-
-	ec.Fatalf("failed to wait latest number %d", number)
-}
-
-func (ec *EthNode) WaitTargetNumber(ctx context.Context, timeout time.Duration, number uint64) error {
-	defer ec.Logf("%s: wait target number %d", ec.ClientType(), number)
-	for ; ; <-time.Tick(time.Second) {
+	tmAfter := time.After(timeout)
+	for {
 		select {
-		case <-time.After(timeout):
-			return fmt.Errorf("reach timeout but %s is not ready", ec.ClientType())
-		default:
-			_, err := ec.EthClient.HeaderByNumber(ctx, new(big.Int).SetUint64(number))
-			if err == nil {
-				return nil
+		case <-ctx.Done():
+			return
+		case <-tmAfter:
+			ec.Fatalf("failed to wait latest number %d", number)
+		case header := <-headerCh:
+			if header.Number.Uint64() >= number {
+				return
 			}
 		}
 	}

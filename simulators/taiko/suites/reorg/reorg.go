@@ -78,9 +78,7 @@ func (r ReorgTestSpec) reorgAndVerifyFirstCluster(ctx context.Context, t *hivesi
 
 	l2eth.WaitLatestNumber(ctx, timeout, l2ReorgStartNumber)
 
-	if err := prover.WaitLatestVerifiedNumber(ctx, timeout, l2ReorgStartNumber/2); err != nil {
-		t.Fatalf("%s: failed to wait LatestVerifiedNumber: %d, err: %v", anvil.ClientType(), l2ReorgStartNumber/2, err)
-	}
+	prover.WaitLatestVerifiedNumber(ctx, timeout, l2ReorgStartNumber/2)
 
 	// Get reorg point.
 	latestVerified := prover.GetLastVerifiedBlockId(ctx)
@@ -99,8 +97,5 @@ func (r ReorgTestSpec) reorgAndVerifyFirstCluster(ctx context.Context, t *hivesi
 	proposer.UnpauseClient()
 	prover.UnpauseClient()
 
-	if err := prover.WaitLatestVerifiedNumber(ctx, timeout, latestVerified+1); err != nil {
-		t.Fatalf("%s: failed to wait LatestVerifiedNumber: %d, err: %v", anvil.ClientType(), latestVerified+1, err)
-	}
-
+	prover.WaitLatestVerifiedNumber(ctx, timeout, latestVerified+1)
 }
