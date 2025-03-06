@@ -9,6 +9,7 @@ import (
 	"taiko/common/clients"
 	cl "taiko/common/config/consensus"
 	el "taiko/common/config/execution"
+	"taiko/common/utils"
 	"taiko/params"
 )
 
@@ -196,9 +197,11 @@ func (p *PreparedTestnet) prepareAnvilNode(
 		opts := []hivesim.StartOption{p.executionOpts}
 
 		// Expose the eth1 ports to the host.
-		opts = append(opts, hivesim.Params{
-			"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp:%d", clients.AnvilPort, clients.AnvilPort),
-		})
+		if utils.GetenvBool("HIVE_DOCKER_PORT_EXPOSE") {
+			opts = append(opts, hivesim.Params{
+				"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp:%d", clients.AnvilPort, clients.AnvilPort),
+			})
+		}
 
 		return opts, nil
 	}
@@ -241,14 +244,16 @@ func (p *PreparedTestnet) prepareGethNode(
 		opts = append(opts, consensus.HiveParams(index))
 
 		// Expose the eth1 ports to the host.
-		opts = append(opts, hivesim.Params{
-			"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf(
-				"%d/tcp:%d,%d/tcp:%d,%d/tcp:%d",
-				clients.EthHttpPort, clients.EthHttpPort,
-				clients.EthWSPort, clients.EthWSPort,
-				clients.EthEngineRPC, clients.EthEngineRPC,
-			),
-		})
+		if utils.GetenvBool("HIVE_DOCKER_PORT_EXPOSE") {
+			opts = append(opts, hivesim.Params{
+				"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf(
+					"%d/tcp:%d,%d/tcp:%d,%d/tcp:%d",
+					clients.EthHttpPort, clients.EthHttpPort,
+					clients.EthWSPort, clients.EthWSPort,
+					clients.EthEngineRPC, clients.EthEngineRPC,
+				),
+			})
+		}
 
 		return opts, nil
 	}
@@ -287,9 +292,11 @@ func (p *PreparedTestnet) prepareBeaconNode(
 		opts := []hivesim.StartOption{p.beaconOpts}
 
 		// Expose the eth1 ports to the host.
-		opts = append(opts, hivesim.Params{
-			"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp:%d", clients.BeaconPort, clients.BeaconPort),
-		})
+		if utils.GetenvBool("HIVE_DOCKER_PORT_EXPOSE") {
+			opts = append(opts, hivesim.Params{
+				"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp:%d", clients.BeaconPort, clients.BeaconPort),
+			})
+		}
 
 		opts = append(opts, hivesim.Params{
 			"HIVE_TAIKO_ETH1_RPC_ADDRS": testnet.Nodes[0].L1EthClient.EngineURL(),
@@ -371,14 +378,16 @@ func (p *PreparedTestnet) prepareTaikoGethClient(
 		opts := []hivesim.StartOption{p.taikoGethOpts}
 
 		// Expose the eth1 ports to the host.
-		opts = append(opts, hivesim.Params{
-			"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp:%d,%d/tcp:%d,%d/tcp:%d,%d:%d",
-				clients.EthHttpPort, clients.EthHttpPort-2500+index*100,
-				clients.EthWSPort, clients.EthWSPort-2500+index*100,
-				clients.EthEngineRPC, clients.EthEngineRPC-2500+index*100,
-				clients.GethP2PPort, clients.GethP2PPort,
-			),
-		})
+		if utils.GetenvBool("HIVE_DOCKER_PORT_EXPOSE") {
+			opts = append(opts, hivesim.Params{
+				"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp:%d,%d/tcp:%d,%d/tcp:%d,%d:%d",
+					clients.EthHttpPort, clients.EthHttpPort-2500+index*100,
+					clients.EthWSPort, clients.EthWSPort-2500+index*100,
+					clients.EthEngineRPC, clients.EthEngineRPC-2500+index*100,
+					clients.GethP2PPort, clients.GethP2PPort,
+				),
+			})
+		}
 
 		bootnode, err := testnet.L2EthClients().Running().Enodes()
 		if err != nil {
@@ -435,7 +444,7 @@ func (p *PreparedTestnet) prepareDriverClient(
 		}
 
 		// Expose the eth1 ports to the host.
-		if index == 0 && testnet.Debug {
+		if index == 0 && utils.GetenvBool("HIVE_DOCKER_PORT_EXPOSE") {
 			opts = append(opts, hivesim.Params{
 				"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp:%d", clients.PreconfServerPort, clients.PreconfServerPort),
 			})
@@ -527,7 +536,7 @@ func (p *PreparedTestnet) prepareBlobScanClient(
 			opts := []hivesim.StartOption{p.blobOpts}
 
 			// Expose the eth1 ports to the host.
-			if testnet.Debug {
+			if utils.GetenvBool("HIVE_DOCKER_PORT_EXPOSE") {
 				opts = append(opts, hivesim.Params{
 					"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("5432/tcp"),
 				})
@@ -551,9 +560,11 @@ func (p *PreparedTestnet) prepareBlobScanClient(
 			})
 
 			// Expose the eth1 ports to the host.
-			opts = append(opts, hivesim.Params{
-				"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp:%d", clients.BlobscanAPIPort, clients.BlobscanAPIPort),
-			})
+			if utils.GetenvBool("HIVE_DOCKER_PORT_EXPOSE") {
+				opts = append(opts, hivesim.Params{
+					"HIVE_DOCKER_PORT_BINDINGS": fmt.Sprintf("%d/tcp:%d", clients.BlobscanAPIPort, clients.BlobscanAPIPort),
+				})
+			}
 
 			return opts, nil
 		},

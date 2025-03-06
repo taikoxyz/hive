@@ -205,12 +205,13 @@ func (r *Runner) run(ctx context.Context, sim string, env SimEnv) (SimResult, er
 	// Create the simulator container.
 	opts := ContainerOptions{
 		Env: map[string]string{
-			"HIVE_SIMULATOR":    "http://" + server.Addr().String(),
-			"HIVE_PARALLELISM":  strconv.Itoa(env.SimParallelism),
-			"HIVE_LOGLEVEL":     strconv.Itoa(env.SimLogLevel),
-			"HIVE_TEST_PATTERN": env.SimTestPattern,
-			"HIVE_RANDOM_SEED":  strconv.Itoa(env.SimRandomSeed),
-			"HIVE_DEBUG":        fmt.Sprintf("%v", env.SimDevDebug),
+			"HIVE_SIMULATOR":          "http://" + server.Addr().String(),
+			"HIVE_PARALLELISM":        strconv.Itoa(env.SimParallelism),
+			"HIVE_LOGLEVEL":           strconv.Itoa(env.SimLogLevel),
+			"HIVE_TEST_PATTERN":       env.SimTestPattern,
+			"HIVE_RANDOM_SEED":        strconv.Itoa(env.SimRandomSeed),
+			"HIVE_DEBUG":              fmt.Sprintf("%v", env.SimDevDebug),
+			"HIVE_DOCKER_PORT_EXPOSE": fmt.Sprintf("%v", env.SimDevExpose),
 		},
 	}
 	containerID, err := r.container.CreateContainer(ctx, r.simImages[sim], opts)

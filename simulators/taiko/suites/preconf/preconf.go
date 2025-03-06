@@ -32,6 +32,8 @@ type PreconfTestSpec struct {
 
 func (r *PreconfTestSpec) GetTestnetConfig() *testnet.Config {
 	cfg := r.BaseTestSpec.GetTestnetConfig()
+	cfg.Network = "network_preconf_preconf"
+
 	preConfig := cfg.CreateConfig
 
 	var indexd = make(map[int]bool)

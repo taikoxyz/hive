@@ -36,7 +36,8 @@ func main() {
 		simDevModeAPIEndpoint = flag.String("dev.addr", "127.0.0.1:3000", "Endpoint that the simulator API listens on")
 		useCredHelper         = flag.Bool("docker.cred-helper", false, "configure docker authentication using locally-configured credential helper")
 
-		devDebug = flag.Bool("dev.debug", false, "Enable debug logging")
+		devDebug  = flag.Bool("dev.debug", false, "Enable debug logging")
+		devExpose = flag.Bool("dev.expose", false, "expose docker ports")
 
 		clientsFile = flag.String("client-file", "", `YAML `+"`file`"+` containing client configurations.`)
 
@@ -117,6 +118,7 @@ func main() {
 		SimRandomSeed:      *simRandomSeed,
 		SimDurationLimit:   *simTimeLimit,
 		SimDevDebug:        *devDebug,
+		SimDevExpose:       *devExpose,
 		ClientStartTimeout: *clientTimeout,
 	}
 	runner := libhive.NewRunner(inv, builder, cb)

@@ -27,7 +27,10 @@ type ReorgTestSpec struct {
 }
 
 func (r *ReorgTestSpec) GetTestnetConfig() *testnet.Config {
-	return r.PreconfTestSpec.GetTestnetConfig()
+	cfg := r.PreconfTestSpec.GetTestnetConfig()
+	cfg.Network = "network_preconf_reorg"
+
+	return cfg
 }
 
 func (r *ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *testnet.Testnet) {

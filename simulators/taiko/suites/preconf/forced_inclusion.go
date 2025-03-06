@@ -38,7 +38,7 @@ type ForcedInclusionTestSpec struct {
 func (f *ForcedInclusionTestSpec) GetTestnetConfig() *testnet.Config {
 	params.SetEnvParams("TEST_L1_BEACON", "true")
 	cfg := f.PreconfTestSpec.GetTestnetConfig()
-	cfg.Network = "network_forced_inclusion"
+	cfg.Network = "network_preconf_forced_inclusion"
 
 	return cfg
 }
