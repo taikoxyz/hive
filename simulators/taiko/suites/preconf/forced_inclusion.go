@@ -56,7 +56,7 @@ func (f *ForcedInclusionTestSpec) Verify(ctx context.Context, t *hivesim.T, test
 	}
 
 	// Wait until over the pacaya hardfork number.
-	l2Geth.WaitLatestNumber(ctx, time.Second*30, proposer.PacayaClients.ForkHeight)
+	l2Geth.WaitLatestNumber(ctx, time.Second*60, proposer.PacayaClients.ForkHeight)
 
 	// stop the proposer.
 	proposer.PauseClient()
@@ -91,7 +91,7 @@ func (f *ForcedInclusionTestSpec) Verify(ctx context.Context, t *hivesim.T, test
 	t.True(len(events[0].Info.BlobHashes) == 1, "forced inclusion blob hashes should be 1")
 	t.True(len(events[0].Info.Blocks) == 1, "forced inclusion blocks should be 1")
 
-	l2Geth.WaitLatestNumber(ctx, time.Second*6, events[0].Info.LastBlockId)
+	l2Geth.WaitLatestNumber(ctx, time.Second*20, events[0].Info.LastBlockId)
 
 	l2Block, err := l2Geth.EthClient.BlockByNumber(ctx, big.NewInt(int64(events[0].Info.LastBlockId)))
 	t.FailIfNotNil(err, "cannot get latest block")

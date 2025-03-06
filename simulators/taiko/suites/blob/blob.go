@@ -61,9 +61,8 @@ func (r BlobTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Test
 
 	var (
 		l2eth        = node.L2EthClient
-		timeout      = time.Second * 60
 		targetNumber = uint64(13)
 	)
 
-	l2eth.WaitLatestNumber(ctx, timeout, targetNumber)
+	l2eth.WaitLatestNumber(ctx, time.Second*60, targetNumber)
 }
