@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# clean contract tx list.
-rm -rf params/l1contract_txs.txt
+params_path=params
+rm -f $params_path/l1contract_txs.txt
 
 # get docker env
 . scripts/docker_env.sh
@@ -17,7 +17,7 @@ for block in $(seq 0 "$END_BLOCK"); do
   for tx in $transactions; do
     echo "tx hash: $tx"
     if [ "$tx" != "" ]; then
-      cast tx "$tx" --json --rpc-url "$L1_PROBE_URL" >>params/l1contract_txs.txt
+      cast tx "$tx" --json --rpc-url "$L1_PROBE_URL" >>$params_path/l1contract_txs.txt
     fi
   done
 done

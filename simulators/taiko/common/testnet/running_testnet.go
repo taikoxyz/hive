@@ -125,10 +125,9 @@ func StartTestnet(
 
 	for index, clientsByRole := range clientGroups {
 		nodeClient := &clients.Node{
-			Logging:      t,
-			Index:        index,
-			BeaconConfig: generateState.BeaconConfig,
-			Genesis:      generateState.Genesis,
+			Logging: t,
+			Index:   index,
+			Genesis: generateState.Genesis,
 		}
 		testnet.Nodes = append(testnet.Nodes, nodeClient)
 
@@ -145,8 +144,8 @@ func StartTestnet(
 		// Prepare the client objects with all the information necessary to
 		// eventually start
 		prep.prepareAnvilNode(testnet, config, anvilDef)
-		prep.prepareExecutionNode(index, testnet, config, executionDef, config.Eth1Consensus)
-		prep.prepareBeaconNode(testnet, config, clientsByRole[clients.Beacon])
+		prep.prepareGethNode(index, testnet, config, executionDef, config.Eth1Consensus)
+		prep.prepareBeaconNode(index, testnet, config, clientsByRole[clients.Beacon])
 		prep.prepareValidatorClient(testnet, clientsByRole[clients.Validator])
 		prep.prepareBlobScanClient(index, testnet, config, clientsByRole)
 
@@ -157,8 +156,8 @@ func StartTestnet(
 		}
 		prep.prepareTaikoGethClient(index, testnet, config, taikoGeth)
 		prep.prepareDriverClient(index, testnet, config, clientsByRole[clients.Driver])
-		prep.prepareProposerClient(index, testnet, clientsByRole[clients.Proposer])
-		prep.prepareProverClient(index, testnet, clientsByRole[clients.Prover])
+		prep.prepareProposerClient(index, testnet, config, clientsByRole[clients.Proposer])
+		prep.prepareProverClient(index, testnet, config, clientsByRole[clients.Prover])
 
 		// Start the node clients if specified so
 		// Connect to the network if specified

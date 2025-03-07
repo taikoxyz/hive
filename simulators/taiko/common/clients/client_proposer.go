@@ -2,39 +2,33 @@ package clients
 
 import (
 	"context"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/hive/hivesim"
-	tkflags "github.com/taikoxyz/taiko-mono/packages/taiko-client/cmd/flags"
+	"github.com/taikoxyz/taiko-mono/packages/taiko-client/bindings/pacaya"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
-	"github.com/taikoxyz/taiko-mono/packages/taiko-client/proposer"
 	"math/big"
 )
 
 type ProposerClient struct {
+	Index int
 	*HiveManagedClient
-
-	*rpc.Client
-	*proposer.Proposer
+	Envs hivesim.Params
 	*State
 }
 
-func (p *ProposerClient) Start() error {
+func (p *ProposerClient) Start() (err error) {
 	if err := p.HiveManagedClient.Start(); err != nil {
 		return err
 	}
 
-	p.Proposer = &proposer.Proposer{}
-	err := NewTaikoClient(p.Proposer, tkflags.ProposerFlags)
-	if err != nil {
-		return err
-	}
-	p.Client, err = rpc.NewClient(context.Background(), p.Config.ClientConfig)
+	client, err := rpc.NewClient(context.Background(), GetClientConfig(p.Envs))
 	if err != nil {
 		return err
 	}
 
-	p.State, err = NewState(p.Client)
+	p.State, err = NewState(client)
 	if err != nil {
 		return err
 	}
@@ -85,5 +79,17 @@ func (p *ProposerClient) ProposeTxLists(
 	}
 	t.Logf("propose tx list, batch count: %d, txs count: %d", len(txs), total)
 
-	return canonicalL1Origin, txs, p.Proposer.ProposeTxLists(ctx, txs)
+	return canonicalL1Origin, txs, nil //p.Proposer.ProposeTxLists(ctx, txs)
+}
+
+func (p *ProposerClient) GetProposeEvents(ctx context.Context, start uint64) []*pacaya.TaikoInboxClientBatchProposed {
+	iter, err := p.PacayaClients.TaikoInbox.FilterBatchProposed(&bind.FilterOpts{Context: ctx, Start: start})
+	p.FailIfNotNil(err)
+
+	var events []*pacaya.TaikoInboxClientBatchProposed
+	if iter.Next() {
+		events = append(events, iter.Event)
+	}
+
+	return events
 }

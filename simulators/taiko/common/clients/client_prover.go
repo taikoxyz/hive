@@ -1,130 +1,119 @@
 package clients
 
 import (
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/taikoxyz/taiko-mono/packages/taiko-client/bindings"
+	"context"
+	"fmt"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/hive/hivesim"
+	"github.com/taikoxyz/taiko-mono/packages/taiko-client/bindings/pacaya"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
-	"golang.org/x/net/context"
-	"math/big"
-	"sync"
-	"sync/atomic"
+	"time"
 )
 
 type ProverClient struct {
+	Index int
 	*HiveManagedClient
+	Envs hivesim.Params
+	*State
 }
 
-type State struct {
-	*rpc.Client
-
-	L1Head atomic.Pointer[types.Header]
-	L2Head atomic.Pointer[types.Header]
-
-	ProposedBlockID chan *big.Int
-
-	LatestL1Origin    atomic.Pointer[rawdb.L1Origin]
-	CanonicalL1Origin atomic.Pointer[rawdb.L1Origin]
-
-	err atomic.Value
-
-	ctx    context.Context
-	cancel context.CancelFunc
-	wg     sync.WaitGroup
-}
-
-func NewState(rpcCli *rpc.Client) (state *State, err error) {
-	subCtx, cancel := context.WithCancel(context.Background())
-
-	state = &State{
-		Client:            rpcCli,
-		L1Head:            atomic.Pointer[types.Header]{},
-		L2Head:            atomic.Pointer[types.Header]{},
-		ProposedBlockID:   make(chan *big.Int, 1),
-		LatestL1Origin:    atomic.Pointer[rawdb.L1Origin]{},
-		CanonicalL1Origin: atomic.Pointer[rawdb.L1Origin]{},
-
-		ctx:    subCtx,
-		cancel: cancel,
+func (p *ProverClient) Start() (err error) {
+	if err := p.HiveManagedClient.Start(); err != nil {
+		return err
 	}
 
-	go state.loop()
-
-	return state, nil
-}
-
-func (s *State) Close() {
-	s.cancel()
-	s.wg.Wait()
-}
-
-func (s *State) StateError() error {
-	if val := s.err.Load(); val == nil {
-		return nil
-	} else {
-		return val.(error)
+	client, err := rpc.NewClient(context.Background(), GetClientConfig(p.Envs))
+	if err != nil {
+		return err
 	}
+
+	p.State, err = NewState(client)
+	if err != nil {
+		return err
+	}
+
+	return err
 }
 
-func (s *State) loop() {
-	s.wg.Add(1)
-	defer s.wg.Done()
+func (p *ProverClient) Shutdown() error {
+	if err := p.HiveManagedClient.Shutdown(); err != nil {
+		return err
+	}
+	p.State.Close()
 
-	l1HeadCh := make(chan *types.Header, 3)
-	l2HeadCh := make(chan *types.Header, 3)
-	blockProposedCh := make(chan *bindings.TaikoL1ClientBlockProposed, 10)
-	blockProposedV2Ch := make(chan *bindings.TaikoL1ClientBlockProposedV2, 10)
+	return nil
+}
 
-	l1Sub := rpc.SubscribeChainHead(s.L1, l1HeadCh)
-	l2Sub := rpc.SubscribeChainHead(s.L2, l2HeadCh)
-	l2BlockProposedSub := rpc.SubscribeBlockProposed(s.TaikoL1, blockProposedCh)
-	l2BlockProposedV2Sub := rpc.SubscribeBlockProposedV2(s.TaikoL1, blockProposedV2Ch)
+func (p *ProverClient) VerifyBlocks(opts *bind.TransactOpts) error {
+	tx, err := p.OntakeClients.TaikoL1.VerifyBlocks(opts, 32)
+	if err != nil {
+		return err
+	}
 
-	defer func() {
-		l1Sub.Unsubscribe()
-		l2Sub.Unsubscribe()
-		l2BlockProposedSub.Unsubscribe()
-		l2BlockProposedV2Sub.Unsubscribe()
-	}()
+	_, err = bind.WaitMined(context.Background(), p.L1, tx)
+	return err
+}
 
-	ctx, cancel := context.WithCancel(s.ctx)
+func (p *ProverClient) WaitLatestBatchesProved(ctx context.Context, timeout time.Duration, number uint64) error {
+	p.Logf("%s: wait latest batches proven: %d", p.ClientType(), number)
+
+	subCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
+	sink := make(chan *pacaya.TaikoInboxClientBatchesProved, 10)
+	sub, err := p.PacayaClients.TaikoInbox.WatchBatchesProved(&bind.WatchOpts{Context: subCtx}, sink)
+	if err != nil {
+		return err
+	}
+	defer sub.Unsubscribe()
+
+	for event := range sink {
+		if event.BatchIds[len(event.BatchIds)-1] >= number {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("%s: failed to wait batches proved: %d", p.ClientType(), number)
+}
+
+func (p *ProverClient) GetLastVerifiedBlockId(ctx context.Context) uint64 {
+	lastVerifiedBlockID, err := GetLastVerifiedBlockId(ctx, p.Client)
+	p.FailIfNotNil(err, "failed to get last verified block id")
+	return lastVerifiedBlockID
+}
+
+func (p *ProverClient) WaitLatestVerifiedNumber(ctx context.Context, timeout time.Duration, verifiedNumber uint64) {
+	p.Logf("%s: wait latest verified number %d", p.ClientType(), verifiedNumber)
+
+	tmAfter := time.After(timeout)
+	tmTicker := time.NewTicker(time.Second)
+	defer tmTicker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case e := <-blockProposedCh:
-			select {
-			case <-s.ProposedBlockID:
-				s.ProposedBlockID <- e.BlockId
-			default:
-				s.ProposedBlockID <- e.BlockId
+		case <-tmAfter:
+			p.FailIfNotNil("failed to wait latest verified number %d", verifiedNumber)
+		case <-tmTicker.C:
+			if number := p.GetLastVerifiedBlockId(ctx); number >= verifiedNumber {
+				return
 			}
-		case e := <-blockProposedV2Ch:
-			select {
-			case <-s.ProposedBlockID:
-				s.ProposedBlockID <- e.BlockId
-			default:
-				s.ProposedBlockID <- e.BlockId
-			}
-		case head := <-l1HeadCh:
-			s.L1Head.Store(head)
-		case head := <-l2HeadCh:
-			s.L2Head.Store(head)
-			l1Origin, err := s.L2.L1OriginByID(ctx, head.Number)
-			if err != nil {
-				s.err.Store(err)
-				continue
-			}
-			s.LatestL1Origin.Store(l1Origin)
-
-			l1Origin, err = s.L2.HeadL1Origin(ctx)
-			if err != nil {
-				s.err.Store(err)
-				continue
-			}
-			s.CanonicalL1Origin.Store(l1Origin)
 		}
 	}
+}
+
+func GetLastVerifiedBlockId(ctx context.Context, client *rpc.Client) (uint64, error) {
+	var lastVerifiedBlockID uint64
+	stateVars, err := client.GetProtocolStateVariablesPacaya(&bind.CallOpts{Context: ctx})
+	if err != nil {
+		slot1, _, err := client.GetProtocolStateVariablesOntake(&bind.CallOpts{Context: ctx})
+		if err != nil {
+			return 0, err
+		}
+		lastVerifiedBlockID = slot1.LastSyncedBlockId
+	} else {
+		lastVerifiedBlockID = stateVars.Stats2.LastVerifiedBatchId
+	}
+
+	return lastVerifiedBlockID, nil
 }

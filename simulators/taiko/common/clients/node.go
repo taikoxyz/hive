@@ -1,22 +1,23 @@
 package clients
 
 import (
-	"context"
 	"fmt"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/hive/hivesim"
 	"github.com/pkg/errors"
-	"github.com/prysmaticlabs/prysm/v5/config/params"
-	"strings"
 	"taiko/common/utils"
+	"taiko/params"
 )
 
 const (
-	EthHttpPort         = 8545
-	EthWSPort           = 8546
-	EthEngineRPC        = 8551
-	BeaconPort          = 3500
-	SoftBlockServerPort = 7000
+	EthHttpPort       = 8545
+	EthWSPort         = 8546
+	EthEngineRPC      = 8551
+	GethP2PPort       = 30303
+	PreconfServerPort = 7001
+	PreconfP2pPort    = 9222
+	BeaconPort        = 3500
+	BlobscanAPIPort   = 3001
 )
 
 // A node bundles together:
@@ -44,8 +45,7 @@ type Node struct {
 
 	BlobScanClient *BlobScanClient
 
-	BeaconConfig *params.BeaconChainConfig
-	Genesis      *core.Genesis
+	Genesis *core.Genesis
 }
 
 func (n *Node) Logf(format string, values ...interface{}) {
@@ -77,11 +77,6 @@ func (n *Node) Start() error {
 			return err
 		}
 	}
-	if n.BlobScanClient != nil {
-		if err := n.BlobScanClient.Start(); err != nil {
-			return err
-		}
-	}
 
 	if n.L2EthClient != nil {
 		if err := n.L2EthClient.Start(); err != nil {
@@ -90,26 +85,28 @@ func (n *Node) Start() error {
 	}
 
 	// Deploy contracts if needed
-	if n.Index == 0 && (n.DriverClient != nil || n.ProposerClient != nil || n.ProverClient != nil) {
-		if n.AnvilClient != nil {
-			fmt.Printf("Deploying contracts in %s node, url: %s\n", n.AnvilClient.ClientType(), n.AnvilClient.HttpURL())
-			if err := utils.DeployContracts(context.Background(), n.AnvilClient.HttpURL(), n.L2EthClient.HttpURL()); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("%s: failed to deploy contracts", n.AnvilClient.ClientType()))
-			}
-			if err := n.AnvilClient.FillTiers(context.Background()); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("%s: failed to watch ProposerEvent", n.AnvilClient.ClientType()))
-			}
-		} else if n.L1EthClient != nil {
-			fmt.Printf("Deploying contracts in %s node, url: %s\n", n.L1EthClient.ClientType(), n.L1EthClient.HttpURL())
-			if err := utils.DeployContracts(context.Background(), n.L1EthClient.HttpURL(), n.L2EthClient.HttpURL()); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("%s: failed to deploy contracts", n.L1EthClient.ClientType()))
-			}
+	if n.Index == 0 && (n.L1EthClient != nil || n.AnvilClient != nil) {
+		l1API := EthExposeAPI(n.AnvilClient)
+		if n.L1EthClient != nil {
+			l1API = n.L1EthClient
 		}
+
+		n.Logf("Deploying contracts in %s node, url: %s\n", l1API.ClientType(), l1API.HttpURL())
+		if err := utils.DeployContracts(params.EnvParams(), l1API.HTTPClient()); err != nil {
+			return errors.Wrap(err, fmt.Sprintf("%s: failed to deploy contracts", l1API.ClientType()))
+		}
+		n.Logf("Deployed contracts in %s node, url: %s\n", l1API.ClientType(), l1API.HttpURL())
 	}
 
 	// Start mining.
 	if n.AnvilClient != nil {
 		n.AnvilClient.StartMining()
+	}
+
+	if n.BlobScanClient != nil {
+		if err := n.BlobScanClient.Start(); err != nil {
+			return err
+		}
 	}
 
 	// Only start the first cluster's driver.
@@ -255,30 +252,4 @@ func (all Nodes) Running() Nodes {
 		}
 	}
 	return res
-}
-
-func (all Nodes) FilterByCL(filters []string) Nodes {
-	ret := make(Nodes, 0)
-	for _, n := range all {
-		for _, filter := range filters {
-			if strings.Contains(n.BeaconClient.ClientName(), filter) {
-				ret = append(ret, n)
-				break
-			}
-		}
-	}
-	return ret
-}
-
-func (all Nodes) FilterByEL(filters []string) Nodes {
-	ret := make(Nodes, 0)
-	for _, n := range all {
-		for _, filter := range filters {
-			if strings.Contains(n.L1EthClient.ClientType(), filter) {
-				ret = append(ret, n)
-				break
-			}
-		}
-	}
-	return ret
 }

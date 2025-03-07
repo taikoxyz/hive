@@ -45,34 +45,83 @@ make hiveview
 
 ### Run hive test cases
 
-* Run l2-full-sync test:
+#### Run l2-full-sync test:
+
+* how it tests
+    * Start one cluster at first;
+    * Start the second and the third clusters and then wait for the l2 finalized header;
+    * Verify the latest l2 finalized header in the three cluster;
 
 ```shell
-./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover,taiko/taiko-geth,taiko/driver,taiko/taiko-geth,taiko/driver --sim taiko --sim.limit "taiko-genesis/l2-full-sync"
+make test_full_sync
 ```
 
-* Run l2-snap-sync test:
+#### Run pacaya preconf test:
+
+* how it tests
+    * Start one cluster at first;
+    * Wait for pacaya hardfork block high;
+    * Stop proposer;
+    * Call preconf api and create preconf blocks;
+    * Verify preconf status;
+    * Create propose block and verify propose status;
 
 ```shell
-./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover,taiko/taiko-geth,taiko/driver,taiko/taiko-geth,taiko/driver --sim taiko --sim.limit "taiko-genesis/l2-snap-sync"
+make test_preconf_preconf
 ```
 
-* Run taiko-reorg test:
+#### Run pacaya preconf reorg test:
+
+* how it tests
+    * Start one cluster at first
+    * Wait for pacaya hardfork block high
+    * Stop proposer
+    * reorg propose blocks
+        * create preconf blocks
+        * set reorg point
+        * create propose block
+        * reorg l1 chain
+        * wait for propose block recovered and verify the status same to origin.
+    * reorg preconf blocks
+        * create preconf blocks
+        * create a reorg propose block then will reorg all the preconf blocks
+        * verify reorg status
 
 ```shell
-./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "taiko-reorg/taiko-reorg"
+make test_preconf_reorg
 ```
 
-* Run blob-l1-beacon test:
+#### Run reorg-reorg test:
+
+* how it tests
+    * Normally start one cluster and wait for a random reorg l2 block
+    * Reorg l2chain to the latest finalized high
+    * Waiting for the l2chain be reorged to the latest finalized high+1
 
 ```shell
-./build/bin/hive --docker.output --client geth,prysm/prysm-bn,prysm/prysm-vc,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "taiko-blob/blob-l1-beacon"
+make test_reorg_reorg
 ```
 
-* Run blob-server test:
+#### Run blob-l1-beacon test:
+
+* how it tests
+    * Start one cluster
+    * Let proposer use blobs to propose blocks
+    * Waiting taiko-geth tough the target number
 
 ```shell
-./build/bin/hive --docker.output --client geth,prysm/prysm-bn,prysm/prysm-vc,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover,storage/redis,storage/postgres,blobscan/blobscan-api,blobscan/blobscan-indexer --sim taiko --sim.limit "taiko-blob/blob-server"
+make test_blob_beacon
+```
+
+#### Run blob-scan test:
+
+* how it tests
+    * Start one cluster
+    * Let proposer use blobs to propose blocks
+    * Waiting taiko-geth tough the target number
+
+```shell
+make test_blob_server
 ```
 
 ### Hive framework
@@ -104,58 +153,59 @@ make hiveview
 
 ```go
 type ClientTestSpec struct {
-    suite_base.BaseTestSpec
+suite_base.BaseTestSpec
 }
 
 func (r ClientTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Testnet) {
-    panic("Plz add test content in this function.")
+panic("Plz add test content in this function.")
 }
 
 ```
 
 * Add `tests.go`
+
 ```go
 var testSuite = hivesim.Suite{
-    Name:        "taiko-blob",
-    DisplayName: "driver blob client test",
-    Location:    "suites/blob",
+Name:        "taiko-blob",
+DisplayName: "driver blob client test",
+Location:    "suites/blob",
 }
 
 var Tests = make([]suites.TestSpec, 0)
 
 func init() {
-    Tests = append(Tests,
-    BlobTestSpec{
-        TestL1Beacon: true,
-        BaseTestSpec: suite_base.BaseTestSpec{
-            Name: "blob-l1-beacon",
-        },
-    },
-    BlobTestSpec{
-        TestBlobServer: true,
-        BaseTestSpec: suite_base.BaseTestSpec{
-            Name: "blob-server",
-        },
-    })
+Tests = append(Tests,
+BlobTestSpec{
+TestL1Beacon: true,
+BaseTestSpec: suite_base.BaseTestSpec{
+Name: "blob-l1-beacon",
+},
+},
+BlobTestSpec{
+TestBlobServer: true,
+BaseTestSpec: suite_base.BaseTestSpec{
+Name: "blob-server",
+},
+})
 }
 
 func Suite(clients clients.ClientGroups) hivesim.Suite {
-    // Load params.yml
-    beaconConfig, err := params.UnmarshalConfig(taparams.ConfigContent, nil)
-    if err != nil {
-        panic(err)
-    }
-    
-    var genesis core.Genesis
-    // Load genesis.json
-    if err = json.Unmarshal(taparams.GenesisContent, &genesis); err != nil {
-        panic(err)
-    }
-	
-    suites.SuiteHydrate(&testSuite, clients, Tests, &execution_config.GenesisState{
-    BeaconConfig:     beaconConfig,
-    Genesis:          &genesis,
-    })
-	return testSuite
+// Load params.yml
+beaconConfig, err := params.UnmarshalConfig(taparams.ConfigContent, nil)
+if err != nil {
+panic(err)
+}
+
+var genesis core.Genesis
+// Load genesis.json
+if err = json.Unmarshal(taparams.GenesisContent, &genesis); err != nil {
+panic(err)
+}
+
+suites.SuiteHydrate(&testSuite, clients, Tests, &execution_config.GenesisState{
+BeaconConfig:     beaconConfig,
+Genesis:          &genesis,
+})
+return testSuite
 }
 ```

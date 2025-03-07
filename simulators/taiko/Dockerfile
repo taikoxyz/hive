@@ -1,19 +1,14 @@
 # Build the simulator binary
-FROM golang:1.23.2-alpine AS builder
-RUN apk --no-cache add gcc musl-dev linux-headers cmake make clang build-base clang-static clang-dev
+FROM hive_go_dependency:latest AS hive_taiko_binary
 
 WORKDIR /source
 ADD . /source
-COPY params/jwt.hex /tmp/
 
-RUN go build -v
-
-# Build within simulator folder
-WORKDIR /source
-RUN go build -o ./ .
+RUN go mod tidy && go build -v
 
 # Build the runner container.
-#FROM golang:1.22-alpine
-#COPY --from=builder /source/taiko /usr/local/bin/taiko
+FROM hive_alpine_dependency:latest
+COPY --from=hive_taiko_binary /source/taiko /bin/taiko
+COPY params/jwt.hex /tmp/
 
-ENTRYPOINT ["/source/taiko"]
+ENTRYPOINT ["taiko"]

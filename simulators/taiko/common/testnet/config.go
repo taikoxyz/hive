@@ -1,7 +1,9 @@
 package testnet
 
 import (
+	"github.com/ethereum/hive/hivesim"
 	"math/big"
+	"taiko/common/clients"
 	execution_config "taiko/common/config/execution"
 )
 
@@ -22,6 +24,8 @@ var (
 	}
 )
 
+type CreateConfig func(index int, nodes clients.Nodes) (hivesim.Params, error)
+
 type Config struct {
 	Eth1Consensus execution_config.ExecutionConsensus `json:"eth1_consensus,omitempty"`
 
@@ -39,18 +43,17 @@ type Config struct {
 	Network string
 
 	// 0=silent, 1=error, 2=warn, 3=info, 4=debug, 5=detail
-	LogLevel int
+	LogLevel string
 
 	FeeReceipt string
-
-	// l2 geth syncmode
-	L2SyncMode string
 
 	// driver variables, false: beacon sync, true: blob sync
 	BeaconSync bool
 
 	// driver variables
 	SoftBlockServerPort uint64
+
+	CreateConfig CreateConfig `json:"-"`
 
 	// open debug flag
 	Debug bool

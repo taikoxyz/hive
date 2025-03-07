@@ -1,6 +1,4 @@
 ARG baseimage=blossomlabs/blobscan-api
-ARG tag=latest
+ARG tag=1.5.0
 
-FROM $baseimage:$tag AS builder
-
-RUN echo "blobscan-indexer latest" >/version.txt
+FROM --platform=linux/amd64 $baseimage:$tag AS builder

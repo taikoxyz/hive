@@ -1,59 +1,93 @@
 #!/bin/bash
 
-# start and stop docker compose
-docker compose -f docker/docker-compose.yml up -d --wait
-trap "docker compose -f docker/docker-compose.yml down" EXIT INT KILL ERR
+HIVE_TAIKO_PATH=$PWD
+OLD_FORK_TAIKO_MONO=${OLD_FORK_TAIKO_MONO:-$HOME/projects/taiko/tmp/taiko-mono}
+TAIKO_MONO_DIR=${TAIKO_MONO_DIR:-$HOME/projects/taiko/taiko-mono}
 
-# get docker env
-. scripts/docker_env.sh
+echo "HIVE_TAIKO_PATH: $HIVE_TAIKO_PATH"
 
-export PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-export TAIKO_L2_ADDRESS=0x1670010000000000000000000000000000010001
-export L2_SIGNAL_SERVICE=0x1670010000000000000000000000000000010005
-export CONTRACT_OWNER=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
-export PROVER_SET_ADMIN=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
-export TAIKO_TOKEN_PREMINT_RECIPIENT=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
-export TAIKO_TOKEN_NAME="Taiko Token Test"
-export TAIKO_TOKEN_SYMBOL="TTKOt"
-export TIER_ROUTER="devnet"
-export PAUSE_TAIKO_L1="false"
-export PAUSE_BRIDGE="false"
-export TAIKO_TOKEN=0x0000000000000000000000000000000000000000
-export SHARED_ADDRESS_MANAGER=0x0000000000000000000000000000000000000000
-export PROPOSER=0x0000000000000000000000000000000000000000
-export PROPOSER_ONE=0x0000000000000000000000000000000000000000
-export NUM_MIN_MAJORITY_GUARDIANS=7
-export NUM_MIN_MINORITY_GUARDIANS=1
+# stop docker compose
+docker compose -f $HIVE_TAIKO_PATH/docker/docker-compose.yml up l1_node l2_pacaya -d --wait
+trap "docker compose -f $HIVE_TAIKO_PATH/docker/docker-compose.yml down" EXIT SIGINT SIGTERM ERR
 
-export GUARDIAN_PROVERS="0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266,0x70997970C51812dc3A010C7d01b50e0d17dc79C8,0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC,0x90F79bf6EB2c4f870365E785982E1f101E93b906,0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65,0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc,0x976EA74026E726554dB657fA54763abd0C3a0aa9,0x14dC79964da2C08b23698B3D3cc7Ca32193d9955,0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f,0xa0Ee7A142d267C1f36714E4a8F75612F20a79720"
+# load l1 chain deploy contracts environment variables
+source scripts/deploy_env.sh
 
-# Get the hash of L2 genesis.
-export L2_GENESIS_HASH=$(
-  curl \
-    --silent \
-    -X POST \
-    -H "Content-Type: application/json" \
-    -d '{"jsonrpc":"2.0","id":0,"method":"eth_getBlockByNumber","params":["0x0", false]}' \
-    "$L2_PROBE_URL" | jq .result.hash | sed 's/\"//g'
-)
-echo "L2_GENESIS_HASH: $L2_GENESIS_HASH"
+# load docker environment variables
+source scripts/docker_env.sh
 
-echo "Start deploying taiko contracts on l1 chain..."
-cd "$TAIKO_MONO_DIR"/packages/protocol && forge script script/layer1/DeployProtocolOnL1.s.sol:DeployProtocolOnL1 \
-  --fork-url "$L1_PROBE_URL" \
-  --broadcast \
-  --ffi \
-  -vvvv \
-  --evm-version cancun \
-  --private-key $PRIVATE_KEY \
-  --block-gas-limit 200000000
+echo "Start deploy l1 ontake contracts ..."
+# Deploy v1.9.1 protocol at first
+cd ${OLD_FORK_TAIKO_MONO}/packages/protocol &&
+  forge script script/layer1/DeployProtocolOnL1.s.sol:DeployProtocolOnL1 \
+    --fork-url "$L1_PROBE_URL" \
+    --broadcast \
+    --ffi \
+    -vvvvv \
+    --evm-version cancun \
+    --private-key "$PRIVATE_KEY" \
+    --block-gas-limit 200000000 \
+    --legacy
 
 cd - || exit
+
+# Get deployed contract address.
+DEPLOYMENT_JSON=$(cat ${OLD_FORK_TAIKO_MONO}/packages/protocol/deployments/deploy_l1.json)
+export OLD_FORK=0x1291Be112d480055DaFd8a610b7d1e203891C274
+export TAIKO_INBOX=$(echo "$DEPLOYMENT_JSON" | jq '.taiko' | sed 's/\"//g')
+export ROLLUP_RESOLVER=$(echo "$DEPLOYMENT_JSON" | jq '.rollup_address_manager' | sed 's/\"//g')
+export PROVER_SET=$(echo "$DEPLOYMENT_JSON" | jq '.prover_set' | sed 's/\"//g')
+export TAIKO_TOKEN=$(echo "$DEPLOYMENT_JSON" | jq '.taiko_token' | sed 's/\"//g')
+export SGX_VERIFIER=$(echo "$DEPLOYMENT_JSON" | jq '.tier_sgx' | sed 's/\"//g')
+export RISC0_VERIFIER=$(echo "$DEPLOYMENT_JSON" | jq '.tier_zkvm_risc0' | sed 's/\"//g')
+export SP1_VERIFIER=$(echo "$DEPLOYMENT_JSON" | jq '.tier_zkvm_sp1' | sed 's/\"//g')
+export SHARED_RESOLVER=$(echo "$DEPLOYMENT_JSON" | jq '.shared_address_manager' | sed 's/\"//g')
+export BRIDGE_L1=$(echo "$DEPLOYMENT_JSON" | jq '.bridge' | sed 's/\"//g')
+export SIGNAL_SERVICE=$(echo "$DEPLOYMENT_JSON" | jq '.signal_service' | sed 's/\"//g')
+export ERC20_VAULT=$(echo "$DEPLOYMENT_JSON" | jq '.erc20_vault' | sed 's/\"//g')
+export ERC721_VAULT=$(echo "$DEPLOYMENT_JSON" | jq '.erc721_vault' | sed 's/\"//g')
+export ERC1155_VAULT=$(echo "$DEPLOYMENT_JSON" | jq '.erc1155_vault' | sed 's/\"//g')
+export QUOTA_MANAGER=0x0000000000000000000000000000000000000000
+
+echo "Start upgrade l1 pacaya contracts ..."
+cd ${TAIKO_MONO_DIR}/packages/protocol &&
+  PRIVATE_KEY=$PRIVATE_KEY forge script script/layer1/devnet/UpgradeDevnetPacayaL1.s.sol:UpgradeDevnetPacayaL1 \
+    --fork-url "$L1_PROBE_URL" \
+    --broadcast \
+    --ffi \
+    -vvvvv \
+    --evm-version cancun \
+    --private-key "$PRIVATE_KEY" \
+    --block-gas-limit 200000000 \
+    --legacy
+
+cd - || exit
+
+#PACAYA_DEPLOYMENT_JSON=$(cat ${TAIKO_MONO_DIR}/packages/protocol/deployments/deploy_l1.json)
+#export CONTRACT_OWNER=0x0000000000000000000000000000000000000000
+#export TAIKO_WRAPPER=$(echo "$PACAYA_DEPLOYMENT_JSON" | jq '.taiko_wrapper' | sed 's/\"//g')
+#
+#cd ${TAIKO_MONO_DIR}/packages/protocol &&
+#  PRIVATE_KEY=$PRIVATE_KEY forge script script/layer1/preconf/DeployPreconfContracts.s.sol:DeployPreconfContracts \
+#    --fork-url "$L1_PROBE_URL" \
+#    --broadcast \
+#    --ffi \
+#    -vvvvv \
+#    --evm-version cancun \
+#    --private-key "$PRIVATE_KEY" \
+#    --block-gas-limit 200000000 \
+#    --legacy
+#
+#cd - || exit
+
+# Get envs
+sh scripts/get_env.sh
+
 # Get txs
 sh scripts/get_txs.sh
 
-# Get deployed contract addresses.
-sh scripts/get_env.sh
+# build ontake abigen
+sh scripts/ontake_abigen.sh
 
-# update go bindings
-sh scripts/abigen.sh
+# build pacaya abigen
+sh scripts/pacaya_abigen.sh

@@ -25,15 +25,19 @@ func main() {
 		dockerPull            = flag.Bool("docker.pull", false, "Refresh base images when building images.")
 		dockerOutput          = flag.Bool("docker.output", false, "Relay all docker output to stderr.")
 		simPattern            = flag.String("sim", "", "Regular `expression` selecting the simulators to run.")
+		simBuild              = flag.String("sim.build", "false", "build sim images")
 		simTestPattern        = flag.String("sim.limit", "", "Regular `expression` selecting tests/suites (interpreted by simulators).")
 		simParallelism        = flag.Int("sim.parallelism", 1, "Max `number` of parallel clients/containers (interpreted by simulators).")
 		simRandomSeed         = flag.Int("sim.randomseed", 0, "Randomness seed number (interpreted by simulators).")
 		simTestLimit          = flag.Int("sim.testlimit", 0, "[DEPRECATED] Max `number` of tests to execute per client (interpreted by simulators).")
 		simTimeLimit          = flag.Duration("sim.timelimit", 0, "Simulation `timeout`. Hive aborts the simulator if it exceeds this time.")
-		simLogLevel           = flag.Int("sim.loglevel", 4, "Selects log `level` of client instances. Supports values 0-5.")
+		simLogLevel           = flag.Int("sim.loglevel", 3, "Selects log `level` of client instances. Supports values 0-5.")
 		simDevMode            = flag.Bool("dev", false, "Only starts the simulator API endpoint (listening at 127.0.0.1:3000 by default) without starting any simulators.")
 		simDevModeAPIEndpoint = flag.String("dev.addr", "127.0.0.1:3000", "Endpoint that the simulator API listens on")
 		useCredHelper         = flag.Bool("docker.cred-helper", false, "configure docker authentication using locally-configured credential helper")
+
+		devDebug  = flag.Bool("dev.debug", false, "Enable debug logging")
+		devExpose = flag.Bool("dev.expose", false, "expose docker ports")
 
 		clientsFile = flag.String("client-file", "", `YAML `+"`file`"+` containing client configurations.`)
 
@@ -113,6 +117,8 @@ func main() {
 		SimParallelism:     *simParallelism,
 		SimRandomSeed:      *simRandomSeed,
 		SimDurationLimit:   *simTimeLimit,
+		SimDevDebug:        *devDebug,
+		SimDevExpose:       *devExpose,
 		ClientStartTimeout: *clientTimeout,
 	}
 	runner := libhive.NewRunner(inv, builder, cb)
@@ -138,7 +144,7 @@ func main() {
 	}
 
 	// Build clients and simulators.
-	if err := runner.Build(ctx, clientList, simList); err != nil {
+	if err = runner.Build(ctx, clientList, simList, strings.ToLower(*simBuild) == "true"); err != nil {
 		fatal(err)
 	}
 	if *simDevMode {

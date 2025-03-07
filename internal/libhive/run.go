@@ -42,14 +42,16 @@ func NewRunner(inv Inventory, b Builder, cb ContainerBackend) *Runner {
 }
 
 // Build builds client and simulator images.
-func (r *Runner) Build(ctx context.Context, clientList []ClientDesignator, simList []string) error {
-	if err := r.container.Build(ctx, r.builder); err != nil {
-		return err
+func (r *Runner) Build(ctx context.Context, clientList []ClientDesignator, simList []string, simBuild bool) error {
+	if simBuild {
+		if err := r.container.Build(ctx, r.builder); err != nil {
+			return err
+		}
 	}
 	if err := r.buildClients(ctx, clientList); err != nil {
 		return err
 	}
-	return r.buildSimulators(ctx, simList)
+	return r.buildSimulators(ctx, simList, simBuild)
 }
 
 // buildClients builds client images.
@@ -86,16 +88,18 @@ func (r *Runner) buildClients(ctx context.Context, clientList []ClientDesignator
 }
 
 // buildSimulators builds simulator images.
-func (r *Runner) buildSimulators(ctx context.Context, simList []string) error {
+func (r *Runner) buildSimulators(ctx context.Context, simList []string, simBuild bool) error {
 	r.simImages = make(map[string]string)
 
 	log15.Info(fmt.Sprintf("building %d simulators...", len(simList)))
 	for _, sim := range simList {
-		image, err := r.builder.BuildSimulatorImage(ctx, sim)
-		if err != nil {
-			return err
+		if simBuild {
+			_, err := r.builder.BuildSimulatorImage(ctx, sim)
+			if err != nil {
+				return err
+			}
 		}
-		r.simImages[sim] = image
+		r.simImages[sim] = fmt.Sprintf("hive/simulators/%s:latest", sim)
 	}
 	return nil
 }
@@ -201,11 +205,13 @@ func (r *Runner) run(ctx context.Context, sim string, env SimEnv) (SimResult, er
 	// Create the simulator container.
 	opts := ContainerOptions{
 		Env: map[string]string{
-			"HIVE_SIMULATOR":    "http://" + server.Addr().String(),
-			"HIVE_PARALLELISM":  strconv.Itoa(env.SimParallelism),
-			"HIVE_LOGLEVEL":     strconv.Itoa(env.SimLogLevel),
-			"HIVE_TEST_PATTERN": env.SimTestPattern,
-			"HIVE_RANDOM_SEED":  strconv.Itoa(env.SimRandomSeed),
+			"HIVE_SIMULATOR":          "http://" + server.Addr().String(),
+			"HIVE_PARALLELISM":        strconv.Itoa(env.SimParallelism),
+			"HIVE_LOGLEVEL":           strconv.Itoa(env.SimLogLevel),
+			"HIVE_TEST_PATTERN":       env.SimTestPattern,
+			"HIVE_RANDOM_SEED":        strconv.Itoa(env.SimRandomSeed),
+			"HIVE_DEBUG":              fmt.Sprintf("%v", env.SimDevDebug),
+			"HIVE_DOCKER_PORT_EXPOSE": fmt.Sprintf("%v", env.SimDevExpose),
 		},
 	}
 	containerID, err := r.container.CreateContainer(ctx, r.simImages[sim], opts)

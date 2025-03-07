@@ -12,30 +12,13 @@ import (
 )
 
 var testSuite = hivesim.Suite{
-	Name:        "taiko-genesis",
+	Name:        "base",
 	DisplayName: "Deneb Testnet",
 	Description: `Collection of test vectors that use a L1EthClient+BeaconNode+ValidatorClient testnet for Cancun+Deneb.`,
 	Location:    "suites/base",
 }
 
 var Tests = make([]suites.TestSpec, 0)
-
-func init() {
-	Tests = append(Tests,
-		BaseTestSpec{
-			Name:           "l2-full-sync",
-			L2SyncMode:     "full",
-			BeaconSync:     true,
-			L2TargetNumber: 5,
-			Debug:          true,
-		},
-		BaseTestSpec{
-			Name:       "l2-snap-sync",
-			L2SyncMode: "snap",
-			BeaconSync: true,
-		},
-	)
-}
 
 func Suite(clients clients.ClientGroups) hivesim.Suite {
 	// Load params.yml

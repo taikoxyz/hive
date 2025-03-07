@@ -27,9 +27,9 @@ echo "Starting taiko geth..."
 nohup geth \
   --bootnodes="$HIVE_BOOTNODE" \
   --taiko \
+  --verbosity "$HIVE_LOGLEVEL" \
   --datadir=/geth/data \
   --networkid="$HIVE_NETWORK_ID" \
-  --verbosity="$HIVE_LOGLEVEL" \
   --http \
   --http.api=admin,debug,eth,net,web3,txpool,miner,taiko \
   --http.addr=0.0.0.0 \

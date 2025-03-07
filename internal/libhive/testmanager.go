@@ -37,6 +37,9 @@ type SimEnv struct {
 	SimRandomSeed  int
 	SimTestPattern string
 
+	SimDevDebug  bool
+	SimDevExpose bool
+
 	// This is the time limit for the simulation run.
 	// There is no default limit.
 	SimDurationLimit time.Duration

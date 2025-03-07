@@ -1,5 +1,7 @@
 #!/bin/bash
 
+HIVE_LOGLEVEL=${HIVE_LOGLEVEL:-3}
+
 # load tool commands.
 . /geth/common.sh
 
@@ -29,6 +31,7 @@ fi
 
 echo "Starting geth..."
 geth \
+  --verbosity "$HIVE_LOGLEVEL" \
   --bootnodes="$HIVE_BOOTNODE" \
   --http \
   --http.api=admin,debug,eth,net,web3,txpool,miner \

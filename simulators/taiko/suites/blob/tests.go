@@ -9,32 +9,15 @@ import (
 	execution_config "taiko/common/config/execution"
 	taparams "taiko/params"
 	"taiko/suites"
-	suite_base "taiko/suites/base"
 )
 
 var testSuite = hivesim.Suite{
-	Name:        "taiko-blob",
+	Name:        "blob",
 	DisplayName: "driver blob client test",
 	Location:    "suites/blob",
 }
 
 var Tests = make([]suites.TestSpec, 0)
-
-func init() {
-	Tests = append(Tests,
-		BlobTestSpec{
-			TestL1Beacon: true,
-			BaseTestSpec: suite_base.BaseTestSpec{
-				Name: "blob-l1-beacon",
-			},
-		},
-		BlobTestSpec{
-			TestBlobServer: true,
-			BaseTestSpec: suite_base.BaseTestSpec{
-				Name: "blob-server",
-			},
-		})
-}
 
 func Suite(clients clients.ClientGroups) hivesim.Suite {
 	// Load params.yml

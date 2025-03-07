@@ -59,6 +59,7 @@ type HiveConfig struct {
 	SimRandomSeed  int
 	SimTimeLimit   time.Duration
 	SimLogLevel    int
+	SimBuild       bool
 
 	// Each group of clients is a node.
 	ClientGroups  [][]string
@@ -145,11 +146,12 @@ func NewHiveFramework(config *HiveConfig) (*HiveFramework, error) {
 }
 
 func (h *HiveFramework) build(ctx context.Context) error {
-	return h.runner.Build(ctx, h.clientList, h.simList)
+	return h.runner.Build(ctx, h.clientList, h.simList, h.SimBuild)
 }
 
 func (h *HiveFramework) Run(ctx context.Context) (int, error) {
 	// build simulators and clients.
+
 	if err := h.build(ctx); err != nil {
 		return 0, err
 	}

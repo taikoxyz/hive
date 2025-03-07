@@ -2,59 +2,44 @@ package clients
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/consensus/taiko"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ethereum/hive/hivesim"
 	"github.com/go-resty/resty/v2"
-	tkflags "github.com/taikoxyz/taiko-mono/packages/taiko-client/cmd/flags"
-	tkutils "github.com/taikoxyz/taiko-mono/packages/taiko-client/cmd/utils"
-	"github.com/taikoxyz/taiko-mono/packages/taiko-client/driver"
-	softblocks "github.com/taikoxyz/taiko-mono/packages/taiko-client/driver/soft_blocks"
+	"github.com/taikoxyz/taiko-mono/packages/taiko-client/bindings/encoding"
+	anchorTxConstructor "github.com/taikoxyz/taiko-mono/packages/taiko-client/driver/anchor_tx_constructor"
+	preconfblocks "github.com/taikoxyz/taiko-mono/packages/taiko-client/driver/preconf_blocks"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
-	"github.com/urfave/cli/v2"
-	"os"
+	"math/big"
 	"taiko/common/utils"
-	"taiko/params"
 )
 
 type DriverClient struct {
+	Index int
 	*HiveManagedClient
-
-	*rpc.Client
-	*driver.Driver
-
+	Envs hivesim.Params
 	*State
 }
 
-func (d *DriverClient) Start() error {
+func (d *DriverClient) Start() (err error) {
 	if err := d.HiveManagedClient.Start(); err != nil {
 		return err
 	}
 
-	d.Logf("driver client, L1_BEACON: %s", os.Getenv("L1_BEACON"))
+	d.Logf("driver client, L1_BEACON: %s", d.Envs["L1_BEACON"])
 
-	d.Driver = &driver.Driver{}
-	err := NewTaikoClient(d.Driver, tkflags.DriverFlags)
+	client, err := rpc.NewClient(context.Background(), GetClientConfig(d.Envs))
 	if err != nil {
 		return err
 	}
 
-	data, err := json.Marshal(d.Config.ClientConfig)
-	if err != nil {
-		return err
-	}
-	d.Logf("driver's client config: %s", string(data))
-
-	d.Client, err = rpc.NewClient(context.Background(), d.Config.ClientConfig)
-	if err != nil {
-		return err
-	}
-
-	d.State, err = NewState(d.Client)
+	d.State, err = NewState(client)
 	if err != nil {
 		return err
 	}
@@ -63,149 +48,106 @@ func (d *DriverClient) Start() error {
 }
 
 func (d *DriverClient) Shutdown() error {
-	if err := d.HiveManagedClient.Shutdown(); err != nil {
-		return err
+	err := d.HiveManagedClient.Shutdown()
+	d.FailIfNotNil(err, fmt.Sprintf("failed to shutdown %s", d.ClientType()))
+	if d.State != nil {
+		d.State.Close()
 	}
-	d.State.Close()
 
 	return nil
 }
 
-func (d *DriverClient) SoftServerURL() string {
-	return fmt.Sprintf("http://%s:%v", d.NetworkIP(), d.Config.SoftBlockServerPort)
+func (d *DriverClient) PreconfServerURL() string {
+	return fmt.Sprintf("http://%s:%v", d.NetworkIP(), PreconfServerPort)
 }
 
-func (d *DriverClient) BuildSoftBlock(
+func BuildPreconfBlock(
+	ctx context.Context,
+	rpccli *rpc.Client,
+	privateKey *ecdsa.PrivateKey,
+	preconfURL string,
+	anchoredL1Block *types.Header,
 	l2BlockID uint64,
-	batchID uint64,
-	endOfBlock bool,
-	endOfPreconf bool,
-	l1Head *types.Header,
 ) (*types.Header, types.Transactions, error) {
-	d.Logf("%s: build soft block", d.ClientType())
+	l2cli := rpccli.L2
 
-	if l1Head == nil {
-		l1Head = d.L1Head.Load()
-	}
-
-	// Create and send a batch of txs.
-	signedTxs, err := buildSoftBlock(d.Client, d.SoftServerURL(), l2BlockID, batchID, endOfBlock, endOfPreconf, l1Head)
+	signedTxs, err := utils.CreateL2Txs(context.Background(), l2cli, true)
 	if err != nil {
 		return nil, nil, err
 	}
-	defer d.Logf("%s: build soft block end, transaction length: %d", d.ClientType(), signedTxs.Len())
 
-	return l1Head, signedTxs, d.StateError()
-}
-
-func (d *DriverClient) RemoveSoftBlocks(newLastBlockID uint64) error {
-	d.Logf("%s: remove soft block, target height: %d", d.ClientType(), newLastBlockID)
-	defer d.Logf("%s: remove soft block end", d.ClientType())
-
-	return removeSoftBlocks(d.SoftServerURL(), newLastBlockID)
-}
-
-func buildSoftBlock(
-	rpcCli *rpc.Client,
-	softURL string,
-	l2BlockID uint64,
-	batchID uint64,
-	endOfBlock bool,
-	endOfPreconf bool,
-	l1Head *types.Header,
-) (types.Transactions, error) {
-	// Create and send a batch of txs.
-	signedTxs, err := utils.CreateL2Txs(context.Background(), rpcCli.L2, true)
+	parent, err := l2cli.HeaderByNumber(ctx, big.NewInt(0).SetUint64(l2BlockID-1))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	b, err := utils.EncodeAndCompressTxList(signedTxs)
+
+	preconfCfg, err := rpccli.GetProtocolConfigs(nil)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	var marker softblocks.TransactionBatchMarker
-	if endOfBlock {
-		marker = softblocks.BatchMarkerEOB
-	} else if endOfPreconf {
-		marker = softblocks.BatchMarkerEOP
-	} else {
-		marker = softblocks.BatchMarkerEmpty
+	baseFee, err := rpccli.CalculateBaseFee(
+		ctx,
+		parent,
+		true,
+		preconfCfg.BaseFeeConfig(),
+		anchoredL1Block.Time,
+	)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to calculate base fee: %w", err)
 	}
 
-	var txBatch = &softblocks.TransactionBatch{
-		BlockID:          l2BlockID,
-		ID:               batchID,
-		TransactionsList: b,
-		BatchMarker:      marker,
-		Signature:        "",
-		BlockParams: &softblocks.SoftBlockParams{
-			AnchorBlockID:   l1Head.Number.Uint64(),
-			AnchorStateRoot: l1Head.Root,
-			Timestamp:       l1Head.Time + 12,
-			Coinbase:        params.L2Auths[0].From,
+	constructor, _ := anchorTxConstructor.New(rpccli)
+	// Assemble a TaikoAnchor.anchorV3 transaction
+	anchorTx, err := constructor.AssembleAnchorV3Tx(
+		ctx,
+		anchoredL1Block.Number,
+		anchoredL1Block.Root,
+		parent.GasUsed,
+		preconfCfg.BaseFeeConfig(),
+		[][32]byte{},
+		new(big.Int).Add(parent.Number, common.Big1),
+		baseFee,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	txBytes, err := utils.EncodeAndCompressTxList(append([]*types.Transaction{anchorTx}, signedTxs...))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	extraData := encoding.EncodeBaseFeeConfig(preconfCfg.BaseFeeConfig())
+	reqBody := &preconfblocks.BuildPreconfBlockRequestBody{
+		ExecutableData: &preconfblocks.ExecutableData{
+			ParentHash:    parent.Hash(),
+			FeeRecipient:  crypto.PubkeyToAddress(privateKey.PublicKey),
+			Number:        l2BlockID,
+			GasLimit:      uint64(preconfCfg.BlockMaxGasLimit()) + taiko.AnchorV3GasLimit,
+			Timestamp:     anchoredL1Block.Time,
+			Transactions:  txBytes,
+			BaseFeePerGas: baseFee.Uint64(),
+			ExtraData:     hexutil.Bytes(extraData[:]),
 		},
-	}
-	payload, err := rlp.EncodeToBytes(txBatch)
-	if err != nil {
-		return nil, err
-	}
-
-	sig, err := crypto.Sign(crypto.Keccak256(payload), params.PrivateKeys[0])
-	if err != nil {
-		return nil, err
-	}
-	txBatch.Signature = common.Bytes2Hex(sig)
-
-	l2Block, err := rpcCli.L2.BlockByNumber(context.Background(), nil)
-	if err != nil {
-		return nil, err
 	}
 
 	// Try to propose a soft block with batch ID 0
 	res, err := resty.New().
 		R().
-		SetBody(&softblocks.BuildSoftBlockRequestBody{
-			TransactionBatch: txBatch,
-		}).
-		Post(softURL + "/softBlocks")
+		SetBody(reqBody).
+		Post(preconfURL + "/preconfBlocks")
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if !res.IsSuccess() {
-		return append(l2Block.Transactions(), signedTxs...), errors.New(res.String())
+		return nil, nil, fmt.Errorf("failed to build preconf block: %v", res.Error())
 	}
 
-	return signedTxs, nil
-}
+	var body *preconfblocks.BuildPreconfBlockResponseBody
+	if err = json.Unmarshal(res.Body(), &body); err != nil {
+		return nil, nil, err
+	}
 
-func removeSoftBlocks(softURL string, newLastBlockID uint64) error {
-	// Remove soft blocks
-	res, err := resty.New().
-		R().
-		SetBody(&softblocks.RemoveSoftBlocksRequestBody{
-			NewLastBlockID: newLastBlockID,
-		}).
-		Delete(softURL + "/softBlocks")
-	if err != nil {
-		return err
-	}
-	if !res.IsSuccess() {
-		return errors.New(res.String())
-	}
-	return nil
-}
-
-func NewTaikoClient[T tkutils.SubcommandApplication](client T, flags []cli.Flag) error {
-	app := cli.NewApp()
-	app.Commands = []*cli.Command{
-		{
-			Name:  "client",
-			Flags: flags,
-			Action: func(c *cli.Context) error {
-				return client.InitFromCli(context.Background(), c)
-			},
-		},
-	}
-	return app.Run([]string{"taiko-client", "client"})
+	return body.BlockHeader, signedTxs, nil
 }
