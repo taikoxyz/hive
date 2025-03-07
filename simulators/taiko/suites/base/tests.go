@@ -37,7 +37,7 @@ func Suite(clients clients.ClientGroups) hivesim.Suite {
 		ForkName:         "deneb",
 		BeaconConfig:     beaconConfig,
 		NumValidators:    64,
-		GenesisTimeDelay: 15,
+		GenesisTimeDelay: 8,
 		Genesis:          &genesis,
 	})
 	return testSuite
