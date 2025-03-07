@@ -32,7 +32,7 @@ echo BUILDER=$builder_option
 echo Starting Prysm Validator Client
 
 validator \
-  --verbosity="$LOG" \
+  --verbosity="warn" \
   --chain-config-file="/hive/input/config.yaml" \
   --beacon-rpc-provider="$HIVE_TAIKO_BN_API_IP:4000" \
   --accept-terms-of-use=true \
