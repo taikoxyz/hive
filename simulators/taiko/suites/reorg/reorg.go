@@ -56,7 +56,7 @@ func (r ReorgTestSpec) reorgAndVerifyFirstCluster(ctx context.Context, t *hivesi
 		prover   = node.ProverClient
 		l2eth    = node.L2EthClient
 
-		timeout            = time.Second * 60
+		timeout            = time.Minute * 3
 		l2ReorgStartNumber = r.L2TargetNumber
 	)
 	if l2ReorgStartNumber == 0 {

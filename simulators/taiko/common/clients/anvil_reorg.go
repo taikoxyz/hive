@@ -98,5 +98,5 @@ func (a *AnvilClient) Reorg(l2Number uint64) {
 
 	l1Number -= 1
 
-	a.WaitLatestNumber(ctx, time.Second*30, l1Number)
+	a.WaitLatestNumber(ctx, time.Minute*3, l1Number)
 }

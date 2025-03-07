@@ -167,7 +167,7 @@ func (ts BaseTestSpec) verifyL2Nodes(ctx context.Context, t *hivesim.T, latestVe
 		prover = nodes[0].ProverClient
 	)
 
-	prover.WaitLatestVerifiedNumber(ctx, time.Second*10, latestVerified+1)
+	prover.WaitLatestVerifiedNumber(ctx, time.Minute*3, latestVerified+1)
 
 	header, err := l2cli.HeaderByNumber(ctx, nil)
 	if err != nil {

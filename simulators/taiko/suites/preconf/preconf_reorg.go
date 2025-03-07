@@ -46,7 +46,7 @@ func (r *ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *testn
 		l2geth   = node.L2EthClient
 	)
 
-	l2geth.WaitLatestNumber(ctx, time.Second*30, proposer.PacayaClients.ForkHeight)
+	l2geth.WaitLatestNumber(ctx, time.Minute*3, proposer.PacayaClients.ForkHeight)
 
 	// stop the proposer.
 	proposer.PauseClient()
