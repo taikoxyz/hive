@@ -6,7 +6,7 @@ toolchain go1.23.6
 
 require (
 	github.com/davecgh/go-spew v1.1.1
-	github.com/ethereum/go-ethereum v1.15.5
+	github.com/ethereum/go-ethereum v1.14.11
 	github.com/ethereum/hive/hiveproxy v0.0.0-20240808014330-625b82294b46
 	github.com/evanw/esbuild v0.18.11
 	github.com/fsouza/go-dockerclient v1.11.0
@@ -84,4 +84,4 @@ require (
 	rsc.io/tmplfunc v0.0.3 // indirect
 )
 
-replace github.com/ethereum/go-ethereum v1.15.5 => github.com/taikoxyz/taiko-geth v1.12.1-0.20250311074847-364acd00d1f2
+replace github.com/ethereum/go-ethereum v1.14.11 => github.com/taikoxyz/taiko-geth v1.12.1-0.20250311074847-364acd00d1f2
