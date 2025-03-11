@@ -70,7 +70,6 @@ func GenerateGenesis(generateGenesisStateFlags *GenesisState) (int, *core.Genesi
 		if v > version.Altair {
 			// set ttd to zero so EL goes post-merge immediately
 			gen.Config.TerminalTotalDifficulty = big.NewInt(0)
-			gen.Config.TerminalTotalDifficultyPassed = true
 		}
 	}
 
