@@ -2,6 +2,8 @@
 
 all: hive hivechain hiveview hive_alpine_dependency hive_go_dependency
 
+test_all: test_full_sync test_reorg_reorg test_preconf_preconf test_preconf_reorg test_preconf_forced_inclusion test_blob_beacon test_blob_server
+
 hive:
 	@echo "Building hive..."
 	@go build -o build/bin/hive ./

@@ -15,10 +15,17 @@
     "londonBlock": 0,
     "arrowGlacierBlock": 0,
     "grayGlacierBlock": 0,
-    "shanghaiTime": 1707402888,
-    "cancunTime": 1707402888,
+    "shanghaiTime": 0,
+    "cancunTime": 0,
     "terminalTotalDifficulty": 0,
-    "terminalTotalDifficultyPassed": true
+    "terminalTotalDifficultyPassed": true,
+    "blobSchedule": {
+      "cancun": {
+        "target": 3,
+        "max": 6,
+        "baseFeeUpdateFraction": 3338477
+      }
+    }
   },
   "nonce": "0x0",
   "timestamp": "0x65c4e688",

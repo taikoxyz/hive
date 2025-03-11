@@ -48,7 +48,7 @@ type depositDataJSON struct {
 
 func GenerateGenesis(generateGenesisStateFlags *GenesisState) (int, *core.Genesis, error) {
 	f := generateGenesisStateFlags
-	if err := params.SetActive(f.BeaconConfig.Copy()); err != nil {
+	if err := params.SetActive(f.BeaconConfig); err != nil {
 		return 0, nil, err
 	}
 
