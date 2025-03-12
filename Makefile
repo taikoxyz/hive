@@ -26,7 +26,7 @@ hive_go_dependency:
 
 test_reorg_reorg:
 	@echo "Running reorg/reorg test..."
-	./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "reorg/reorg"
+	./build/bin/hive --dev.expose --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "reorg/reorg"
 
 test_preconf_preconf:
 	@echo "Running preconf/preconf test..."
@@ -47,10 +47,6 @@ test_full_sync:
 test_blob_beacon:
 	@echo "Running blob/blob-l1-beacon test..."
 	./build/bin/hive --docker.output --client geth,prysm/prysm-bn,prysm/prysm-vc,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "blob/blob-l1-beacon"
-
-test_blob_beacon_debug:
-	@echo "Running blob/blob-l1-beacon test..."
-	./build/bin/hive --dev.debug --docker.output --client geth,prysm/prysm-bn,prysm/prysm-vc,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "blob/blob-l1-beacon"
 
 test_blob_server:
 	@echo "Running blob/blob-server test..."
