@@ -44,7 +44,7 @@ func init() {
 		panic(err)
 	}
 
-	l1Pacaya, err = pacaya.NewPacayaL1Clients(l2Cli)
+	l1Pacaya, err = pacaya.NewPacayaL1Clients(l1Cli)
 	if err != nil {
 		panic(err)
 	}
@@ -146,9 +146,17 @@ func TestGetLastVerifiedBlockId(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log(id)
 
-	tx, err := l1Ontake.TaikoL1.VerifyBlocks(params.L1Auths[0], 1)
-	assert.NoError(t, err)
-	receipt, err := bind.WaitMined(context.Background(), l1Cli, tx)
-	assert.NoError(t, err)
-	t.Log(receipt.Status)
+	if id < pacaya.PacayaForkNumber(l2Cli) {
+		tx, err := l1Ontake.TaikoL1.VerifyBlocks(params.L1Auths[0], 1)
+		assert.NoError(t, err)
+		receipt, err := bind.WaitMined(context.Background(), l1Cli, tx)
+		assert.NoError(t, err)
+		t.Log(receipt.Status)
+	} else {
+		tx, err := l1Pacaya.TaikoInbox.VerifyBatches(params.L1Auths[0], 1)
+		assert.NoError(t, err)
+		receipt, err := bind.WaitMined(context.Background(), l1Cli, tx)
+		assert.NoError(t, err)
+		t.Log(receipt.Status)
+	}
 }

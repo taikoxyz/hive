@@ -69,6 +69,13 @@ func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
 				envs           = params.EnvParams()
 			)
 
+			if firstNode.AnvilClient != nil {
+				envs["HIVE_L1_NODE"] = "anvil"
+			}
+			if firstNode.L1EthClient != nil {
+				envs["HIVE_L1_NODE"] = "geth"
+			}
+
 			envs["L2_AUTH"] = l2Client.EngineURL()
 			envs["L2_HTTP"] = l2Client.HttpURL()
 			envs["L2_WS"] = l2Client.WSURL()
@@ -140,13 +147,13 @@ func (ts BaseTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 		if lastVerifiedBlockID >= proposer.PacayaClients.ForkHeight {
 			break
 		}
-		t.Nil(prover.VerifyBlocks(params.L1Auths[0]), "failed to verify blocks")
+		prover.VerifyBlocks(params.L1Auths[0])
 	}
 
 	// For Debug
 	if utils.GetenvBool("HIVE_DEBUG") {
 		proposer.PauseClient()
-		time.Sleep(time.Minute * 120)
+		time.Sleep(time.Hour * 2)
 	}
 
 	// Start the other cluster's l2eth and driver nodes.

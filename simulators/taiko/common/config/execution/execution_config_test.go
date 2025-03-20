@@ -5,8 +5,11 @@ import (
 	"errors"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/prysmaticlabs/prysm/v5/config/params"
+	"github.com/prysmaticlabs/prysm/v5/runtime/version"
+	"github.com/prysmaticlabs/prysm/v5/testing/endtoend/types"
 	"github.com/stretchr/testify/assert"
 	"math/big"
+	"os"
 	"taiko/common/config"
 	taparams "taiko/params"
 	"testing"
@@ -73,6 +76,12 @@ func TestBuildChainConfig(t *testing.T) {
 	}
 }
 
+func TestCC(t *testing.T) {
+	cfg := types.InitForkCfg(version.Bellatrix, version.Deneb, params.E2ETestConfig())
+	data := params.ConfigToYaml(cfg)
+	os.WriteFile("/Users/huan/projects/taiko/hive/simulators/taiko/params/config1.yaml", data, 0644)
+}
+
 func TestGetGenesisFromFile(t *testing.T) {
 	// Load params.yml
 	beaconConfig, err := params.UnmarshalConfig(taparams.ConfigContent, nil)
@@ -82,7 +91,7 @@ func TestGetGenesisFromFile(t *testing.T) {
 
 	var genesis core.Genesis
 	// Load genesis.json
-	if err = json.Unmarshal(taparams.GenesisContent, &genesis); err != nil {
+	if err := json.Unmarshal(taparams.GenesisContent, &genesis); err != nil {
 		panic(err)
 	}
 
@@ -92,6 +101,7 @@ func TestGetGenesisFromFile(t *testing.T) {
 		NumValidators:    64,
 		GenesisTimeDelay: 3,
 		Genesis:          &genesis,
+		GenesisTime:      1707402888,
 	}
 
 	executionGenesis, _, err := BuildExecutionGenesis(genesisState)

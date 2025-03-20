@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"golang.org/x/exp/maps"
 	"io"
 	"mime/multipart"
 	"net"
@@ -196,15 +197,28 @@ func (sim *Simulation) StartClientWithOptions(testSuite SuiteID, test TestID, cl
 		opt.apply(setup)
 	}
 
-	showEnv := fmt.Sprintf("\n\n---------------->>> %s envs variables ---------------->>>		", clientType)
+	envs := maps.Clone(setup.config.Environment)
+	switch envs["HIVE_L1_NODE"] {
+	case "anvil":
+		envs["L1_HTTP"] = "http://localhost:8545"
+		envs["L1_WS"] = "ws://localhost:8545"
+		envs["L1_BEACON"] = "http://localhost:8545"
+	case "geth":
+		envs["L1_HTTP"] = "http://localhost:8545"
+		envs["L1_WS"] = "ws://localhost:8546"
+		envs["L1_BEACON"] = "http://localhost:3500"
+	}
+	envs["L2_HTTP"] = "L2_HTTP=http://localhost:6045"
+	envs["L2_WS"] = "ws://localhost:6046"
+	envs["L2_BEACON"] = "L2_HTTP=http://localhost:6051"
+
 	// Set environment variables.
-	for k, v := range setup.config.Environment {
-		_ = os.Setenv(k, v)
+	showEnv := fmt.Sprintf("\n\n%s envs variables: \n", clientType)
+	for k, v := range envs {
 		showEnv += fmt.Sprintf("%s=%s;", k, v)
 	}
-	showEnv += "L2_AUTH=http://localhost:8551;L1_HTTP=http://localhost:8545;L1_WS=ws://localhost:8545;L1_BEACON=http://localhost:8545;L2_HTTP=http://localhost:6045;L2_WS=ws://localhost:6046;L2_AUTH=http://localhost:6051"
-	showEnv += fmt.Sprintf("		<<<---------------- %s envs variables <<<----------------\n\n", clientType)
-	fmt.Printf(showEnv[:len(showEnv)-1])
+	showEnv = showEnv[:len(showEnv)-1] + "\n\n"
+	fmt.Printf(showEnv)
 
 	err := setup.postWithFiles(url, &resp)
 	if err != nil {

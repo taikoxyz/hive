@@ -3,6 +3,7 @@ package clients
 import (
 	"context"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/hive/hivesim"
 	"github.com/stretchr/testify/assert"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
@@ -61,4 +62,12 @@ func TestAnvil(t *testing.T) {
 
 func TestVerified(t *testing.T) {
 	assert.NoError(t, anvil.WaitLatestVerifiedNumber(context.Background(), time.Second*60, 3))
+}
+
+func TestAnvil2(t *testing.T) {
+	client, err := ethclient.Dial("http://127.0.0.1:8545")
+	assert.NoError(t, err)
+
+	err = client.Client().Call(nil, "evm_increaseTime", time.Second*20)
+	assert.NoError(t, err)
 }

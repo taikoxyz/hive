@@ -48,7 +48,7 @@ type depositDataJSON struct {
 
 func GenerateGenesis(generateGenesisStateFlags *GenesisState) (int, *core.Genesis, error) {
 	f := generateGenesisStateFlags
-	if err := params.SetActive(f.BeaconConfig.Copy()); err != nil {
+	if err := params.SetActive(f.BeaconConfig); err != nil {
 		return 0, nil, err
 	}
 
@@ -70,7 +70,6 @@ func GenerateGenesis(generateGenesisStateFlags *GenesisState) (int, *core.Genesi
 		if v > version.Altair {
 			// set ttd to zero so EL goes post-merge immediately
 			gen.Config.TerminalTotalDifficulty = big.NewInt(0)
-			gen.Config.TerminalTotalDifficultyPassed = true
 		}
 	}
 
