@@ -26,7 +26,7 @@ hive_go_dependency:
 
 test_reorg_reorg:
 	@echo "Running reorg/reorg test..."
-	./build/bin/hive --dev.expose --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "reorg/reorg"
+	./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "reorg/reorg"
 
 test_preconf_preconf:
 	@echo "Running preconf/preconf test..."

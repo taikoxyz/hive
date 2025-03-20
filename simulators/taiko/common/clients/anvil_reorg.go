@@ -74,25 +74,29 @@ func (a *AnvilClient) Reorg(l2Number uint64) {
 		a.Logf("check reorg point, l2_number: %d, l1_number: %d", l2Number, l1Number)
 	}
 
-	blocks := make([]*types.Block, 0)
+	l1Blocks := make([]*types.Block, 0)
 	for l1Number += 1; true; {
 		block, err := client.BlockByNumber(ctx, new(big.Int).SetUint64(l1Number))
 		if err != nil {
 			break
 		}
-		blocks = append(blocks, block)
+		l1Blocks = append(l1Blocks, block)
 		delete(a.reorgCache, l1Number)
 		l1Number++
 	}
 
 	a.RevertSnapshot(snapshot)
 
-	for _, block := range blocks {
+	for _, block := range l1Blocks {
 		a.Logf("reorg l1chain block, l2_number: %d, l1_number: %d, hash: %s", l2Number, block.NumberU64(), block.Hash().Hex())
 		for _, tx := range block.Transactions() {
 			err := client.SendTransaction(ctx, tx)
 			a.FailIfNotNil(err, fmt.Sprintf("failed to send tx %s, err: %v", tx.Hash().Hex(), err))
 		}
+
+		// Set the next block timestamp.
+		a.SetNextBlockTimestamp(block.Time())
+
 		a.MineBlock()
 	}
 

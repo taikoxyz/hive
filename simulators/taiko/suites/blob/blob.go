@@ -54,9 +54,7 @@ func (r BlobTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Test
 
 	// For debug
 	if utils.GetenvBool("HIVE_DEBUG") {
-		node.DriverClient.Shutdown()
-		node.ProposerClient.Shutdown()
-		time.Sleep(time.Minute * 120)
+		time.Sleep(time.Hour * 2)
 	}
 
 	var (

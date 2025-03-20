@@ -54,7 +54,7 @@ func (r *ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *testn
 	// For Debug
 	if utils.GetenvBool("HIVE_DEBUG") {
 		driver.Shutdown()
-		time.Sleep(time.Minute * 120)
+		time.Sleep(time.Hour * 2)
 	}
 
 	// Test reorg propose blocks.

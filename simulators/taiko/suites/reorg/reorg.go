@@ -42,7 +42,7 @@ func (r ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 
 	// For debug
 	if utils.GetenvBool("HIVE_DEBUG") {
-		time.Sleep(time.Minute * 60)
+		time.Sleep(time.Hour * 2)
 	}
 
 	r.reorgAndVerifyFirstCluster(ctx, t, node)
@@ -73,12 +73,12 @@ func (r ReorgTestSpec) reorgAndVerifyFirstCluster(ctx context.Context, t *hivesi
 		if lastVerifiedBlockID >= proposer.PacayaClients.ForkHeight {
 			break
 		}
-		t.Nil(prover.VerifyBlocks(params.L1Auths[0]), "failed to verify blocks")
+		prover.VerifyBlocks(params.L1Auths[0])
 	}
 
 	l2eth.WaitLatestNumber(ctx, timeout, l2ReorgStartNumber)
 
-	prover.WaitLatestVerifiedNumber(ctx, timeout, l2ReorgStartNumber/2)
+	prover.WaitLatestVerifiedNumber(ctx, timeout, l2ReorgStartNumber)
 
 	// Get reorg point.
 	latestVerified := prover.GetLastVerifiedBlockId(ctx)

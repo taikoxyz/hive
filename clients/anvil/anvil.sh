@@ -10,7 +10,7 @@ echo "anvil CONTAINER_IP: $CONTAINER_IP"
 if [ -f /hive/input/genesis.json ]; then
   echo genesis.json:
   cat /hive/input/genesis.json
-  anvil --init /hive/input/genesis.json --host 0.0.0.0 --accounts 20 -q
+  anvil --init /hive/input/genesis.json --host 0.0.0.0 --accounts 20
 else
-  anvil --host 0.0.0.0 --accounts 20 -q
+  anvil --host 0.0.0.0 --accounts 20
 fi

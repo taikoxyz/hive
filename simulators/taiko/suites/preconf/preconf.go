@@ -54,6 +54,7 @@ func (r *PreconfTestSpec) GetTestnetConfig() *testnet.Config {
 		envs["PRECONFIRMATION_P2P_PEERSTORE_PATH"] = "memory"
 		envs["PRECONFIRMATION_P2P_SEQUENCER_KEY"] = envs["L1_PROPOSER_PRIV_KEY"]
 		envs["PRECONFIRMATION_P2P_PRIV_RAW"] = params.ChainAuths[index].Key
+		envs["PRECONFIRMATION_P2P_BOOTNODES"] = "enode://869d07b5932f17e8490990f75a3f94195e9504ddb6b85f7189e5a9c0a8fff8b00aecf6f3ac450ecba6cdabdb5858788a94bde2b613e0f2d82e9b395355f76d1a@34.65.67.101:30305"
 
 		var staticPeers string
 		for i := 0; i < index; i++ {

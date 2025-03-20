@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/hive/hivesim"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/bindings/pacaya"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
@@ -44,14 +45,20 @@ func (p *ProverClient) Shutdown() error {
 	return nil
 }
 
-func (p *ProverClient) VerifyBlocks(opts *bind.TransactOpts) error {
-	tx, err := p.OntakeClients.TaikoL1.VerifyBlocks(opts, 32)
-	if err != nil {
-		return err
+func (p *ProverClient) VerifyBlocks(opts *bind.TransactOpts) {
+	latestVerifyId, err := GetLastVerifiedBlockId(context.Background(), p.Client)
+	p.FailIfNotNil(err, "failed to get last verified block id")
+
+	var tx *types.Transaction
+	if latestVerifyId < p.PacayaClients.ForkHeight {
+		tx, err = p.OntakeClients.TaikoL1.VerifyBlocks(opts, 32)
+	} else {
+		tx, err = p.PacayaClients.TaikoInbox.VerifyBatches(opts, 32)
 	}
+	p.FailIfNotNil(err, "failed to verify blocks")
 
 	_, err = bind.WaitMined(context.Background(), p.L1, tx)
-	return err
+	p.FailIfNotNil(err, "failed to wait mined")
 }
 
 func (p *ProverClient) WaitLatestBatchesProved(ctx context.Context, timeout time.Duration, number uint64) error {
