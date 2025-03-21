@@ -8,6 +8,9 @@ deploy_contracts:
 taiko:
 	docker build --no-cache -t hive/simulators/taiko:latest .
 
+hive_prysmctl:
+	docker build --no-cache -t hive/simulators/hive_prysmctl:latest .
+
 log_geth:
 	docker ps -a | grep "taiko-geth" | awk '{print $1}' | xargs docker logs -f
 

@@ -8,18 +8,6 @@ HIVE_LOGLEVEL=${HIVE_LOGLEVEL:-3}
 # Immediately abort the script on any error encountered
 set -e
 
-# Reset genesis.json
-prysmctl \
-  testnet \
-  generate-genesis \
-  --fork=fulu \
-  --num-validators=1 \
-  --genesis-time="1742366600" \
-  --output-ssz=genesis.ssz \
-  --chain-config-file=config.yml \
-  --geth-genesis-json-in=genesis.json \
-  --geth-genesis-json-out=genesis.json
-
 echo genesis.json:
 cat genesis.json
 
@@ -34,6 +22,7 @@ echo "Starting geth..."
 geth \
   --verbosity "$HIVE_LOGLEVEL" \
   --bootnodes="$HIVE_BOOTNODE" \
+  --datadir=data \
   --http \
   --http.api=admin,debug,eth,net,web3,txpool,miner \
   --http.addr=0.0.0.0 \

@@ -11,11 +11,7 @@ check_env "TAIKO_INBOX"
 check_env "TAIKO_ANCHOR"
 check_env "TAIKO_TOKEN"
 check_env "L1_PROPOSER_PRIV_KEY"
-check_env "HIVE_TAIKO_FEE_RECEIPT"
-
-if [ "$HIVE_TAIKO_FEE_RECEIPT" != "" ]; then
-  export L2_SUGGESTED_FEE_RECIPIENT="$HIVE_TAIKO_FEE_RECEIPT"
-fi
+check_env "L2_SUGGESTED_FEE_RECIPIENT"
 
 # Run proposer
 echo "Starting proposer..."

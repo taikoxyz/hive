@@ -15,11 +15,10 @@
     "londonBlock": 0,
     "arrowGlacierBlock": 0,
     "grayGlacierBlock": 0,
-    "shanghaiTime": 1742366600,
-    "cancunTime": 1742366600,
-    "pragueTime": 1742366600,
+    "shanghaiTime": 0,
+    "cancunTime": 0,
+    "pragueTime": 0,
     "terminalTotalDifficulty": 0,
-    "depositContractAddress": "0x0000000000000000000000000000000000000000",
     "blobSchedule": {
       "cancun": {
         "target": 3,
@@ -34,9 +33,9 @@
     }
   },
   "nonce": "0x0",
-  "timestamp": "0x67da6788",
+  "timestamp": "0x0",
   "extraData": "0x0000000000000000000000000000000000000000000000000000000000000000123463a4b065722e99115d6c222f267d9cabb5240000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-  "gasLimit": "0xb2d05e00",
+  "gasLimit": "0x12a05f2000",
   "difficulty": "0x1",
   "mixHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
   "coinbase": "0x0000000000000000000000000000000000000000",

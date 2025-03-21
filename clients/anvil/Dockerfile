@@ -1,7 +1,6 @@
-ARG baseimage=ghcr.io/foundry-rs/foundry
-ARG tag=nightly
+FROM hive_prysmctl:latest AS prysmctl
 
-FROM $baseimage:$tag AS builder
+FROM ghcr.io/foundry-rs/foundry:nightly
 
 # Generate the version.txt file.
 #RUN anvil --version > /version.txt
@@ -10,7 +9,8 @@ WORKDIR /anvil
 
 COPY anvil.sh .
 COPY common.sh .
-COPY genesis.json .
+
+COPY --from=prysmctl /prysmctl/genesis.json .
 
 EXPOSE 8545
 

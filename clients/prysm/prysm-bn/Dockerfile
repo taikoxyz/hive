@@ -1,19 +1,20 @@
-FROM gcr.io/prysmaticlabs/prysm/cmd/prysmctl:v5.3.1 AS prysmctl
+FROM hive_prysmctl:latest AS prysmctl
 
 FROM gcr.io/prysmaticlabs/prysm/beacon-chain:v5.3.1 AS beacon
 
-FROM ubuntu:24.10
-COPY --from=prysmctl /app/cmd/prysmctl/prysmctl /usr/local/bin
+FROM ubuntu:24.10 AS builder
 COPY --from=beacon /app/cmd/beacon-chain/beacon-chain /usr/local/bin/beacon-chain
 
 WORKDIR /prysm
 
 COPY prysm_bn.sh .
 COPY common.sh .
-COPY genesis.json .
-COPY config.yml .
 
-RUN chmod +x prysm_bn.sh
+COPY --from=prysmctl /prysmctl/config.yml .
+COPY --from=prysmctl /prysmctl/genesis.ssz .
+COPY --from=prysmctl /prysmctl/genesis.json .
+
+RUN chmod +x /prysm/prysm_bn.sh
 # Generate the version.txt file.
 RUN beacon-chain --version > /version.txt
 # Create jwt.hex file
