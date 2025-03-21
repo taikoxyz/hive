@@ -10,6 +10,7 @@ WORKDIR /anvil
 
 COPY anvil.sh .
 COPY common.sh .
+COPY genesis.json .
 
 EXPOSE 8545
 
