@@ -10,7 +10,6 @@ import (
 	"taiko/common/clients"
 	"taiko/common/testnet"
 	tn "taiko/common/testnet"
-	"taiko/common/utils"
 	"taiko/params"
 	suite_base "taiko/suites/base"
 	"time"
@@ -98,8 +97,8 @@ func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 	// stop the proposer.
 	proposer.PauseClient()
 
-	// For Debug
-	if utils.GetenvBool("HIVE_DEBUG") {
+	// For DevDebug
+	if testnet.DevDebug {
 		driver.Shutdown()
 		time.Sleep(time.Minute * 120)
 	}

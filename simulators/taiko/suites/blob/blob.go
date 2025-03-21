@@ -6,7 +6,6 @@ import (
 	"github.com/ethereum/hive/hivesim"
 	"taiko/common/testnet"
 	tn "taiko/common/testnet"
-	"taiko/common/utils"
 	"taiko/params"
 	suite_base "taiko/suites/base"
 	"time"
@@ -53,7 +52,7 @@ func (r BlobTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Test
 	}
 
 	// For debug
-	if utils.GetenvBool("HIVE_DEBUG") {
+	if testnet.DevDebug {
 		time.Sleep(time.Hour * 2)
 	}
 

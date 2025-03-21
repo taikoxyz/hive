@@ -7,7 +7,6 @@ import (
 	"github.com/ethereum/hive/hivesim"
 	"math/big"
 	"taiko/common/testnet"
-	"taiko/common/utils"
 	suite_base "taiko/suites/base"
 	"time"
 )
@@ -51,8 +50,8 @@ func (r *ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *testn
 	// stop the proposer.
 	proposer.PauseClient()
 
-	// For Debug
-	if utils.GetenvBool("HIVE_DEBUG") {
+	// For DevDebug
+	if testnet.DevDebug {
 		driver.Shutdown()
 		time.Sleep(time.Hour * 2)
 	}
