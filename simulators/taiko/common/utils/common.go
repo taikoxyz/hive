@@ -67,7 +67,7 @@ func DeployContracts(envs hivesim.Params, l1cli *rpc.EthClient) error {
 				return fmt.Errorf("failed to wait mined, hash: %s, err: %v", tx.Hash().String(), err)
 			}
 			if receipt.Status != types.ReceiptStatusSuccessful {
-				return fmt.Errorf("failed to call contract, hash: %s", tx.Hash().String())
+				return fmt.Errorf("failed to call contract, hash: %s, status: %d", tx.Hash().String(), receipt.Status)
 			}
 		}
 	}

@@ -3,36 +3,26 @@
 HIVE_LOGLEVEL=${HIVE_LOGLEVEL:-3}
 
 # load tool commands.
-. /geth/common.sh
+. common.sh
 
 # Immediately abort the script on any error encountered
 set -e
 
-EXECUTION_DIR=/geth
-
-check_env "HIVE_TAIKO_CLIQUE_PRIVATEKEY"
-check_env "HIVE_TAIKO_CLIQUE_ADDRESS"
-
 echo genesis.json:
-cat /hive/input/genesis.json
+cat genesis.json
 
 # Initialize the local testchain with the genesis state
 echo "Initializing database with genesis state..."
-geth init /hive/input/genesis.json
+geth init --datadir=data --state.scheme=hash genesis.json
 
-if [ "$HIVE_TAIKO_CLIQUE_PRIVATEKEY" != "" ]; then
-  echo "Importing clique key..."
-  echo "secret" >$EXECUTION_DIR/geth_password.txt
-  geth account import --password $EXECUTION_DIR/geth_password.txt <(echo "$HIVE_TAIKO_CLIQUE_PRIVATEKEY")
-else
-  echo "clique private key is not set, exiting..."
-  exit 1
-fi
+# Move keystore file into data/keystore.
+mv keyfile.json data/keystore
 
 echo "Starting geth..."
 geth \
   --verbosity "$HIVE_LOGLEVEL" \
   --bootnodes="$HIVE_BOOTNODE" \
+  --datadir=data \
   --http \
   --http.api=admin,debug,eth,net,web3,txpool,miner \
   --http.addr=0.0.0.0 \
@@ -46,9 +36,8 @@ geth \
   --authrpc.addr=0.0.0.0 \
   --authrpc.jwtsecret=/tmp/jwt.hex \
   --allow-insecure-unlock \
-  --unlock="$HIVE_TAIKO_CLIQUE_ADDRESS" \
-  --password=$EXECUTION_DIR/geth_password.txt \
+  --unlock=0x123463a4b065722e99115d6c222f267d9cabb524 \
+  --password=geth_password.txt \
   --nodiscover \
   --gcmode=archive \
-  --state.scheme=path \
   --gcmode=full

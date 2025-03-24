@@ -1,5 +1,5 @@
 # Build the simulator binary
-FROM golang:1.23.2-alpine AS hive_alpine_dependency
+FROM golang:1.24-alpine AS hive_alpine_dependency
 
 RUN apk --no-cache add gcc musl-dev linux-headers build-base
 

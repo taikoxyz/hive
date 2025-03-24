@@ -1,18 +1,19 @@
-ARG baseimage=gcr.io/prysmaticlabs/prysm/validator
-ARG tag=v5.0.4
+FROM hive_prysmctl:latest AS prysmctl
 
-FROM $baseimage:$tag as upstream
+FROM gcr.io/prysmaticlabs/prysm/validator:v5.3.1 AS validator
 
-FROM debian:buster-slim
-COPY --from=upstream /app/cmd/validator/validator /usr/local/bin/validator
+FROM ubuntu:24.10 AS builder
+COPY --from=validator /app/cmd/validator/validator /usr/local/bin/validator
 
 WORKDIR /prysm
 
 COPY prysm_vc.sh .
 COPY common.sh .
 
-RUN validator --version >/version.txt
+COPY --from=prysmctl /prysmctl/config.yml .
 
-RUN chmod +x /prysm/prysm_vc.sh
+RUN chmod +x prysm_vc.sh
+# Generate the version.txt file.
+RUN validator --version >/version.txt
 
 ENTRYPOINT ["/prysm/prysm_vc.sh"]

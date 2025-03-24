@@ -1,115 +1,36 @@
 package testnet
 
 import (
-	"context"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/prysmaticlabs/prysm/v5/beacon-chain/state"
-	"github.com/prysmaticlabs/prysm/v5/consensus-types/primitives"
 	"taiko/common/clients"
 	"time"
 
-	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/hive/hivesim"
-	"taiko/common/config/consensus"
-	"taiko/common/config/execution"
 )
 
 type Testnet struct {
 	*hivesim.T
 	clients.Nodes
 
-	genesisTime           uint64
-	genesisValidatorsRoot common.Hash
-
-	// Consensus chain configuration
-	spec *consensus_config.Spec
-	// Execution chain configuration and genesis info
-	executionGenesis *execution_config.ExecutionGenesis
-
 	// debug flag
-	Debug bool
-}
-
-type ActiveSpec struct {
-	*consensus_config.Spec
-}
-
-const slotsTolerance primitives.Slot = 2
-
-func (spec *ActiveSpec) EpochTimeoutContext(
-	parent context.Context,
-	epochs primitives.Epoch,
-) (context.Context, context.CancelFunc) {
-	return context.WithTimeout(
-		parent,
-		time.Duration(
-			uint64((spec.SlotsPerEpoch*primitives.Slot(epochs))+slotsTolerance)*
-				uint64(spec.SecondsPerSlot),
-		)*time.Second,
-	)
-}
-
-func (spec *ActiveSpec) SlotTimeoutContext(
-	parent context.Context,
-	slots primitives.Slot,
-) (context.Context, context.CancelFunc) {
-	return context.WithTimeout(
-		parent,
-		time.Duration(
-			uint64(slots+slotsTolerance)*
-				uint64(spec.SecondsPerSlot))*time.Second,
-	)
-}
-
-func (spec *ActiveSpec) EpochsTimeout(epochs primitives.Epoch) <-chan time.Time {
-	return time.After(
-		time.Duration(
-			uint64(
-				spec.SlotsPerEpoch*primitives.Slot(epochs),
-			)*uint64(
-				spec.SecondsPerSlot,
-			),
-		) * time.Second,
-	)
-}
-
-func (spec *ActiveSpec) SlotsTimeout(slots primitives.Slot) <-chan time.Time {
-	return time.After(
-		time.Duration(
-			uint64(slots)*uint64(spec.SecondsPerSlot),
-		) * time.Second,
-	)
-}
-
-func (t *Testnet) Spec() *ActiveSpec {
-	return &ActiveSpec{
-		Spec: t.spec,
-	}
+	DevDebug  bool
+	DevExpose bool
 }
 
 func (t *Testnet) GenesisTimeUnix() time.Time {
-	return time.Unix(int64(t.genesisTime), 0)
-}
-
-func (t *Testnet) GenesisBeaconState() state.BeaconState {
-	return t.executionGenesis.GenesisState
+	return time.Unix(1742366600, 0)
 }
 
 func (t *Testnet) GenesisValidatorsRoot() [32]byte {
-	return t.genesisValidatorsRoot
-}
-
-func (t *Testnet) ExecutionGenesis() *core.Genesis {
-	return t.executionGenesis.Genesis
+	return common.Hash{}
 }
 
 func StartTestnet(
 	t *hivesim.T,
 	clientGroups clients.ClientGroups,
 	config *Config,
-	generateState *execution_config.GenesisState,
 ) *Testnet {
-	prep, err := PrepareTestnet(config, generateState)
+	prep, err := PrepareTestnet(config)
 	if err != nil {
 		t.Fatalf("FAIL: Unable to prepare testnet: %v", err)
 	}
@@ -127,7 +48,6 @@ func StartTestnet(
 		nodeClient := &clients.Node{
 			Logging: t,
 			Index:   index,
-			Genesis: generateState.Genesis,
 		}
 		testnet.Nodes = append(testnet.Nodes, nodeClient)
 
@@ -144,7 +64,7 @@ func StartTestnet(
 		// Prepare the client objects with all the information necessary to
 		// eventually start
 		prep.prepareAnvilNode(testnet, config, anvilDef)
-		prep.prepareGethNode(index, testnet, config, executionDef, config.Eth1Consensus)
+		prep.prepareGethNode(index, testnet, config, executionDef)
 		prep.prepareBeaconNode(index, testnet, config, clientsByRole[clients.Beacon])
 		prep.prepareValidatorClient(testnet, clientsByRole[clients.Validator])
 		prep.prepareBlobScanClient(index, testnet, config, clientsByRole)

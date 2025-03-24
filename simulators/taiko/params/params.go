@@ -11,12 +11,6 @@ import (
 //go:embed .env
 var envContent []byte
 
-//go:embed config.yml
-var ConfigContent []byte
-
-//go:embed genesis.json
-var GenesisContent []byte
-
 var (
 	envParams   = hivesim.Params{}
 	ClusterEnvs = map[int]hivesim.Params{}

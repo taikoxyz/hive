@@ -8,7 +8,6 @@ import (
 	"math/rand/v2"
 	"os"
 	"taiko/common/clients"
-	execution_config "taiko/common/config/execution"
 	"taiko/common/testnet"
 	tn "taiko/common/testnet"
 	"taiko/common/utils"
@@ -20,7 +19,6 @@ func init() {
 	Tests = append(Tests,
 		BaseTestSpec{
 			Name:           "fullsync",
-			BeaconSync:     true,
 			L2TargetNumber: 13,
 		},
 	)
@@ -36,7 +34,6 @@ type BaseTestSpec struct {
 
 	// driver config
 	IsGuardian bool
-	BeaconSync bool
 }
 
 func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
@@ -48,15 +45,10 @@ func (ts BaseTestSpec) GetTestnetConfig() *testnet.Config {
 	}
 
 	return &testnet.Config{
-		Eth1Consensus: execution_config.ExecutionCliqueConsensus{
-			CliquePrivateKey: "2e0834786285daccd064ca17f1654f67b4aef298acbb82cef9ec422fb4975622",
-			CliqueAddress:    "123463a4B065722E99115D6c222f267d9cABb524",
-		},
-		Network:    "taiko_base_test",
-		LogLevel:   os.Getenv("HIVE_LOGLEVEL"),
-		FeeReceipt: "a0Ee7A142d267C1f36714E4a8F75612F20a79720",
-		BeaconSync: ts.BeaconSync,
-		Debug:      utils.GetenvBool("HIVE_DEBUG"),
+		Network:   "taiko_base_test",
+		LogLevel:  os.Getenv("HIVE_LOGLEVEL"),
+		DevDebug:  utils.GetenvBool("HIVE_DEV_DEBUG"),
+		DevExpose: utils.GetenvBool("HIVE_DEV_EXPOSE"),
 		CreateConfig: func(index int, nodes clients.Nodes) (hivesim.Params, error) {
 			var (
 				firstNode      = nodes[0]
@@ -150,8 +142,8 @@ func (ts BaseTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 		prover.VerifyBlocks(params.L1Auths[0])
 	}
 
-	// For Debug
-	if utils.GetenvBool("HIVE_DEBUG") {
+	// For DevDebug
+	if testnet.DevDebug {
 		proposer.PauseClient()
 		time.Sleep(time.Hour * 2)
 	}

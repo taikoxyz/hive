@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/ethereum/hive/hivesim"
 	"taiko/common/clients"
-	"taiko/common/config/execution"
 	"taiko/common/testnet"
 )
 
@@ -22,7 +21,6 @@ func SuiteHydrate(
 	suite *hivesim.Suite,
 	clients clients.ClientGroups,
 	tests []TestSpec,
-	generateState *execution_config.GenesisState,
 ) {
 
 	for _, test := range tests {
@@ -34,18 +32,14 @@ func SuiteHydrate(
 				t.Logf("Starting test: %s", test.GetName())
 				defer t.Logf("Finished test: %s", test.GetName())
 
-				// Create the testnet
-				ctx, cancel := context.WithCancel(context.Background())
-				defer cancel()
-
-				testnet := testnet.StartTestnet(t, clients, test.GetTestnetConfig(), generateState)
+				testnet := testnet.StartTestnet(t, clients, test.GetTestnetConfig())
 				if testnet == nil {
 					t.Fatalf("failed to start testnet")
 				}
 				defer testnet.Stop()
 
 				// Verify nodes.
-				test.Verify(ctx, t, testnet)
+				test.Verify(context.Background(), t, testnet)
 			},
 		})
 	}

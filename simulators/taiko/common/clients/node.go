@@ -2,7 +2,6 @@ package clients
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/hive/hivesim"
 	"github.com/pkg/errors"
 	"taiko/common/utils"
@@ -44,8 +43,6 @@ type Node struct {
 	ProverClient   *ProverClient
 
 	BlobScanClient *BlobScanClient
-
-	Genesis *core.Genesis
 }
 
 func (n *Node) Logf(format string, values ...interface{}) {
