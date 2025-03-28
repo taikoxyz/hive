@@ -2,6 +2,7 @@ package preconf
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -92,15 +93,15 @@ func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 		l2geth   = node.L2EthClient
 	)
 
-	l2geth.WaitLatestNumber(ctx, time.Minute*3, proposer.PacayaClients.ForkHeight)
+	l2geth.WaitLatestNumber(ctx, time.Minute*3, proposer.PacayaClients.ForkHeight-1)
 
 	// stop the proposer.
-	proposer.PauseClient()
+	proposer.Shutdown()
 
 	// For DevDebug
 	if testnet.DevDebug {
 		driver.Shutdown()
-		time.Sleep(time.Minute * 120)
+		time.Sleep(time.Hour * 2)
 	}
 
 	for times := 0; times < 4; times++ {
@@ -111,28 +112,37 @@ func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 		t.FailIfNotNil(err, "cannot preconfirmer proposer")
 
 		// Verify latest preconf block.
-		verifyL2Chain(t, true, testnet.Nodes, l2Header)
+		verifyL2Chain(t, true, index, testnet.Nodes, l2Header)
 
 		// propose txs.
 		_, err = proposeBlock(ctx, driver.Envs, driver.Client, anchorL1Header)
 		t.FailIfNotNil(err, "cannot propose txs")
 
 		// Verify latest propose block.
-		verifyL2Chain(t, false, testnet.Nodes, l2Header)
+		verifyL2Chain(t, false, index, testnet.Nodes, l2Header)
 	}
 }
 
-func verifyL2Chain(t *hivesim.T, isPreconf bool, nodes []*clients.Node, l2Header *types.Header) {
-	l2cli := nodes[0].DriverClient.Client.L2
+func verifyL2Chain(t *hivesim.T, isPreconf bool, index int, nodes []*clients.Node, l2Header *types.Header) {
+	rpccli := nodes[index].DriverClient.Client
+	l2cli := rpccli.L2
+
+	t.FailIfNotNil(clients.WaitPreconfStatus(context.Background(), rpccli, isPreconf, time.Minute*3, l2Header.Number.Uint64()), "cannot wait preconf status")
+
 	l1Origin, err := l2cli.L1OriginByID(context.Background(), l2Header.Number)
 	t.FailIfNotNil(err, "cannot get l1 origin by id")
 
 	l1HeadOrigin, err := l2cli.HeadL1Origin(context.Background())
 	t.FailIfNotNil(err, "cannot get head l1 origin")
 
-	for _, node := range nodes {
+	for idx, node := range nodes {
+		if idx == index {
+			continue
+		}
+
 		l2geth := node.L2EthClient
-		l2geth.WaitLatestNumber(context.Background(), time.Minute*3, l2Header.Number.Uint64())
+
+		t.FailIfNotNil(clients.WaitPreconfStatus(context.Background(), node.DriverClient.Client, isPreconf, time.Minute*3, l2Header.Number.Uint64()), "cannot wait preconf status")
 
 		actualHeader, err := l2geth.EthClient.HeaderByNumber(context.Background(), l2Header.Number)
 		t.FailIfNotNil(err, "cannot get header by number")
@@ -145,12 +155,16 @@ func verifyL2Chain(t *hivesim.T, isPreconf bool, nodes []*clients.Node, l2Header
 		l1ho, err := l2cli.HeadL1Origin(context.Background())
 		t.FailIfNotNil(err, "cannot get head l1 origin")
 
+		data, _ := json.Marshal(l1Origin)
+
+		t.Logf("verify node's l1Origin, node_index: %d, isPreconf: %v, l1Origin: %s", node.Index, isPreconf, string(data))
+
 		if isPreconf {
-			t.Equal(true, l1Origin.L1BlockHeight == nil)
-			t.Equal(l1Origin.L1BlockHash.String(), common.Hash{}.String())
+			t.Equal(true, l1o.L1BlockHeight == nil)
+			t.Equal(l1o.L1BlockHash.String(), common.Hash{}.String())
 		} else {
-			t.Equal(l1Origin.L1BlockHeight.Uint64(), l1o.L1BlockHeight.Uint64())
-			t.Equal(l1Origin.L1BlockHash.String(), l1o.L1BlockHash.String())
+			t.Equal(l1o.L1BlockHeight.Uint64(), l1Origin.L1BlockHeight.Uint64())
+			t.Equal(l1o.L1BlockHash.String(), l1Origin.L1BlockHash.String())
 		}
 		t.Equal(l1Origin.BlockID.Uint64(), l1o.BlockID.Uint64())
 		t.Equal(l1Origin.L2BlockHash.String(), l1o.L2BlockHash.String())

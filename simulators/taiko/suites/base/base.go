@@ -192,7 +192,7 @@ func (ts BaseTestSpec) verifyL2Nodes(ctx context.Context, t *hivesim.T, latestVe
 		}
 
 		for num := uint64(1); num <= target; num++ {
-			l1Origin, err := l2client.L1OriginByID(ctx, big.NewInt(0).SetUint64(num))
+			l1Origin, err := l2client.EthClient.L1OriginByID(ctx, big.NewInt(0).SetUint64(num))
 			if err != nil {
 				t.Fatalf("unexpect error when get l1origin, number: %d, err: %v", num, err)
 			}

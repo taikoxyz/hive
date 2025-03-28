@@ -211,10 +211,10 @@ github.com/gogo/protobuf v1.1.1/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7a
 github.com/gogo/protobuf v1.3.1/go.mod h1:SlYgWuQ5SjCEi6WLHjHCa1yvBfUnHcTbrrZtXPKa29o=
 github.com/gogo/protobuf v1.3.2 h1:Ov1cvc58UF3b5XjBnZv7+opcTcQFZebYjWzi34vdm4Q=
 github.com/gogo/protobuf v1.3.2/go.mod h1:P1XiOD3dCwIKUDQYPy72D8LYyHL2YPYrpS2s69NZV8Q=
-github.com/golang-jwt/jwt/v4 v4.5.1 h1:JdqV9zKUdtaa9gdPlywC3aeoEsR681PlKC+4F5gQgeo=
-github.com/golang-jwt/jwt/v4 v4.5.1/go.mod h1:m21LjoU+eqJr34lmDMbreY2eSTRJ1cv77w39/MY0Ch0=
-github.com/golang-jwt/jwt/v5 v5.2.1 h1:OuVbFODueb089Lh128TAcimifWaLhJwVflnrgM17wHk=
-github.com/golang-jwt/jwt/v5 v5.2.1/go.mod h1:pqrtFR0X4osieyHYxtmOUWsAWrfe1Q5UVIyoH402zdk=
+github.com/golang-jwt/jwt/v4 v4.5.2 h1:YtQM7lnr8iZ+j5q71MGKkNw9Mn7AjHM68uc9g5fXeUI=
+github.com/golang-jwt/jwt/v4 v4.5.2/go.mod h1:m21LjoU+eqJr34lmDMbreY2eSTRJ1cv77w39/MY0Ch0=
+github.com/golang-jwt/jwt/v5 v5.2.2 h1:Rl4B7itRWVtYIHFrSNd7vhTiz9UpLdi6gZhZ3wEeDy8=
+github.com/golang-jwt/jwt/v5 v5.2.2/go.mod h1:pqrtFR0X4osieyHYxtmOUWsAWrfe1Q5UVIyoH402zdk=
 github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b/go.mod h1:SBH7ygxi8pfUlaOkMMuAQtPIUF8ecWP5IEl/CR7VP2Q=
 github.com/golang/lint v0.0.0-20180702182130-06c8688daad7/go.mod h1:tluoj9z5200jBnyusfRPU2LqT6J+DAorxEvtC7LHB+E=
 github.com/golang/mock v1.1.1/go.mod h1:oTYuIxOrZwtPieC+H1uAHpcLFnEyAGVDL/k47Jfbm0A=
@@ -661,8 +661,10 @@ github.com/taikoxyz/optimism v0.0.0-20250311075120-f1339352ab9d h1:VQkAR1kAKMXCe
 github.com/taikoxyz/optimism v0.0.0-20250311075120-f1339352ab9d/go.mod h1:V0VCkKtCzuaJH6qcL75SRcbdlakM9LhurMEJUhO6VXA=
 github.com/taikoxyz/taiko-geth v1.12.1-0.20250315074115-43a60b36ea53 h1:5U6+dQaUQtqUzkfhnikkGwUFxKJEvewtAgkc6ttHqo8=
 github.com/taikoxyz/taiko-geth v1.12.1-0.20250315074115-43a60b36ea53/go.mod h1:1LG2LnMOx2yPRHR/S+xuipXH29vPr6BIH6GElD8N/fo=
-github.com/taikoxyz/taiko-mono v0.0.0-20250319014922-54aed0b3ea06 h1:TS3b2cxSOZjYQ7ZGOIWLwOf2AtM4lpclsUFW95gyoCQ=
-github.com/taikoxyz/taiko-mono v0.0.0-20250319014922-54aed0b3ea06/go.mod h1:203URZhsMQOSw/oJZJ+YpAcd+LeJomTpFOk8xSppISQ=
+github.com/taikoxyz/taiko-mono v0.0.0-20250327234930-3dd5500d23cf h1:iT0o7wJ77u7uy/DDYmq/8K3tr693h/dzeFnZWqxWwDE=
+github.com/taikoxyz/taiko-mono v0.0.0-20250327234930-3dd5500d23cf/go.mod h1:zVxJGApMIkPcjkbpmGfpn+gVJ0xNkqFOsw8nWSp7x5o=
+github.com/taikoxyz/taiko-mono v0.0.0-20250328094641-280395485fce h1:lm4kg03voiXGl6uChtzsu8CRKb9uEZukkxkMgeYRN/8=
+github.com/taikoxyz/taiko-mono v0.0.0-20250328094641-280395485fce/go.mod h1:zVxJGApMIkPcjkbpmGfpn+gVJ0xNkqFOsw8nWSp7x5o=
 github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07/go.mod h1:kDXzergiv9cbyO7IOYJZWg1U88JhDg3PB6klq9Hg2pA=
 github.com/thomaso-mirodin/intmath v0.0.0-20160323211736-5dc6d854e46e h1:cR8/SYRgyQCt5cNCMniB/ZScMkhI9nk8U5C7SbISXjo=
 github.com/thomaso-mirodin/intmath v0.0.0-20160323211736-5dc6d854e46e/go.mod h1:Tu4lItkATkonrYuvtVjG0/rhy15qrNGNTjPdaphtZ/8=
