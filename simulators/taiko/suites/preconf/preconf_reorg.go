@@ -84,20 +84,20 @@ func (r *ReorgTestSpec) reorgProposeBlocks(ctx context.Context, t *hivesim.T, te
 		t.FailIfNotNil(err, "cannot preconfirmer proposer")
 
 		// Verify latest preconf block.
-		verifyL2Chain(t, true, testnet.Nodes, l2Header)
+		verifyL2Chain(t, true, index, testnet.Nodes, l2Header)
 
 		// propose txs.
 		_, err = proposeBlock(ctx, driver.Envs, driver.Client, anchorL1Header)
 		t.FailIfNotNil(err, "cannot propose txs")
 
 		// Verify latest propose block.
-		verifyL2Chain(t, false, testnet.Nodes, l2Header)
+		verifyL2Chain(t, false, index, testnet.Nodes, l2Header)
 
 		// Reorg to the specified l2 block.
 		anvil.Reorg(l2Header.Number.Uint64() - 1)
 
 		// Verify latest propose block.
-		verifyL2Chain(t, false, testnet.Nodes, l2Header)
+		verifyL2Chain(t, false, index, testnet.Nodes, l2Header)
 	}
 }
 
@@ -116,7 +116,7 @@ func (r *PreconfTestSpec) reorgPreconfBlocks(ctx context.Context, t *hivesim.T, 
 	t.FailIfNotNil(err, "cannot preconfirmer proposer")
 
 	// Verify latest preconf block.
-	verifyL2Chain(t, true, testnet.Nodes, l2Header)
+	verifyL2Chain(t, true, 0, testnet.Nodes, l2Header)
 
 	preconfBlocks := make([]*types.Block, 0)
 	for number := l2Number + 1; number <= l2Header.Number.Uint64(); number++ {

@@ -141,7 +141,7 @@ func BuildPreconfBlock(
 		return nil, nil, err
 	}
 	if !res.IsSuccess() {
-		return nil, nil, fmt.Errorf("failed to build preconf block: %v", res.Error())
+		return nil, nil, fmt.Errorf("failed to build preconf block: %v", res)
 	}
 
 	var body *preconfblocks.BuildPreconfBlockResponseBody

@@ -81,3 +81,8 @@ func TestDD(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log(node.URLv4())
 }
+
+func TestPreconferBlock(t *testing.T) {
+	_, _, _, err := preconferBlock(0, rpccli, preconfURL, 5)
+	assert.NoError(t, err)
+}

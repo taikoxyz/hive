@@ -1,11 +1,9 @@
 package clients
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"
 	"math/big"
 	"strings"
@@ -67,15 +65,6 @@ func (l *L1Origin) UnmarshalJSON(input []byte) error {
 
 type TaikoGethClient struct {
 	*EthNode
-}
-
-func (t *TaikoGethClient) L1OriginByID(ctx context.Context, blockID *big.Int) (*L1Origin, error) {
-	var res *L1Origin
-	if err := t.EthClient.CallContext(ctx, &res, "taiko_l1OriginByID", hexutil.EncodeBig(blockID)); err != nil {
-		return nil, err
-	}
-
-	return res, nil
 }
 
 type L2EthClients []*TaikoGethClient

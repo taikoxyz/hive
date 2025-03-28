@@ -3,9 +3,11 @@ package clients
 import (
 	"context"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
+	"math/big"
 	"time"
 )
 
@@ -97,6 +99,30 @@ func (ec *EthNode) WaitLatestNumber(ctx context.Context, timeout time.Duration, 
 		case header := <-headerCh:
 			if header.Number.Uint64() >= number {
 				return
+			}
+		}
+	}
+}
+
+func WaitPreconfStatus(ctx context.Context, rpccli *rpc.Client, isPreconf bool, timeout time.Duration, number uint64) error {
+	tick := time.NewTicker(time.Second)
+	defer tick.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-time.After(timeout):
+			return fmt.Errorf("timed out waiting for preconf status, isPreconf: %v, number: %d", isPreconf, number)
+		case <-tick.C:
+			l1Origin, err := rpccli.L2.L1OriginByID(ctx, big.NewInt(int64(number)))
+			if err != nil {
+				continue
+			}
+			if isPreconf && (l1Origin.L1BlockHeight == nil && l1Origin.L1BlockHash == (common.Hash{})) {
+				return nil
+			}
+			if !isPreconf && (l1Origin.L1BlockHeight != nil && l1Origin.L1BlockHash != (common.Hash{})) {
+				return nil
 			}
 		}
 	}
