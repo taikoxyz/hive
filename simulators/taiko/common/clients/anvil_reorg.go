@@ -11,8 +11,14 @@ import (
 	"time"
 )
 
+type ReorgParams struct {
+	DelayTime   int64 // seconds
+	DelayNumber int   // blocks
+}
+
 func (a *AnvilClient) StartRecordReorgPoints(ctx context.Context, l2cli *rpc.EthClient) {
 	a.reorgCh = make(chan struct{})
+	a.reorgCache = make(map[uint64]*L1BlockInfo)
 	go func() {
 		tick := time.NewTicker(time.Second)
 		defer tick.Stop()
@@ -47,11 +53,12 @@ func (a *AnvilClient) StartRecordReorgPoints(ctx context.Context, l2cli *rpc.Eth
 func (a *AnvilClient) StopRecordReorgPoints() {
 	if a.reorgCh != nil {
 		close(a.reorgCh)
-		a.reorgCh = nil
 	}
+	a.reorgCh = nil
+	a.reorgCache = nil
 }
 
-func (a *AnvilClient) Reorg(l2Number uint64) {
+func (a *AnvilClient) Reorg(l2Number uint64, params *ReorgParams) {
 	a.StopMining()
 	defer a.StartMining()
 
@@ -62,6 +69,11 @@ func (a *AnvilClient) Reorg(l2Number uint64) {
 		snapshot string
 	)
 
+	if params == nil {
+		params = &ReorgParams{}
+	}
+	a.Logf("%s: start reorg l1chain, l2_number: %d, delay_time: %d, delay_number: %d", a.ClientType(), l2Number, params.DelayTime, params.DelayNumber)
+
 	nums := maps.Keys(a.reorgCache)
 	sort.Slice(nums, func(i, j int) bool { return nums[i] < nums[j] })
 	for _, num := range nums {
@@ -71,36 +83,45 @@ func (a *AnvilClient) Reorg(l2Number uint64) {
 		}
 		l1Number = num
 		snapshot = info.Snapshot
-		a.Logf("check reorg point, l2_number: %d, l1_number: %d", l2Number, l1Number)
+		a.Logf("%s: check reorg point, l2_number: %d, l1_number: %d", a.ClientType(), l2Number, l1Number)
 	}
 
-	l1Blocks := make([]*types.Block, 0)
-	for l1Number += 1; true; {
+	var (
+		startTime  int64
+		blockCount = params.DelayNumber
+		txs        []*types.Transaction
+	)
+	for l1Number += 1; true; l1Number++ {
 		block, err := client.BlockByNumber(ctx, new(big.Int).SetUint64(l1Number))
 		if err != nil {
 			break
 		}
-		l1Blocks = append(l1Blocks, block)
+		if startTime == 0 {
+			startTime = int64(block.Time())
+		}
+		txs = append(txs, block.Transactions()...)
+		blockCount++
 		delete(a.reorgCache, l1Number)
-		l1Number++
+		a.Logf("%s: reorg l1 chain, l2_number: %d, l1_number: %d", a.ClientType(), l2Number, l1Number)
+	}
+	if txs == nil || blockCount <= 0 || startTime+params.DelayTime <= 0 {
+		a.Errorf("%s: no txs to reorg, l2_number: %d, l1_number: %d", a.ClientType(), l2Number, l1Number)
+		return
 	}
 
+	// Revert l1 chain.
 	a.RevertSnapshot(snapshot)
 
-	for _, block := range l1Blocks {
-		a.Logf("reorg l1chain block, l2_number: %d, l1_number: %d, hash: %s", l2Number, block.NumberU64(), block.Hash().Hex())
-		for _, tx := range block.Transactions() {
+	var curTxs []*types.Transaction
+	for i := 0; i < blockCount; i++ {
+		count := min((len(txs)+blockCount-1)/blockCount, len(txs))
+		curTxs, txs = txs[:count], txs[count:]
+		for _, tx := range curTxs {
 			err := client.SendTransaction(ctx, tx)
 			a.FailIfNotNil(err, fmt.Sprintf("failed to send tx %s, err: %v", tx.Hash().Hex(), err))
 		}
-
-		// Set the next block timestamp.
-		a.SetNextBlockTimestamp(block.Time())
-
+		a.SetNextBlockTimestamp(uint64(startTime+params.DelayTime) + uint64(i)*a.SecondsPerSlot)
 		a.MineBlock()
+		a.Logf("%s: mint a new l1 block, l2_number: %d, l1_number: %d", a.ClientType(), l2Number, l1Number+uint64(i))
 	}
-
-	l1Number -= 1
-
-	a.WaitLatestNumber(ctx, time.Minute*3, l1Number)
 }

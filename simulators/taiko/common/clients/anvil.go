@@ -23,7 +23,6 @@ type AnvilClient struct {
 }
 
 func (a *AnvilClient) Start() error {
-	a.reorgCache = make(map[uint64]*L1BlockInfo)
 	return a.EthNode.Start()
 }
 

@@ -25,6 +25,9 @@ func init() {
 
 type ReorgTestSpec struct {
 	suite_base.BaseTestSpec
+
+	// reorg params
+	params *clients.ReorgParams
 }
 
 func (r ReorgTestSpec) GetTestnetConfig() *testnet.Config {
@@ -44,10 +47,10 @@ func (r ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 		time.Sleep(time.Hour * 2)
 	}
 
-	r.reorgAndVerifyFirstCluster(ctx, t, node)
+	r.reorg(ctx, t, node)
 }
 
-func (r ReorgTestSpec) reorgAndVerifyFirstCluster(ctx context.Context, t *hivesim.T, node *clients.Node) {
+func (r ReorgTestSpec) reorg(ctx context.Context, t *hivesim.T, node *clients.Node) {
 	var (
 		anvil    = node.AnvilClient
 		driver   = node.DriverClient
@@ -64,8 +67,7 @@ func (r ReorgTestSpec) reorgAndVerifyFirstCluster(ctx context.Context, t *hivesi
 	}
 	t.Logf("%s: start reorgAndVerifyFirstCluster, target number: %d", r.Name, l2ReorgStartNumber)
 
-	// Start recording reorg points.
-	anvil.StartRecordReorgPoints(ctx, l2eth.EthClient)
+	l2eth.WaitLatestNumber(ctx, timeout, l2ReorgStartNumber)
 
 	for range time.Tick(time.Second) {
 		lastVerifiedBlockID := prover.GetLastVerifiedBlockId(ctx)
@@ -75,7 +77,9 @@ func (r ReorgTestSpec) reorgAndVerifyFirstCluster(ctx context.Context, t *hivesi
 		prover.VerifyBlocks(params.L1Auths[0])
 	}
 
-	l2eth.WaitLatestNumber(ctx, timeout, l2ReorgStartNumber)
+	// Start recording reorg points.
+	anvil.StartRecordReorgPoints(ctx, l2eth.EthClient)
+	defer anvil.StopRecordReorgPoints()
 
 	prover.WaitLatestVerifiedNumber(ctx, timeout, l2ReorgStartNumber)
 
@@ -89,7 +93,7 @@ func (r ReorgTestSpec) reorgAndVerifyFirstCluster(ctx context.Context, t *hivesi
 	prover.PauseClient()
 
 	// Reorg l1 eth chain.
-	anvil.Reorg(latestVerified)
+	anvil.Reorg(latestVerified, r.params)
 
 	// unpause driver, proposer, prover
 	driver.UnpauseClient()
