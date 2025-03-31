@@ -2,7 +2,13 @@
 
 all: hive hivechain hiveview hive_alpine_dependency hive_go_dependency
 
-test_all: test_full_sync test_reorg_reorg test_preconf_preconf test_preconf_reorg test_preconf_forced_inclusion test_blob_beacon test_blob_server
+test_base: test_full_sync
+
+test_reorg: test_reorg_reorg test_reorg_shorter test_reorg_longer
+
+test_preconf: test_preconf_preconf test_preconf_forced_inclusion test_preconf_reorg
+
+test_blob: test_blob_beacon test_blob_server
 
 hive:
 	@echo "Building hive..."
@@ -29,8 +35,16 @@ hive_prysmctl:
 	@docker build --no-cache -t hive_prysmctl:latest clients/prysm/prysmctl
 
 test_reorg_reorg: hive_prysmctl
-	@echo "Running reorg/reorg test..."
-	./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "reorg/reorg"
+	@echo "Running reorg/reorg_reorg test..."
+	./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "reorg/reorg_reorg"
+
+test_reorg_longer: hive_prysmctl
+	@echo "Running reorg/reorg_longer test..."
+	./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "reorg/reorg_longer"
+
+test_reorg_shorter: hive_prysmctl
+	@echo "Running reorg/reorg_shorter test..."
+	./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "reorg/reorg_shorter"
 
 test_preconf_preconf: hive_prysmctl
 	@echo "Running preconf/preconf test..."

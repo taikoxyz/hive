@@ -59,6 +59,8 @@ func (p *ProverClient) VerifyBlocks(opts *bind.TransactOpts) {
 
 	_, err = bind.WaitMined(context.Background(), p.L1, tx)
 	p.FailIfNotNil(err, "failed to wait mined")
+
+	p.Logf("%s: the latest verified id: %d", p.ClientType(), latestVerifyId)
 }
 
 func (p *ProverClient) WaitLatestBatchesProved(ctx context.Context, timeout time.Duration, number uint64) error {

@@ -210,7 +210,7 @@ func (sim *Simulation) StartClientWithOptions(testSuite SuiteID, test TestID, cl
 	}
 	envs["L2_HTTP"] = "http://localhost:6045"
 	envs["L2_WS"] = "ws://localhost:6046"
-	envs["L2_BEACON"] = "http://localhost:6051"
+	envs["L2_AUTH"] = "http://localhost:6051"
 
 	// Set environment variables.
 	showEnv := fmt.Sprintf("\n\n%s envs variables: \n", clientType)

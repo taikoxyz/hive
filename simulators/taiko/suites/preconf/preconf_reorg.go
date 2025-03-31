@@ -94,7 +94,7 @@ func (r *ReorgTestSpec) reorgProposeBlocks(ctx context.Context, t *hivesim.T, te
 		verifyL2Chain(t, false, index, testnet.Nodes, l2Header)
 
 		// Reorg to the specified l2 block.
-		anvil.Reorg(l2Header.Number.Uint64() - 1)
+		anvil.Reorg(l2Header.Number.Uint64()-1, nil)
 
 		// Verify latest propose block.
 		verifyL2Chain(t, false, index, testnet.Nodes, l2Header)

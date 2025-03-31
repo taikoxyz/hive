@@ -6,6 +6,7 @@ deploy_contracts:
 	sh scripts/deploy_l1_contract.sh
 
 taiko:
+	docker images | grep "none" | awk '{print $3}' | xargs docker rmi 2>/dev/null
 	docker build --no-cache -t hive/simulators/taiko:latest .
 
 hive_prysmctl:
