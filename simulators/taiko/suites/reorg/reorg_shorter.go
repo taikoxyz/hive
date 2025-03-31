@@ -40,7 +40,7 @@ func (r ReorgShorterTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet 
 	}
 
 	r.params = &clients.ReorgParams{
-		DelayTime:   0,
+		DelayTime:   1,
 		DelayNumber: -2,
 	}
 
