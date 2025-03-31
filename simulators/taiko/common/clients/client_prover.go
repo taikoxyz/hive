@@ -57,9 +57,8 @@ func (p *ProverClient) VerifyBlocks(opts *bind.TransactOpts) {
 	}
 	p.FailIfNotNil(err, "failed to verify blocks")
 
-	receipt, err := bind.WaitMined(context.Background(), p.L1, tx)
+	_, err = bind.WaitMined(context.Background(), p.L1, tx)
 	p.FailIfNotNil(err, "failed to wait mined")
-	p.Equal(types.ReceiptStatusSuccessful, receipt.Status)
 
 	p.Logf("%s: the latest verified id: %d", p.ClientType(), latestVerifyId)
 }

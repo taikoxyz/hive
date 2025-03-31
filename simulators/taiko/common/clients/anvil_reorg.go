@@ -61,6 +61,7 @@ func (a *AnvilClient) StopRecordReorgPoints() {
 func (a *AnvilClient) Reorg(l2Number uint64, params *ReorgParams) {
 	a.StopMining()
 	defer a.StartMining()
+	defer a.StopRecordReorgPoints()
 
 	var (
 		ctx      = context.Background()
@@ -72,27 +73,26 @@ func (a *AnvilClient) Reorg(l2Number uint64, params *ReorgParams) {
 	if params == nil {
 		params = &ReorgParams{}
 	}
-	a.Logf("%s: start reorg l1chain, l2_number: %d, delay_time: %d, delay_number: %d", a.ClientType(), l2Number, params.DelayTime, params.DelayNumber)
 
 	nums := maps.Keys(a.reorgCache)
 	sort.Slice(nums, func(i, j int) bool { return nums[i] < nums[j] })
 	for _, num := range nums {
 		info := a.reorgCache[num]
 		if info.L2Number > l2Number {
+			l1Number = num
 			break
 		}
-		l1Number = num
 		snapshot = info.Snapshot
-		a.Logf("%s: check reorg point, l2_number: %d, l1_number: %d", a.ClientType(), l2Number, l1Number)
 	}
+	a.Logf("%s: start reorg l1chain, l1_number: %d, l2_number: %d, delay_time: %d, delay_number: %d", a.ClientType(), l1Number, l2Number, params.DelayTime, params.DelayNumber)
 
 	var (
 		startTime  int64
 		blockCount = params.DelayNumber
 		txs        []*types.Transaction
 	)
-	for l1Number += 1; true; l1Number++ {
-		block, err := client.BlockByNumber(ctx, new(big.Int).SetUint64(l1Number))
+	for l1Num := l1Number; true; l1Num++ {
+		block, err := client.BlockByNumber(ctx, new(big.Int).SetUint64(l1Num))
 		if err != nil {
 			break
 		}
@@ -101,8 +101,8 @@ func (a *AnvilClient) Reorg(l2Number uint64, params *ReorgParams) {
 		}
 		txs = append(txs, block.Transactions()...)
 		blockCount++
-		delete(a.reorgCache, l1Number)
-		a.Logf("%s: reorg l1 chain, l2_number: %d, l1_number: %d", a.ClientType(), l2Number, l1Number)
+		delete(a.reorgCache, l1Num)
+		a.Logf("%s: reorg l1 chain, l1_number: %d", a.ClientType(), l1Num)
 	}
 	if txs == nil || blockCount <= 0 || startTime+params.DelayTime <= 0 {
 		a.Errorf("%s: no txs to reorg, l2_number: %d, l1_number: %d", a.ClientType(), l2Number, l1Number)
@@ -120,8 +120,8 @@ func (a *AnvilClient) Reorg(l2Number uint64, params *ReorgParams) {
 			err := client.SendTransaction(ctx, tx)
 			a.FailIfNotNil(err, fmt.Sprintf("failed to send tx %s, err: %v", tx.Hash().Hex(), err))
 		}
-		a.SetNextBlockTimestamp(uint64(startTime+params.DelayTime) + uint64(i)*a.SecondsPerSlot)
+		a.SetNextBlockTimestamp(uint64(startTime) + uint64(i)*a.SecondsPerSlot + uint64(params.DelayTime))
 		a.MineBlock()
-		a.Logf("%s: mint a new l1 block, l2_number: %d, l1_number: %d", a.ClientType(), l2Number, l1Number+uint64(i))
+		a.Logf("%s: mint a new l1 block, l2_number: %d, l1_number: %d", a.ClientType(), l2Number+1+uint64(i), l1Number+uint64(i))
 	}
 }

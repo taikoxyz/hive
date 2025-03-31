@@ -2,12 +2,15 @@ package suite_reorg
 
 import (
 	"context"
+	"fmt"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/hive/hivesim"
+	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
+	"math/big"
 	"math/rand/v2"
 	"taiko/common/clients"
 	"taiko/common/testnet"
 	tn "taiko/common/testnet"
-	"taiko/params"
 	suite_base "taiko/suites/base"
 	"time"
 )
@@ -16,7 +19,7 @@ func init() {
 	Tests = append(Tests,
 		ReorgTestSpec{
 			BaseTestSpec: suite_base.BaseTestSpec{
-				Name:           "reorg",
+				Name:           "reorg_reorg",
 				L2TargetNumber: 13,
 			},
 		},
@@ -44,7 +47,11 @@ func (r ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 
 	// For debug
 	if testnet.DevDebug {
-		time.Sleep(time.Hour * 2)
+		node.DriverClient.Shutdown()
+		time.Sleep(time.Minute * 2)
+	}
+	r.params = &clients.ReorgParams{
+		DelayTime: 1,
 	}
 
 	r.reorg(ctx, t, node)
@@ -55,11 +62,11 @@ func (r ReorgTestSpec) reorg(ctx context.Context, t *hivesim.T, node *clients.No
 		anvil    = node.AnvilClient
 		driver   = node.DriverClient
 		proposer = node.ProposerClient
-		prover   = node.ProverClient
 		l2eth    = node.L2EthClient
 
-		timeout            = time.Minute * 3
-		l2ReorgStartNumber = r.L2TargetNumber
+		timeout                   = time.Minute * 3
+		l2ReorgStartNumber        = r.L2TargetNumber
+		reorgDeep          uint64 = 5
 	)
 	if l2ReorgStartNumber == 0 {
 		// random [10, 50) value
@@ -69,36 +76,42 @@ func (r ReorgTestSpec) reorg(ctx context.Context, t *hivesim.T, node *clients.No
 
 	l2eth.WaitLatestNumber(ctx, timeout, l2ReorgStartNumber)
 
-	for range time.Tick(time.Second) {
-		lastVerifiedBlockID := prover.GetLastVerifiedBlockId(ctx)
-		if lastVerifiedBlockID >= proposer.PacayaClients.ForkHeight {
-			break
-		}
-		prover.VerifyBlocks(params.L1Auths[0])
-	}
-
 	// Start recording reorg points.
 	anvil.StartRecordReorgPoints(ctx, l2eth.EthClient)
-	defer anvil.StopRecordReorgPoints()
 
-	prover.WaitLatestVerifiedNumber(ctx, timeout, l2ReorgStartNumber)
-
-	// Get reorg point.
-	latestVerified := prover.GetLastVerifiedBlockId(ctx)
-	t.Logf("get the l2chain latestVerified: %d", latestVerified)
+	l2eth.WaitLatestNumber(ctx, timeout, l2ReorgStartNumber+reorgDeep)
 
 	// pause driver, proposer, prover
 	driver.PauseClient()
 	proposer.PauseClient()
-	prover.PauseClient()
 
 	// Reorg l1 eth chain.
-	anvil.Reorg(latestVerified, r.params)
+	anvil.Reorg(l2ReorgStartNumber, r.params)
 
 	// unpause driver, proposer, prover
 	driver.UnpauseClient()
 	proposer.UnpauseClient()
-	prover.UnpauseClient()
 
-	prover.WaitLatestVerifiedNumber(ctx, timeout, latestVerified+1)
+	l2eth.WaitLatestNumber(ctx, timeout, l2ReorgStartNumber*2)
+
+	// Verify l1Origins.
+	verifyL1Origin(ctx, t, l2ReorgStartNumber, reorgDeep, l2eth.EthClient)
+}
+
+func verifyL1Origin(ctx context.Context, t *hivesim.T, l2ReorgStartNumber, reorgDeep uint64, l1client *rpc.EthClient) {
+	var l1Headers = map[uint64]*types.Header{}
+	for number := l2ReorgStartNumber + 1; number <= l2ReorgStartNumber+reorgDeep; number++ {
+		header, err := l1client.HeaderByNumber(ctx, big.NewInt(int64(number)))
+		t.FailIfNotNil(err, "failed to get l1 origin")
+		l1Headers[number] = header
+	}
+
+	// Verify l1Origins.
+	for number := l2ReorgStartNumber + 1; number <= l2ReorgStartNumber+5; number++ {
+		l1Origin, err := l1client.L1OriginByID(ctx, big.NewInt(int64(number)))
+		t.FailIfNotNil(err, "failed to get l1 origin")
+
+		l1Number := l1Origin.L1BlockHeight.Uint64()
+		t.Equal(l1Headers[l1Number].Hash().String(), l1Origin.L1BlockHash.String(), fmt.Sprintf("l1Origin content is not right, l1BlockHeight: %d, l1BlockHash: %s", l1Number, l1Headers[l1Number].Hash().String()))
+	}
 }

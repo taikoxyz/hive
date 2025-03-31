@@ -11,10 +11,10 @@ import (
 
 func init() {
 	Tests = append(Tests,
-		ReorgLongerTestSpec{
+		ReorgShorterTestSpec{
 			ReorgTestSpec{
 				BaseTestSpec: suite_base.BaseTestSpec{
-					Name:           "reorg_longer",
+					Name:           "reorg_shorter",
 					L2TargetNumber: 13,
 				},
 			},
@@ -22,11 +22,11 @@ func init() {
 	)
 }
 
-type ReorgLongerTestSpec struct {
+type ReorgShorterTestSpec struct {
 	ReorgTestSpec
 }
 
-func (r ReorgLongerTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Testnet) {
+func (r ReorgShorterTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Testnet) {
 	node := testnet.Nodes[0]
 	if err := node.Start(); err != nil {
 		t.Fatalf("%s: failed to start the first node, err: %v", r.Name, err)
@@ -41,7 +41,7 @@ func (r ReorgLongerTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *
 
 	r.params = &clients.ReorgParams{
 		DelayTime:   0,
-		DelayNumber: 2,
+		DelayNumber: -2,
 	}
 
 	r.reorg(ctx, t, node)
