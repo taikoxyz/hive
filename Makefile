@@ -30,15 +30,15 @@ hive_prysmctl:
 
 test_reorg_reorg: hive_prysmctl
 	@echo "Running reorg/reorg_reorg test..."
-	./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer --sim taiko --sim.limit "reorg/reorg_reorg"
+	./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "reorg/reorg_reorg"
 
 test_reorg_longer: hive_prysmctl
 	@echo "Running reorg/reorg_longer test..."
-	./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer --sim taiko --sim.limit "reorg/reorg_longer"
+	./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "reorg/reorg_longer"
 
 test_reorg_shorter: hive_prysmctl
 	@echo "Running reorg/reorg_shorter test..."
-	./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer --sim taiko --sim.limit "reorg/reorg_shorter"
+	./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "reorg/reorg_shorter"
 
 test_preconf_preconf: hive_prysmctl
 	@echo "Running preconf/preconf test..."

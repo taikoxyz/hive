@@ -1,5 +1,7 @@
 package clients
 
+import "github.com/ethereum/go-ethereum/core/rawdb"
+
 var (
 	AnvilPort int64 = 8545
 )
@@ -18,8 +20,9 @@ type AnvilClient struct {
 	SecondsPerSlot uint64
 	*EthNode
 
-	reorgCh    chan struct{}
-	reorgCache map[uint64]*L1BlockInfo
+	reorgCh     chan struct{}
+	reorgPoints map[uint64]string
+	l1Origins   map[uint64]*rawdb.L1Origin
 }
 
 func (a *AnvilClient) Start() error {

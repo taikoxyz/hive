@@ -655,8 +655,8 @@ github.com/supranational/blst v0.3.15-0.20250213130419-105d4af00985/go.mod h1:jZ
 github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7/go.mod h1:q4W45IWZaF22tdD+VEXcAWRA037jwmWEB5VWYORlTpc=
 github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d h1:vfofYNRScrDdvS342BElfbETmL1Aiz3i2t0zfRj16Hs=
 github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d/go.mod h1:RRCYJbIwD5jmqPI9XoAFR0OcDxqUctll6zUj/+B4S48=
-github.com/taikoxyz/hive v0.0.0-20250321034322-b633d5499ddf h1:um4POAwR5Ieih5QKNMCK1MyK+/T6BIesCYsgyGOgm4g=
-github.com/taikoxyz/hive v0.0.0-20250321034322-b633d5499ddf/go.mod h1:dHfvZdUZJzn0Bt9Be9WmwNDz+VHH41BA3hbEvTnRApo=
+github.com/taikoxyz/hive v0.0.0-20250331024428-d37daab9996e h1:rVbF0TgpT4q43ILU78BV/jq4kMvrA+KKaGI2cMTpekI=
+github.com/taikoxyz/hive v0.0.0-20250331024428-d37daab9996e/go.mod h1:dHfvZdUZJzn0Bt9Be9WmwNDz+VHH41BA3hbEvTnRApo=
 github.com/taikoxyz/optimism v0.0.0-20250311075120-f1339352ab9d h1:VQkAR1kAKMXCejzDOaj56D5LCznfozs8TXSkA5BH710=
 github.com/taikoxyz/optimism v0.0.0-20250311075120-f1339352ab9d/go.mod h1:V0VCkKtCzuaJH6qcL75SRcbdlakM9LhurMEJUhO6VXA=
 github.com/taikoxyz/taiko-geth v1.12.1-0.20250315074115-43a60b36ea53 h1:5U6+dQaUQtqUzkfhnikkGwUFxKJEvewtAgkc6ttHqo8=
