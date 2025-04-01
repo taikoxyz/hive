@@ -12,27 +12,27 @@ import (
 )
 
 func init() {
-	Tests = append(Tests, &ReorgTestSpec{
+	Tests = append(Tests, &ReorgPreconfTestSpec{
 		PreconfTestSpec: PreconfTestSpec{
 			suite_base.BaseTestSpec{
-				Name: "reorg",
+				Name: "reorg_preconf",
 			},
 		},
 	})
 }
 
-type ReorgTestSpec struct {
+type ReorgPreconfTestSpec struct {
 	PreconfTestSpec
 }
 
-func (r *ReorgTestSpec) GetTestnetConfig() *testnet.Config {
+func (r *ReorgPreconfTestSpec) GetTestnetConfig() *testnet.Config {
 	cfg := r.PreconfTestSpec.GetTestnetConfig()
-	cfg.Network = "network_preconf_reorg"
+	cfg.Network = "network_reorg_preconf"
 
 	return cfg
 }
 
-func (r *ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *testnet.Testnet) {
+func (r *ReorgPreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *testnet.Testnet) {
 	// Start all the cluster's nodes.
 	for _, node := range testnet.Nodes {
 		t.Nil(node.Start(), "cannot start L2EthClient")
@@ -45,10 +45,10 @@ func (r *ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *testn
 		l2geth   = node.L2EthClient
 	)
 
-	l2geth.WaitLatestNumber(ctx, time.Minute*3, proposer.PacayaClients.ForkHeight)
+	l2geth.WaitLatestNumber(ctx, time.Minute*3, proposer.PacayaClients.ForkHeight-1)
 
 	// stop the proposer.
-	proposer.PauseClient()
+	proposer.Shutdown()
 
 	// For DevDebug
 	if testnet.DevDebug {
@@ -56,52 +56,11 @@ func (r *ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *testn
 		time.Sleep(time.Hour * 2)
 	}
 
-	// Test reorg propose blocks.
-	r.reorgProposeBlocks(ctx, t, testnet)
-
 	// Test reorg preconf blocks.
 	r.reorgPreconfBlocks(ctx, t, testnet)
 }
 
-func (r *ReorgTestSpec) reorgProposeBlocks(ctx context.Context, t *hivesim.T, testnet *testnet.Testnet) {
-	var (
-		node   = testnet.Nodes[0]
-		anvil  = node.AnvilClient
-		l2Geth = node.L2EthClient
-		driver = node.DriverClient
-	)
-
-	// Start record reorg points.
-	anvil.StartRecordReorgPoints(ctx, l2Geth.EthClient)
-	defer anvil.StopRecordReorgPoints()
-
-	// Reorg propose blocks.
-	for times := 0; times < 2; times++ {
-		index := times % len(testnet.Nodes)
-		driver = testnet.Nodes[index].DriverClient
-
-		l2Header, anchorL1Header, _, err := preconferBlock(index, driver.Client, driver.PreconfServerURL(), 5)
-		t.FailIfNotNil(err, "cannot preconfirmer proposer")
-
-		// Verify latest preconf block.
-		verifyL2Chain(t, true, index, testnet.Nodes, l2Header)
-
-		// propose txs.
-		_, err = proposeBlock(ctx, driver.Envs, driver.Client, anchorL1Header)
-		t.FailIfNotNil(err, "cannot propose txs")
-
-		// Verify latest propose block.
-		verifyL2Chain(t, false, index, testnet.Nodes, l2Header)
-
-		// Reorg to the specified l2 block.
-		anvil.Reorg(l2Header.Number.Uint64()-1, nil)
-
-		// Verify latest propose block.
-		verifyL2Chain(t, false, index, testnet.Nodes, l2Header)
-	}
-}
-
-func (r *PreconfTestSpec) reorgPreconfBlocks(ctx context.Context, t *hivesim.T, testnet *testnet.Testnet) {
+func (r *ReorgPreconfTestSpec) reorgPreconfBlocks(ctx context.Context, t *hivesim.T, testnet *testnet.Testnet) {
 	var (
 		node   = testnet.Nodes[0]
 		driver = node.DriverClient
