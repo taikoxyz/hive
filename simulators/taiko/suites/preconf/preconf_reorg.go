@@ -45,10 +45,10 @@ func (r *ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *testn
 		l2geth   = node.L2EthClient
 	)
 
-	l2geth.WaitLatestNumber(ctx, time.Minute*3, proposer.PacayaClients.ForkHeight)
+	l2geth.WaitLatestNumber(ctx, time.Minute*3, proposer.PacayaClients.ForkHeight-1)
 
 	// stop the proposer.
-	proposer.PauseClient()
+	proposer.Shutdown()
 
 	// For DevDebug
 	if testnet.DevDebug {
@@ -71,14 +71,13 @@ func (r *ReorgTestSpec) reorgProposeBlocks(ctx context.Context, t *hivesim.T, te
 		driver = node.DriverClient
 	)
 
-	// Start record reorg points.
-	anvil.StartRecordReorgPoints(ctx, l2Geth.EthClient)
-	defer anvil.StopRecordReorgPoints()
-
 	// Reorg propose blocks.
-	for times := 0; times < 2; times++ {
+	for times := 0; times < 4; times++ {
 		index := times % len(testnet.Nodes)
 		driver = testnet.Nodes[index].DriverClient
+
+		// Start record reorg points.
+		anvil.StartRecordReorgPoints(ctx, l2Geth.EthClient)
 
 		l2Header, anchorL1Header, _, err := preconferBlock(index, driver.Client, driver.PreconfServerURL(), 5)
 		t.FailIfNotNil(err, "cannot preconfirmer proposer")

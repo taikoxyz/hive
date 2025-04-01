@@ -81,7 +81,7 @@ func (r ReorgTestSpec) reorg(ctx context.Context, t *hivesim.T, node *clients.No
 	l2eth.WaitLatestNumber(ctx, timeout, l2ReorgStartNumber+reorgDeep)
 
 	// Reorg l1 eth chain.
-	l2ReorgStartNumber = anvil.Reorg(l2ReorgStartNumber, r.params)
+	anvil.Reorg(l2ReorgStartNumber, r.params)
 
 	l2eth.WaitLatestNumber(ctx, timeout, l2ReorgStartNumber+reorgDeep+3)
 

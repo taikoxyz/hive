@@ -73,17 +73,17 @@ func BuildPreconfBlock(
 
 	signedTxs, err := utils.CreateL2Txs(context.Background(), l2cli, true)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to create signed txs: %w", err)
 	}
 
 	parent, err := l2cli.HeaderByNumber(ctx, big.NewInt(0).SetUint64(l2BlockID-1))
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("cannot get parent block number, expect_number: %d: %v", l2BlockID-1, err)
 	}
 
 	preconfCfg, err := rpccli.GetProtocolConfigs(nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("cannot get protocol configs: %w", err)
 	}
 
 	baseFee, err := rpccli.CalculateBaseFee(
@@ -110,12 +110,12 @@ func BuildPreconfBlock(
 		baseFee,
 	)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to construct anchored tx: %w", err)
 	}
 
 	txBytes, err := utils.EncodeAndCompressTxList(append([]*types.Transaction{anchorTx}, signedTxs...))
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to encode and compress anchor tx list: %w", err)
 	}
 
 	extraData := encoding.EncodeBaseFeeConfig(preconfCfg.BaseFeeConfig())
@@ -138,10 +138,10 @@ func BuildPreconfBlock(
 		SetBody(reqBody).
 		Post(preconfURL + "/preconfBlocks")
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to build preconf blocks: %w", err)
 	}
 	if !res.IsSuccess() {
-		return nil, nil, fmt.Errorf("failed to build preconf block: %v", res)
+		return nil, nil, fmt.Errorf("failed to build preconf blocks: %s", res.String())
 	}
 
 	var body *preconfblocks.BuildPreconfBlockResponseBody

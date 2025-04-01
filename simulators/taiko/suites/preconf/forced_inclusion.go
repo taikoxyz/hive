@@ -56,7 +56,7 @@ func (f *ForcedInclusionTestSpec) Verify(ctx context.Context, t *hivesim.T, test
 	}
 
 	// Wait until over the pacaya hardfork number.
-	l2Geth.WaitLatestNumber(ctx, time.Minute*3, proposer.PacayaClients.ForkHeight)
+	l2Geth.WaitLatestNumber(ctx, time.Minute*3, proposer.PacayaClients.ForkHeight-1)
 
 	// stop the proposer.
 	proposer.PauseClient()
