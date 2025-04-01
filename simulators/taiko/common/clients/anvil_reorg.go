@@ -27,6 +27,9 @@ func (a *AnvilClient) StopRecordReorgPoints() {
 }
 
 func (a *AnvilClient) StartRecordReorgPoints(ctx context.Context, l2cli *rpc.EthClient) {
+	if a.reorgCh != nil {
+		return
+	}
 	a.reorgCh = make(chan struct{})
 	a.reorgPoints = make(map[uint64]string)
 	a.l1Origins = make(map[uint64]*rawdb.L1Origin)
