@@ -60,7 +60,7 @@ func (p *ProverClient) VerifyBlocks(opts *bind.TransactOpts) {
 	_, err = bind.WaitMined(context.Background(), p.L1, tx)
 	p.FailIfNotNil(err, "failed to wait mined")
 
-	p.Logf("%s: the latest verified id: %d", p.ClientType(), latestVerifyId)
+	p.Logf("%s: the latest verified id: %d, tx_hash: %s", p.ClientType(), latestVerifyId, tx.Hash().TerminalString())
 }
 
 func (p *ProverClient) WaitLatestBatchesProved(ctx context.Context, timeout time.Duration, number uint64) error {
@@ -94,21 +94,14 @@ func (p *ProverClient) GetLastVerifiedBlockId(ctx context.Context) uint64 {
 func (p *ProverClient) WaitLatestVerifiedNumber(ctx context.Context, timeout time.Duration, verifiedNumber uint64) {
 	p.Logf("%s: wait latest verified number %d", p.ClientType(), verifiedNumber)
 
-	tmTicker := time.NewTicker(time.Second)
-	defer tmTicker.Stop()
 	var number uint64
-	for {
-		select {
-		case <-ctx.Done():
+	for i := 0; i < int(timeout/time.Second); i++ {
+		if number = p.GetLastVerifiedBlockId(ctx); number >= verifiedNumber {
 			return
-		case <-time.After(timeout):
-			p.Fatalf("failed to wait latest verified, expect_number: %d, actual_number: %d", verifiedNumber, number)
-		case <-tmTicker.C:
-			if number = p.GetLastVerifiedBlockId(ctx); number >= verifiedNumber {
-				return
-			}
 		}
+		time.Sleep(time.Second)
 	}
+	p.Fatalf("failed to wait latest verified, expect_number: %d, actual_number: %d", verifiedNumber, number)
 }
 
 func GetLastVerifiedBlockId(ctx context.Context, client *rpc.Client) (uint64, error) {

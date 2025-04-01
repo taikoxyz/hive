@@ -12,7 +12,7 @@ RUN prysmctl  \
     generate-genesis \
     --fork=fulu \
     --num-validators=1 \
-    --genesis-time-delay=10 \
+    --genesis-time-delay=0 \
     --output-ssz=genesis.ssz \
     --chain-config-file=config.yml \
     --geth-genesis-json-in=genesis.json \

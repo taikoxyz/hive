@@ -86,7 +86,7 @@ func (r ReorgTestSpec) reorg(ctx context.Context, t *hivesim.T, node *clients.No
 	// Reorg l1 eth chain.
 	anvil.Reorg(reorgStart, r.params)
 
-	l2eth.WaitLatestNumber(ctx, timeout, reorgStart+reorgDeep+3)
+	l2eth.WaitLatestNumber(ctx, timeout, reorgStart+reorgDeep+1)
 
 	// Verify l1Origins.
 	t.FailIfNotNil(clients.VerifyL1Origin(ctx, reorgStart, anvil.EthClient, l2eth.EthClient))

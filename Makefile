@@ -10,6 +10,10 @@ test_preconf: test_preconf_preconf test_preconf_forced_inclusion test_preconf_re
 
 test_blob: test_blob_beacon test_blob_server
 
+taiko:
+	@echo "Building simulators/taiko..."
+	make -C simulators/taiko taiko
+
 hive:
 	@echo "Building hive..."
 	@go build -o build/bin/hive ./
@@ -30,7 +34,7 @@ hive_go_dependency:
 	@echo "Building hive_go_dependency..."
 	@docker build --no-cache -t hive_go_dependency:latest --target hive_go_dependency .
 
-hive_prysmctl:
+hive_prysmctl: taiko
 	@echo "Building prysmctl"
 	@docker build --no-cache -t hive_prysmctl:latest clients/prysm/prysmctl
 

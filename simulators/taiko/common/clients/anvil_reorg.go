@@ -3,6 +3,7 @@ package clients
 import (
 	"context"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
@@ -114,6 +115,7 @@ func (a *AnvilClient) Reorg(l2Number uint64, params *ReorgParams) {
 		startTime  int64
 		blockCount = params.DelayNumber
 		txs        []*types.Transaction
+		receipts   = map[common.Hash]*types.Receipt{}
 	)
 	for l1Num := l1Number + 1; true; l1Num++ {
 		block, err := client.BlockByNumber(ctx, new(big.Int).SetUint64(l1Num))
@@ -124,6 +126,13 @@ func (a *AnvilClient) Reorg(l2Number uint64, params *ReorgParams) {
 			startTime = int64(block.Time())
 		}
 		txs = append(txs, block.Transactions()...)
+
+		for _, tx := range block.Transactions() {
+			receipt, err := client.TransactionReceipt(ctx, tx.Hash())
+			a.FailIfNotNil(err)
+			receipts[tx.Hash()] = receipt
+		}
+
 		blockCount++
 		a.Logf("%s: reorg l1 chain, l1_number: %d", a.ClientType(), l1Num)
 	}
@@ -143,17 +152,31 @@ func (a *AnvilClient) Reorg(l2Number uint64, params *ReorgParams) {
 	}
 
 	var (
-		curTxs []*types.Transaction
-		count  = min((len(txs)+blockCount-1)/blockCount, len(txs))
+		reorgTxs []*types.Transaction
+		count    = min((len(txs)+blockCount-1)/blockCount, len(txs))
 	)
 	for i := 0; i < blockCount; i++ {
-		curTxs, txs = txs[:min(count, len(txs))], txs[min(count, len(txs)):]
-		for _, tx := range curTxs {
+		reorgTxs, txs = txs[:min(count, len(txs))], txs[min(count, len(txs)):]
+
+		// Send reorg txs.
+		for _, tx := range reorgTxs {
 			err := client.SendTransaction(ctx, tx)
-			a.FailIfNotNil(err, fmt.Sprintf("failed to send tx %s, err: %v", tx.Hash().Hex(), err))
+			a.FailIfNotNil(err, fmt.Sprintf("failed to send tx %s, err: %v", tx.Hash().TerminalString(), err))
 		}
+
+		// Mint reorg block.
 		a.SetNextBlockTimestamp(uint64(startTime) + uint64(i)*a.SecondsPerSlot + uint64(params.DelayTime))
 		a.MineBlock()
-		a.Logf("%s: mint a new l1 block, l1_number: %d, tx_count: %d, lest: %d", a.ClientType(), l1Number+1+uint64(i), len(curTxs), len(txs))
+
+		// Verify txs' status.
+		for _, tx := range reorgTxs {
+			receipt, err := client.TransactionReceipt(ctx, tx.Hash())
+			a.FailIfNotNil(err, fmt.Sprintf("failed to receive tx %s, err: %v", tx.Hash().TerminalString(), err))
+			if receipt.Status != receipts[tx.Hash()].Status {
+				a.Logf("the reorged tx status is not equal to the origin's %s, err: %v", tx.Hash().TerminalString(), err)
+			}
+		}
+
+		a.Logf("%s: mint a new l1 block, l1_number: %d, tx_count: %d, lest: %d", a.ClientType(), l1Number+1+uint64(i), len(reorgTxs), len(txs))
 	}
 }
