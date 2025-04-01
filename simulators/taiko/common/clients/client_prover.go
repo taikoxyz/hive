@@ -94,17 +94,17 @@ func (p *ProverClient) GetLastVerifiedBlockId(ctx context.Context) uint64 {
 func (p *ProverClient) WaitLatestVerifiedNumber(ctx context.Context, timeout time.Duration, verifiedNumber uint64) {
 	p.Logf("%s: wait latest verified number %d", p.ClientType(), verifiedNumber)
 
-	tmAfter := time.After(timeout)
 	tmTicker := time.NewTicker(time.Second)
 	defer tmTicker.Stop()
+	var number uint64
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-tmAfter:
-			p.FailIfNotNil("failed to wait latest verified number %d", verifiedNumber)
+		case <-time.After(timeout):
+			p.Fatalf("failed to wait latest verified, expect_number: %d, actual_number: %d", verifiedNumber, number)
 		case <-tmTicker.C:
-			if number := p.GetLastVerifiedBlockId(ctx); number >= verifiedNumber {
+			if number = p.GetLastVerifiedBlockId(ctx); number >= verifiedNumber {
 				return
 			}
 		}

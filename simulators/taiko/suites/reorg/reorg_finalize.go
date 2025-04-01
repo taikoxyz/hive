@@ -13,7 +13,7 @@ import (
 func init() {
 	Tests = append(Tests,
 		ReorgFinalizeTestSpec{
-			ReorgTestSpec{BaseTestSpec: suite_base.BaseTestSpec{Name: "reorg_shorter"}},
+			ReorgTestSpec{BaseTestSpec: suite_base.BaseTestSpec{Name: "reorg_finalize"}},
 		},
 	)
 }
@@ -46,7 +46,7 @@ func (r ReorgFinalizeTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet
 	r.reorgDeep = 5
 	r.params = &clients.ReorgParams{
 		DelayTime:   1,
-		DelayNumber: -2,
+		DelayNumber: 0,
 	}
 
 	// Start recording l1 chain.
@@ -66,4 +66,7 @@ func (r ReorgFinalizeTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet
 	r.reorgStart = prover.GetLastVerifiedBlockId(ctx) / 2
 
 	r.reorg(ctx, t, node)
+
+	// verify finalize
+	prover.WaitLatestVerifiedNumber(ctx, time.Second*5, r.reorgStart)
 }
