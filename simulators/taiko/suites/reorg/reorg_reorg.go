@@ -13,18 +13,15 @@ import (
 
 func init() {
 	Tests = append(Tests,
-		ReorgTestSpec{
-			BaseTestSpec: suite_base.BaseTestSpec{
-				Name:           "reorg_reorg",
-				L2TargetNumber: 13,
-			},
-		},
+		ReorgTestSpec{BaseTestSpec: suite_base.BaseTestSpec{Name: "reorg_reorg"}},
 	)
 }
 
 type ReorgTestSpec struct {
 	suite_base.BaseTestSpec
 
+	reorgStart uint64
+	reorgDeep  uint64
 	// reorg params
 	params *clients.ReorgParams
 }
@@ -36,7 +33,11 @@ func (r ReorgTestSpec) GetTestnetConfig() *testnet.Config {
 }
 
 func (r ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Testnet) {
-	node := testnet.Nodes[0]
+	var (
+		node   = testnet.Nodes[0]
+		prover = node.ProverClient
+	)
+
 	if err := node.Start(); err != nil {
 		t.Fatalf("%s: failed to start the first node, err: %v", r.Name, err)
 	}
@@ -47,27 +48,12 @@ func (r ReorgTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 		node.ProverClient.Shutdown()
 		time.Sleep(time.Second * 10)
 	}
+
+	r.reorgStart = 13
+	r.reorgDeep = 5
 	r.params = &clients.ReorgParams{
 		DelayTime: 1,
 	}
-
-	r.reorg(ctx, t, node)
-}
-
-func (r ReorgTestSpec) reorg(ctx context.Context, t *hivesim.T, node *clients.Node) {
-	var (
-		anvil  = node.AnvilClient
-		prover = node.ProverClient
-		l2eth  = node.L2EthClient
-
-		timeout                   = time.Minute * 3
-		l2ReorgStartNumber        = r.L2TargetNumber
-		reorgDeep          uint64 = 5
-	)
-	t.Logf("%s: start reorgAndVerifyFirstCluster, target number: %d", r.Name, l2ReorgStartNumber)
-
-	// Start recording reorg points.
-	anvil.StartRecordReorgPoints(ctx, l2eth.EthClient)
 
 	for range time.Tick(time.Second) {
 		prover.VerifyBlocks(params.L1Auths[0])
@@ -78,13 +64,30 @@ func (r ReorgTestSpec) reorg(ctx context.Context, t *hivesim.T, node *clients.No
 		}
 	}
 
-	l2eth.WaitLatestNumber(ctx, timeout, l2ReorgStartNumber+reorgDeep)
+	r.reorg(ctx, t, node)
+}
+
+func (r ReorgTestSpec) reorg(ctx context.Context, t *hivesim.T, node *clients.Node) {
+	var (
+		anvil = node.AnvilClient
+		l2eth = node.L2EthClient
+
+		timeout    = time.Minute * 3
+		reorgStart = r.reorgStart
+		reorgDeep  = r.reorgDeep
+	)
+	t.Logf("%s: start reorgAndVerifyFirstCluster, target number: %d", r.Name, reorgStart)
+
+	// Start recording reorg points.
+	anvil.StartRecordReorgPoints(ctx, l2eth.EthClient)
+
+	l2eth.WaitLatestNumber(ctx, timeout, reorgStart+reorgDeep)
 
 	// Reorg l1 eth chain.
-	anvil.Reorg(l2ReorgStartNumber, r.params)
+	anvil.Reorg(reorgStart, r.params)
 
-	l2eth.WaitLatestNumber(ctx, timeout, l2ReorgStartNumber+reorgDeep+3)
+	l2eth.WaitLatestNumber(ctx, timeout, reorgStart+reorgDeep+3)
 
 	// Verify l1Origins.
-	t.FailIfNotNil(clients.VerifyL1Origin(ctx, l2ReorgStartNumber, anvil.EthClient, l2eth.EthClient))
+	t.FailIfNotNil(clients.VerifyL1Origin(ctx, reorgStart, anvil.EthClient, l2eth.EthClient))
 }

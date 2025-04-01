@@ -12,19 +12,25 @@ import (
 
 func init() {
 	Tests = append(Tests,
-		ReorgLongerTestSpec{
-			ReorgTestSpec{BaseTestSpec: suite_base.BaseTestSpec{Name: "reorg_longer"}},
+		ReorgFinalizeTestSpec{
+			ReorgTestSpec{BaseTestSpec: suite_base.BaseTestSpec{Name: "reorg_shorter"}},
 		},
 	)
 }
 
-type ReorgLongerTestSpec struct {
+type ReorgFinalizeTestSpec struct {
 	ReorgTestSpec
 }
 
-func (r ReorgLongerTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Testnet) {
-	node := testnet.Nodes[0]
-	prover := node.ProverClient
+func (r ReorgFinalizeTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Testnet) {
+	var (
+		node    = testnet.Nodes[0]
+		anvil   = node.AnvilClient
+		l2eth   = node.L2EthClient
+		prover  = node.ProverClient
+		propoer = node.ProposerClient
+	)
+
 	if err := node.Start(); err != nil {
 		t.Fatalf("%s: failed to start the first node, err: %v", r.Name, err)
 	}
@@ -40,17 +46,24 @@ func (r ReorgLongerTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *
 	r.reorgDeep = 5
 	r.params = &clients.ReorgParams{
 		DelayTime:   1,
-		DelayNumber: 2,
+		DelayNumber: -2,
 	}
 
+	// Start recording l1 chain.
+	anvil.StartRecordReorgPoints(ctx, l2eth.EthClient)
+
+	// Verify blocks.
 	for range time.Tick(time.Second) {
 		prover.VerifyBlocks(params.L1Auths[0])
 		lastVerifiedBlockID := prover.GetLastVerifiedBlockId(ctx)
-		if lastVerifiedBlockID > 0 {
+		if lastVerifiedBlockID >= propoer.PacayaClients.ForkHeight-1 {
 			node.ProverClient.Shutdown()
 			break
 		}
 	}
+
+	// Set reorg point before the fork height.
+	r.reorgStart = prover.GetLastVerifiedBlockId(ctx) / 2
 
 	r.reorg(ctx, t, node)
 }
