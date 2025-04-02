@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/ethereum/hive/hivesim"
 	"taiko/common/testnet"
+	"taiko/params"
 	suite_base "taiko/suites/base"
 	"time"
 )
@@ -73,7 +74,7 @@ func (r *ReorgProposeTestSpec) reorgProposeBlocks(ctx context.Context, t *hivesi
 		// Start record reorg points.
 		anvil.StartRecordReorgPoints(ctx, l2Geth.EthClient)
 
-		l2Header, anchorL1Header, _, err := preconferBlock(index, driver.Client, driver.PreconfServerURL(), 5)
+		l2Header, anchorL1Header, err := preconferBlock(params.ChainAuths[index*2+1].PrivateKey, driver.Client, driver.PreconfServerURL(), 5, nil)
 		t.FailIfNotNil(err, "cannot preconfirmer proposer")
 
 		// Verify latest preconf block.

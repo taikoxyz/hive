@@ -30,7 +30,7 @@ type PreconfTestSpec struct {
 	suite_base.BaseTestSpec
 }
 
-func (r *PreconfTestSpec) GetTestnetConfig() *testnet.Config {
+func (r PreconfTestSpec) GetTestnetConfig() *testnet.Config {
 	cfg := r.BaseTestSpec.GetTestnetConfig()
 	cfg.Network = "network_preconf_preconf"
 
@@ -80,7 +80,7 @@ func (r *PreconfTestSpec) GetTestnetConfig() *testnet.Config {
 	return cfg
 }
 
-func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Testnet) {
+func (r PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Testnet) {
 	// Start all the cluster's nodes.
 	for _, node := range testnet.Nodes {
 		t.Nil(node.Start(), "cannot start L2EthClient")
@@ -108,7 +108,7 @@ func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 		index := times % len(testnet.Nodes)
 		driver = testnet.Nodes[index].DriverClient
 
-		l2Header, anchorL1Header, _, err := preconferBlock(index, driver.Client, driver.PreconfServerURL(), 5)
+		l2Header, anchorL1Header, err := preconferBlock(params.ChainAuths[index*2+1].PrivateKey, driver.Client, driver.PreconfServerURL(), 5, nil)
 		t.FailIfNotNil(err, "cannot preconfirmer proposer")
 
 		// Verify latest preconf block.

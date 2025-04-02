@@ -83,6 +83,6 @@ func TestDD(t *testing.T) {
 }
 
 func TestPreconferBlock(t *testing.T) {
-	_, _, _, err := preconferBlock(0, rpccli, preconfURL, 5)
+	_, _, err := preconferBlock(params.ChainAuths[1].PrivateKey, rpccli, preconfURL, 5, nil)
 	assert.NoError(t, err)
 }

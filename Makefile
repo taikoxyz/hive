@@ -6,7 +6,7 @@ test_base: test_full_sync
 
 test_reorg: test_reorg_reorg test_reorg_shorter test_reorg_longer test_reorg_finalize
 
-test_preconf: test_preconf_preconf test_preconf_forced_inclusion test_preconf_reorg_propose test_preconf_reorg_preconf
+test_preconf: test_preconf_preconf test_preconf_forced_inclusion test_preconf_reorg_propose test_preconf_reorg_preconf test_preconf_ancients
 
 test_blob: test_blob_beacon test_blob_server
 
@@ -53,6 +53,10 @@ test_reorg_finalize: hive_prysmctl
 test_preconf_preconf: hive_prysmctl
 	@echo "Running preconf/preconf test..."
 	./build/bin/hive --docker.output --sim taiko --sim.limit "preconf/preconf" --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/taiko-geth,taiko/driver
+
+test_preconf_ancients: hive_prysmctl
+	@echo "Running preconf/ancients test..."
+	./build/bin/hive --docker.output --sim taiko --sim.limit "preconf/ancients" --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/taiko-geth,taiko/driver
 
 test_preconf_reorg_propose: hive_prysmctl
 	@echo "Running preconf/reorg_propose test..."

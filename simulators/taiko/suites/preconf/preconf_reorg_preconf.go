@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/hive/hivesim"
 	"math/big"
 	"taiko/common/testnet"
+	"taiko/params"
 	suite_base "taiko/suites/base"
 	"time"
 )
@@ -71,7 +72,7 @@ func (r *ReorgPreconfTestSpec) reorgPreconfBlocks(ctx context.Context, t *hivesi
 	l2Number, err := driver.L2.BlockNumber(ctx)
 	t.FailIfNotNil(err, "cannot get l2 header by number")
 
-	l2Header, anchorL1Header, _, err := preconferBlock(0, driver.Client, driver.PreconfServerURL(), 5)
+	l2Header, anchorL1Header, err := preconferBlock(params.ChainAuths[1].PrivateKey, driver.Client, driver.PreconfServerURL(), 5, nil)
 	t.FailIfNotNil(err, "cannot preconfirmer proposer")
 
 	// Verify latest preconf block.
