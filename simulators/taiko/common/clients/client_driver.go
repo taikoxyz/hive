@@ -18,6 +18,7 @@ import (
 	preconfblocks "github.com/taikoxyz/taiko-mono/packages/taiko-client/driver/preconf_blocks"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"math/big"
+	"os"
 	"taiko/common/utils"
 )
 
@@ -49,7 +50,9 @@ func (d *DriverClient) Start() (err error) {
 		return err
 	}
 
-	d.p2pNode, d.p2pSigner, err = GetP2PNode(d.ctx, d.GetPreconfP2PNode())
+	// Set static peer.
+	_ = os.Setenv("PRECONFIRMATION_P2P_STATIC", d.GetPreconfP2PNode())
+	d.p2pNode, d.p2pSigner, err = GetP2PNode(d.ctx)
 	if err != nil {
 		return err
 	}

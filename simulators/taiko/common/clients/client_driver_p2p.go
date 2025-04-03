@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum-optimism/optimism/op-node/rollup"
 	"github.com/ethereum-optimism/optimism/op-service/eth"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/hive/hivesim"
 	"github.com/holiman/uint256"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/bindings/encoding"
@@ -54,9 +55,10 @@ func (d *DriverClient) PublishL2Payload(ctx context.Context, msg *preconfblocks.
 	d.FailIfNotNil(err, fmt.Sprintf("%s: failed to publish payload", d.ClientType()))
 }
 
-func GetP2PNode(ctx context.Context, staticPeer string) (*p2p.NodeP2P, p2p.Signer, error) {
-	// Set static peer.
-	_ = os.Setenv("PRECONFIRMATION_P2P_STATIC", staticPeer)
+func GetP2PNode(ctx context.Context) (*p2p.NodeP2P, p2p.Signer, error) {
+	fmt.Printf("p2pNode config, PRECONFIRMATION_SERVER_PORT=%s\n", os.Getenv("PRECONFIRMATION_SERVER_PORT"))
+	fmt.Printf("p2pNode config, PRECONFIRMATION_P2P_PRIV_RAW=%s\n", os.Getenv("PRECONFIRMATION_P2P_PRIV_RAW"))
+	fmt.Printf("p2pNode config, PRECONFIRMATION_P2P_STATIC=%s\n\n", os.Getenv("PRECONFIRMATION_P2P_STATIC"))
 
 	driverClient := &MockDriver{}
 	if err := NewTaikoClient(driverClient, flags.DriverFlags); err != nil {
@@ -99,5 +101,26 @@ func GetP2PNode(ctx context.Context, staticPeer string) (*p2p.NodeP2P, p2p.Signe
 		return nil, nil, fmt.Errorf("failed to create p2p signer: %w", err)
 	}
 
+	fmt.Printf("p2pNode config, host: %s, static_peer: %s", p2pNode.Host().ID().String(), cfg.P2PConfigs.StaticPeers)
+	for _, id := range p2pNode.Peers() {
+		fmt.Printf("p2pNode config, connected_peer: %s", id.String())
+	}
+
+	preconfBlockServer.SetP2PNode(p2pNode)
+	preconfBlockServer.SetP2PSigner(p2pSigner)
+
 	return p2pNode, p2pSigner, nil
+}
+
+func GetP2PEnvs(index int) hivesim.Params {
+	var envs = hivesim.Params{}
+	envs["PRECONFIRMATION_SERVER_PORT"] = fmt.Sprintf("%d", PreconfServerPort)
+	envs["PRECONFIRMATION_SERVER_SIGNATURE_CHECK"] = "true"
+	envs["PRECONFIRMATION_P2P_DISCOVERY_PATH"] = "memory"
+	envs["PRECONFIRMATION_P2P_PEERSTORE_PATH"] = "memory"
+	envs["PRECONFIRMATION_P2P_SEQUENCER_KEY"] = envs["L1_PROPOSER_PRIV_KEY"]
+	envs["PRECONFIRMATION_P2P_PRIV_RAW"] = params.ChainAuths[index].Key
+	envs["PRECONFIRMATION_P2P_BOOTNODES"] = "enode://869d07b5932f17e8490990f75a3f94195e9504ddb6b85f7189e5a9c0a8fff8b00aecf6f3ac450ecba6cdabdb5858788a94bde2b613e0f2d82e9b395355f76d1a@34.65.67.101:30305"
+
+	return envs
 }

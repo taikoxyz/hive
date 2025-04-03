@@ -19,7 +19,7 @@ fi
 
 # Run driver
 echo "Starting driver..."
-nohup taiko-client driver --verbosity $HIVE_LOGLEVEL 2>&1 &
+nohup taiko-client driver --verbosity 4 2>&1 &
 
 touch /taiko-client/nohup.out
 tail -f /taiko-client/nohup.out

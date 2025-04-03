@@ -45,6 +45,7 @@ func (r AncientsTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 
 	// Start all the cluster's nodes.
 	for _, node := range testnet.Nodes {
+
 		t.Nil(node.Start(), "cannot start L2EthClient")
 	}
 
@@ -53,13 +54,18 @@ func (r AncientsTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 	// stop the proposer.
 	t.FailIfNotNil(proposer.Shutdown())
 
+	// For DevDebug
+	if testnet.DevDebug {
+		driver.Shutdown()
+		time.Sleep(time.Hour * 2)
+	}
+
 	// Create a batch of preconf request bodies.
 	var (
-		batchSize     = 5
+		batchSize     = 1
 		l1Number      = anvil.BlockNumber(ctx)
 		l2Number      = l2geth.BlockNumber(ctx)
 		requestBodies []*preconfblocks.BuildPreconfBlockRequestBody
-
 		//l2Header *types.Header
 	)
 
@@ -69,7 +75,7 @@ func (r AncientsTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 		requestBody, err := clients.BuildPreconfRequestBody(ctx, driver.Client, params.ChainAuths[index*2+1].PrivateKey, l1Number, l2Num)
 		t.FailIfNotNil(err, "cannot build preconf request body")
 
-		//l2Header, err = clients.BuildPreconfBlock(driver.PreconfServerURL(), requestBody)
+		//_, err = clients.BuildPreconfBlock(driver.PreconfServerURL(), requestBody)
 		//t.FailIfNotNil(err, "cannot build preconf block")
 
 		time.Sleep(time.Second)
@@ -77,11 +83,6 @@ func (r AncientsTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 		driver.PublishL2Payload(ctx, requestBody)
 
 		requestBodies = append(requestBodies, requestBody)
-	}
-
-	// For DevDebug
-	if testnet.DevDebug {
-		time.Sleep(time.Hour * 2)
 	}
 	//l2geth.RevertTaikoGeth()
 }
