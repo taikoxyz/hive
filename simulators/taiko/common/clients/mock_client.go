@@ -2,13 +2,16 @@ package clients
 
 import (
 	"context"
+	"github.com/ethereum-optimism/optimism/op-service/eth"
 	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 	txmgrMetrics "github.com/ethereum-optimism/optimism/op-service/txmgr/metrics"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/hive/hivesim"
 	tkutils "github.com/taikoxyz/taiko-mono/packages/taiko-client/cmd/utils"
+	"github.com/taikoxyz/taiko-mono/packages/taiko-client/driver"
 	pkgFlags "github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/flags"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/proposer"
 	"github.com/urfave/cli/v2"
@@ -69,3 +72,29 @@ func (t *MockClient) Name() string {
 func (t *MockClient) Start() error { return nil }
 
 func (t *MockClient) Close(ctx context.Context) {}
+
+type MockDriver struct {
+	*driver.Driver
+}
+
+func (m *MockDriver) InitFromCli(_ context.Context, c *cli.Context) error {
+	if m.Driver == nil {
+		m.Driver = &driver.Driver{}
+	}
+	cfg, err := driver.NewConfigFromCliContext(c)
+	if err != nil {
+		return err
+	}
+	m.Config = cfg
+	return nil
+}
+
+type MockPreconfBlockChainSyncer struct {
+}
+
+func (m *MockPreconfBlockChainSyncer) InsertPreconfBlockFromExecutionPayload(ctx context.Context, executableData *eth.ExecutionPayload) (*types.Header, error) {
+	return nil, nil
+}
+func (m *MockPreconfBlockChainSyncer) RemovePreconfBlocks(context.Context, uint64) error {
+	return nil
+}

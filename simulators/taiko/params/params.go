@@ -12,8 +12,7 @@ import (
 var envContent []byte
 
 var (
-	envParams   = hivesim.Params{}
-	ClusterEnvs = map[int]hivesim.Params{}
+	envParams = hivesim.Params{}
 )
 
 func init() {

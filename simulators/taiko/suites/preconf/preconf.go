@@ -18,7 +18,7 @@ import (
 
 func init() {
 	Tests = append(Tests,
-		&PreconfTestSpec{
+		PreconfTestSpec{
 			BaseTestSpec: suite_base.BaseTestSpec{
 				Name: "preconf",
 			},
@@ -36,12 +36,11 @@ func (r PreconfTestSpec) GetTestnetConfig() *testnet.Config {
 
 	preConfig := cfg.CreateConfig
 
-	var indexd = make(map[int]bool)
+	var indexd = make(map[int]hivesim.Params)
 	cfg.CreateConfig = func(index int, nodes clients.Nodes) (hivesim.Params, error) {
-		if indexd[index] {
-			return params.ClusterEnvs[index], nil
+		if len(indexd[index]) > 0 {
+			return indexd[index], nil
 		}
-		indexd[index] = true
 
 		envs, err := preConfig(index, nodes)
 		if err != nil {
@@ -58,7 +57,7 @@ func (r PreconfTestSpec) GetTestnetConfig() *testnet.Config {
 
 		var staticPeers string
 		for i := 0; i < index; i++ {
-			sk, err := parsePriv(params.ChainAuths[i].Key)
+			sk, err := clients.ParsePriv(params.ChainAuths[i].Key)
 			if err != nil {
 				return nil, err
 			}
@@ -72,7 +71,11 @@ func (r PreconfTestSpec) GetTestnetConfig() *testnet.Config {
 		}
 		envs["PRECONFIRMATION_P2P_STATIC"] = staticPeers
 
-		params.ClusterEnvs[index] = envs
+		indexd[index] = envs
+		// Load envs.
+		for k, v := range envs {
+			params.SetEnvParams(k, v)
+		}
 
 		return envs, nil
 	}

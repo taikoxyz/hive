@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum-optimism/optimism/op-node/p2p"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/consensus/taiko"
@@ -24,6 +25,10 @@ type DriverClient struct {
 	Index int
 	*HiveManagedClient
 	Envs hivesim.Params
+
+	p2pNode   *p2p.NodeP2P
+	p2pSigner p2p.Signer
+
 	*State
 }
 
@@ -40,6 +45,11 @@ func (d *DriverClient) Start() (err error) {
 	}
 
 	d.State, err = NewState(client)
+	if err != nil {
+		return err
+	}
+
+	d.p2pNode, d.p2pSigner, err = GetP2PNode(d.ctx, d.GetPreconfP2PNode())
 	if err != nil {
 		return err
 	}
@@ -71,14 +81,19 @@ func BuildPreconfRequestBody(
 
 	l1Header, err := l1cli.HeaderByNumber(ctx, l1Number)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot get l1 header: %w", err)
 	}
 
-	l2Header, err := l2cli.HeaderByNumber(ctx, l2Number)
-	if err != nil {
-		return nil, err
+	var l2BlockID uint64
+	if l2Number != nil {
+		l2BlockID = l2Number.Uint64()
+	} else {
+		l2Header, err := l2cli.HeaderByNumber(ctx, nil)
+		if err != nil {
+			return nil, fmt.Errorf("cannot get l2 header: %w", err)
+		}
+		l2BlockID = l2Header.Number.Uint64()
 	}
-	l2BlockID := l2Header.Number.Uint64()
 
 	signedTxs, err := utils.CreateL2Txs(context.Background(), l2cli, true)
 	if err != nil {
