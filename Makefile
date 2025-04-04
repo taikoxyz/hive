@@ -64,7 +64,7 @@ test_preconf_ancients: hive_prysmctl
 
 test_preconf_cross: hive_prysmctl
 	@echo "Running preconf/cross test..."
-	./build/bin/hive --dev.debug --dev.expose --docker.output --sim taiko --sim.limit "preconf/cross" --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover
+	./build/bin/hive --dev.debug --dev.expose --docker.output --sim taiko --sim.limit "preconf/cross" --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover,taiko/taiko-geth,taiko/driver
 
 test_preconf_reorg_propose: hive_prysmctl
 	@echo "Running preconf/reorg_propose test..."
