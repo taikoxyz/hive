@@ -2,7 +2,6 @@ package clients
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/ethereum-optimism/optimism/op-node/metrics"
 	"github.com/ethereum-optimism/optimism/op-node/p2p"
@@ -47,7 +46,7 @@ func NewP2PNode(ctx context.Context, client *rpc.Client, index int, staticPeer s
 	envs := hivesim.Params{}
 	envs["PRECONFIRMATION_P2P_PRIV_RAW"] = privateKey
 	envs["PRECONFIRMATION_P2P_STATIC"] = staticPeer
-	envs["PRECONFIRMATION_P2P_LISTEN_TCP_PORT"] = fmt.Sprintf("%d", PreconfP2pPort)
+	envs["PRECONFIRMATION_P2P_LISTEN_TCP_PORT"] = fmt.Sprintf("%d", PreconfP2pPort+1)
 	envs["PRECONFIRMATION_P2P_SEQUENCER_KEY"] = params.ParamByKey("L1_PROPOSER_PRIV_KEY")
 	for k, v := range envs {
 		_ = os.Setenv(k, v)
@@ -56,7 +55,7 @@ func NewP2PNode(ctx context.Context, client *rpc.Client, index int, staticPeer s
 	driverClient := &MockDriver{}
 	if err := NewTaikoClient(
 		driverClient, flags.DriverFlags,
-		"--p2p.listen.tcp", fmt.Sprintf("%d", PreconfP2pPort),
+		"--p2p.listen.tcp", fmt.Sprintf("%d", PreconfP2pPort+1),
 		"--p2p.discovery.path", "memory",
 		"--p2p.peerstore.path", "memory",
 		"--p2p.sequencer.key", params.ParamByKey("L1_PROPOSER_PRIV_KEY"),
@@ -110,9 +109,6 @@ func (p *P2PNode) Close() {
 }
 
 func (p *P2PNode) PublishL2Payload(ctx context.Context, sendBody *eth.ExecutionPayloadEnvelope) error {
-	body, _ := json.Marshal(sendBody)
-	fmt.Printf("successfully published preconf block, peer_count: %d, content: %s\n", len(p.Peers()), string(body))
-
 	err := p.GossipOut().PublishL2Payload(ctx,
 		sendBody,
 		p.p2pSigner,

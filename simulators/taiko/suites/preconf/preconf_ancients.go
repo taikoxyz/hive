@@ -2,6 +2,7 @@ package preconf
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/ethereum-optimism/optimism/op-service/eth"
 	"github.com/ethereum/hive/hivesim"
@@ -99,6 +100,9 @@ func (r AncientsTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 		}
 		sendBodies = append(sendBodies, sendBody)
 
+		body, _ := json.Marshal(sendBody)
+		t.Logf("%s", string(body))
+
 		time.Sleep(time.Second)
 	}
 
@@ -110,11 +114,9 @@ func (r AncientsTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 
 	slices.Reverse(sendBodies)
 
-	for range 3 {
-		for _, requestBody := range sendBodies {
-			t.FailIfNotNil(p2pNode.PublishL2Payload(ctx, requestBody))
-			time.Sleep(time.Second)
-		}
+	for _, requestBody := range sendBodies {
+		t.FailIfNotNil(p2pNode.PublishL2Payload(ctx, requestBody))
+		time.Sleep(time.Second)
 	}
 
 	// For DevDebug
