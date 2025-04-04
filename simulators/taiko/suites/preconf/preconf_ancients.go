@@ -2,7 +2,6 @@ package preconf
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/ethereum-optimism/optimism/op-service/eth"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -140,9 +139,6 @@ func getPreconfBodies(ctx context.Context, t *hivesim.T, node *clients.Node, l1N
 			},
 		}
 		sendBodies = append(sendBodies, sendBody)
-
-		body, _ := json.Marshal(sendBody)
-		t.Logf("%s", string(body))
 
 		time.Sleep(time.Second)
 	}
