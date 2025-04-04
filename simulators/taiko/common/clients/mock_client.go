@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/hive/hivesim"
+	"github.com/libp2p/go-libp2p/core/peer"
 	tkutils "github.com/taikoxyz/taiko-mono/packages/taiko-client/cmd/utils"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/driver"
 	pkgFlags "github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/flags"
@@ -17,7 +18,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func NewTaikoClient[T tkutils.SubcommandApplication](client T, flags []cli.Flag) error {
+func NewTaikoClient[T tkutils.SubcommandApplication](client T, flags []cli.Flag, params ...string) error {
 	app := cli.NewApp()
 	app.Commands = []*cli.Command{
 		{
@@ -28,7 +29,12 @@ func NewTaikoClient[T tkutils.SubcommandApplication](client T, flags []cli.Flag)
 			},
 		},
 	}
-	return app.Run([]string{"taiko-client", "client"})
+	arguments := []string{"taiko-client", "client"}
+	for _, arg := range params {
+		arguments = append(arguments, arg)
+	}
+
+	return app.Run(arguments)
 }
 
 type MockClient struct {
@@ -97,4 +103,16 @@ func (m *MockPreconfBlockChainSyncer) InsertPreconfBlockFromExecutionPayload(ctx
 }
 func (m *MockPreconfBlockChainSyncer) RemovePreconfBlocks(context.Context, uint64) error {
 	return nil
+}
+
+type MockPreconfBlockAPIServer struct {
+	Address common.Address
+}
+
+func (m *MockPreconfBlockAPIServer) OnUnsafeL2Payload(ctx context.Context, from peer.ID, msg *eth.ExecutionPayloadEnvelope) error {
+	return nil
+}
+
+func (m *MockPreconfBlockAPIServer) P2PSequencerAddress() common.Address {
+	return m.Address
 }

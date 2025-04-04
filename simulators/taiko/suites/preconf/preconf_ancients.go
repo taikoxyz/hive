@@ -2,9 +2,11 @@ package preconf
 
 import (
 	"context"
+	"fmt"
+	"github.com/ethereum-optimism/optimism/op-service/eth"
 	"github.com/ethereum/hive/hivesim"
-	preconfblocks "github.com/taikoxyz/taiko-mono/packages/taiko-client/driver/preconf_blocks"
-	"math/big"
+	"github.com/holiman/uint256"
+	"golang.org/x/exp/slices"
 	"taiko/common/clients"
 	"taiko/common/testnet"
 	tn "taiko/common/testnet"
@@ -29,7 +31,7 @@ type AncientsTestSpec struct {
 
 func (r AncientsTestSpec) GetTestnetConfig() *testnet.Config {
 	cfg := r.PreconfTestSpec.GetTestnetConfig()
-	cfg.Network = "network_preconf_ancients"
+	cfg.Network = "network_preconf_ancients_12"
 
 	return cfg
 }
@@ -41,18 +43,79 @@ func (r AncientsTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 		l2geth   = node.L2EthClient
 		driver   = node.DriverClient
 		proposer = node.ProposerClient
+		prover   = node.ProverClient
 	)
 
 	// Start all the cluster's nodes.
 	for _, node := range testnet.Nodes {
-
 		t.Nil(node.Start(), "cannot start L2EthClient")
 	}
 
-	l2geth.WaitLatestNumber(ctx, time.Minute*3, proposer.PacayaClients.ForkHeight-1)
+	p2pNode, err := clients.NewP2PNode(ctx, driver.Client, driver.Index, driver.GetPreconfP2PNode())
+	t.FailIfNotNil(err, fmt.Sprintf("cannot create p2p node"))
+	defer p2pNode.Close()
 
+	for range time.Tick(time.Second) {
+		prover.VerifyBlocks(params.L1Auths[0])
+		lastVerifiedBlockID := prover.GetLastVerifiedBlockId(ctx)
+		if lastVerifiedBlockID > 0 {
+			prover.Shutdown()
+			break
+		}
+	}
+
+	l2geth.WaitLatestNumber(ctx, time.Minute*3, proposer.PacayaClients.ForkHeight-1)
 	// stop the proposer.
 	t.FailIfNotNil(proposer.Shutdown())
+
+	// Create a batch of preconf blocks.
+	var (
+		batchSize  = 5
+		l2Number   = l2geth.BlockNumber(ctx)
+		sendBodies []*eth.ExecutionPayloadEnvelope
+	)
+
+	for i := 0; i < batchSize; i++ {
+		requestBody, err := clients.BuildPreconfRequestBody(ctx, driver.Client, params.ChainAuths[1].PrivateKey, anvil.BlockNumber(ctx), nil)
+		t.FailIfNotNil(err, "cannot build preconf request body")
+
+		header, err := clients.SendPreconfBlock(driver.PreconfServerURL(), requestBody)
+		t.FailIfNotNil(err, "cannot send preconf request")
+
+		sendBody := &eth.ExecutionPayloadEnvelope{
+			ExecutionPayload: &eth.ExecutionPayload{
+				ParentHash:    header.ParentHash,
+				FeeRecipient:  header.Coinbase,
+				ExtraData:     header.Extra,
+				PrevRandao:    eth.Bytes32(header.MixDigest),
+				BlockNumber:   eth.Uint64Quantity(header.Number.Uint64()),
+				GasLimit:      eth.Uint64Quantity(header.GasLimit),
+				GasUsed:       eth.Uint64Quantity(header.GasUsed),
+				Timestamp:     eth.Uint64Quantity(header.Time),
+				BlockHash:     header.Hash(),
+				BaseFeePerGas: eth.Uint256Quantity(*uint256.NewInt(requestBody.ExecutableData.BaseFeePerGas)),
+				Transactions:  []eth.Data{requestBody.ExecutableData.Transactions},
+			},
+		}
+		sendBodies = append(sendBodies, sendBody)
+
+		time.Sleep(time.Second)
+	}
+
+	l2geth.RevertTaikoGeth(ctx, l2Number)
+
+	// Waiting for p2p node is connected.
+	t.FailIfNotNil(p2pNode.WaitConnected(ctx, time.Minute))
+	time.Sleep(time.Minute)
+
+	slices.Reverse(sendBodies)
+
+	for range 3 {
+		for _, requestBody := range sendBodies {
+			t.FailIfNotNil(p2pNode.PublishL2Payload(ctx, requestBody))
+			time.Sleep(time.Second)
+		}
+	}
 
 	// For DevDebug
 	if testnet.DevDebug {
@@ -60,29 +123,5 @@ func (r AncientsTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 		time.Sleep(time.Hour * 2)
 	}
 
-	// Create a batch of preconf request bodies.
-	var (
-		batchSize     = 1
-		l1Number      = anvil.BlockNumber(ctx)
-		l2Number      = l2geth.BlockNumber(ctx)
-		requestBodies []*preconfblocks.BuildPreconfBlockRequestBody
-		//l2Header *types.Header
-	)
-
-	// Create a batch of preconf blocks.
-	for index := 0; index < batchSize; index++ {
-		l2Num := big.NewInt(l2Number.Int64() + int64(index) + 1)
-		requestBody, err := clients.BuildPreconfRequestBody(ctx, driver.Client, params.ChainAuths[index*2+1].PrivateKey, l1Number, l2Num)
-		t.FailIfNotNil(err, "cannot build preconf request body")
-
-		//_, err = clients.BuildPreconfBlock(driver.PreconfServerURL(), requestBody)
-		//t.FailIfNotNil(err, "cannot build preconf block")
-
-		time.Sleep(time.Second)
-
-		driver.PublishL2Payload(ctx, requestBody)
-
-		requestBodies = append(requestBodies, requestBody)
-	}
-	//l2geth.RevertTaikoGeth()
+	l2geth.WaitLatestNumber(ctx, time.Minute*3, l2Number.Uint64()+uint64(batchSize))
 }

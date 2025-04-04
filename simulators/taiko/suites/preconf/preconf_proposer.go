@@ -34,7 +34,7 @@ func preconferBlock(privateKey *ecdsa.PrivateKey, rpccli *rpc.Client, preconfURL
 		if err != nil {
 			return nil, nil, err
 		}
-		latestL2Header, err = clients.BuildPreconfBlock(preconfURL, requestBody)
+		latestL2Header, err = clients.SendPreconfBlock(preconfURL, requestBody)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to build preconf block: %v", err)
 		}

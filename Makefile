@@ -34,7 +34,7 @@ hive_go_dependency:
 	@echo "Building hive_go_dependency..."
 	@docker build --no-cache -t hive_go_dependency:latest --target hive_go_dependency .
 
-hive_prysmctl: taiko
+hive_prysmctl:
 	@echo "Building prysmctl"
 	@docker build --no-cache -t hive_prysmctl:latest clients/prysm/prysmctl
 
@@ -61,7 +61,7 @@ test_preconf_preconf: hive_prysmctl
 test_preconf_ancients: hive_prysmctl
 	@echo "Running preconf/ancients test..."
 	#./build/bin/hive --docker.output --sim taiko --sim.limit "preconf/ancients" --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/taiko-geth,taiko/driver
-	./build/bin/hive --dev.debug --dev.expose --docker.output --sim taiko --sim.limit "preconf/ancients" --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer
+	./build/bin/hive --dev.expose --docker.output --sim taiko --sim.limit "preconf/ancients" --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover
 
 test_preconf_reorg_propose: hive_prysmctl
 	@echo "Running preconf/reorg_propose test..."

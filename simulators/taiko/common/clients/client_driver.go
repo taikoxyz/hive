@@ -5,7 +5,6 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum-optimism/optimism/op-node/p2p"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/consensus/taiko"
@@ -18,7 +17,6 @@ import (
 	preconfblocks "github.com/taikoxyz/taiko-mono/packages/taiko-client/driver/preconf_blocks"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"math/big"
-	"os"
 	"taiko/common/utils"
 )
 
@@ -26,9 +24,6 @@ type DriverClient struct {
 	Index int
 	*HiveManagedClient
 	Envs hivesim.Params
-
-	p2pNode   *p2p.NodeP2P
-	p2pSigner p2p.Signer
 
 	*State
 }
@@ -46,13 +41,6 @@ func (d *DriverClient) Start() (err error) {
 	}
 
 	d.State, err = NewState(client)
-	if err != nil {
-		return err
-	}
-
-	// Set static peer.
-	_ = os.Setenv("PRECONFIRMATION_P2P_STATIC", d.GetPreconfP2PNode())
-	d.p2pNode, d.p2pSigner, err = GetP2PNode(d.ctx)
 	if err != nil {
 		return err
 	}
@@ -95,7 +83,7 @@ func BuildPreconfRequestBody(
 		if err != nil {
 			return nil, fmt.Errorf("cannot get l2 header: %w", err)
 		}
-		l2BlockID = l2Header.Number.Uint64()
+		l2BlockID = l2Header.Number.Uint64() + 1
 	}
 
 	signedTxs, err := utils.CreateL2Txs(context.Background(), l2cli, true)
@@ -162,7 +150,7 @@ func BuildPreconfRequestBody(
 	return reqBody, nil
 }
 
-func BuildPreconfBlock(
+func SendPreconfBlock(
 	preconfURL string,
 	requestBody *preconfblocks.BuildPreconfBlockRequestBody,
 ) (*types.Header, error) {

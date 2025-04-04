@@ -14,6 +14,9 @@ hive_prysmctl:
 log_geth:
 	docker ps -a | grep "taiko-geth" | awk '{print $1}' | xargs docker logs -f
 
+log_taiko:
+	docker ps -a | grep "taiko:latest" | awk '{print $1}' | xargs docker logs -f
+
 log_driver:
 	docker ps -a | grep "driver" | awk '{print $1}' | xargs docker logs -f
 
