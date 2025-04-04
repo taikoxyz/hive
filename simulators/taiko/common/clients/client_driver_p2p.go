@@ -35,22 +35,12 @@ type P2PNode struct {
 	p2pSigner p2p.Signer
 }
 
-func NewP2PNode(ctx context.Context, client *rpc.Client, index int, staticPeer string) (*P2PNode, error) {
-
+func NewP2PNode(ctx context.Context, client *rpc.Client, staticPeer string) (*P2PNode, error) {
 	sk, err := crypto.GenerateKey()
 	if err != nil {
 		return nil, err
 	}
 	privateKey := common.Bytes2Hex(crypto.FromECDSA(sk))
-
-	envs := hivesim.Params{}
-	envs["PRECONFIRMATION_P2P_PRIV_RAW"] = privateKey
-	envs["PRECONFIRMATION_P2P_STATIC"] = staticPeer
-	envs["PRECONFIRMATION_P2P_LISTEN_TCP_PORT"] = fmt.Sprintf("%d", PreconfP2pPort+1)
-	envs["PRECONFIRMATION_P2P_SEQUENCER_KEY"] = params.ParamByKey("L1_PROPOSER_PRIV_KEY")
-	for k, v := range envs {
-		_ = os.Setenv(k, v)
-	}
 
 	driverClient := &MockDriver{}
 	if err := NewTaikoClient(

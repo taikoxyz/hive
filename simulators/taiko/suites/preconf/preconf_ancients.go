@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ethereum-optimism/optimism/op-service/eth"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/hive/hivesim"
 	"github.com/holiman/uint256"
 	"golang.org/x/exp/slices"
+	"math/big"
 	"taiko/common/clients"
 	"taiko/common/testnet"
 	tn "taiko/common/testnet"
@@ -32,7 +34,7 @@ type AncientsTestSpec struct {
 
 func (r AncientsTestSpec) GetTestnetConfig() *testnet.Config {
 	cfg := r.PreconfTestSpec.GetTestnetConfig()
-	cfg.Network = "network_preconf_ancients_12"
+	cfg.Network = "network_preconf_ancients"
 
 	return cfg
 }
@@ -52,7 +54,7 @@ func (r AncientsTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 		t.Nil(node.Start(), "cannot start L2EthClient")
 	}
 
-	p2pNode, err := clients.NewP2PNode(ctx, driver.Client, driver.Index, driver.GetPreconfP2PNode())
+	p2pNode, err := clients.NewP2PNode(ctx, driver.Client, driver.GetPreconfP2PNode())
 	t.FailIfNotNil(err, fmt.Sprintf("cannot create p2p node"))
 	defer p2pNode.Close()
 
@@ -71,13 +73,43 @@ func (r AncientsTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 
 	// Create a batch of preconf blocks.
 	var (
-		batchSize  = 5
+		batchSize            = 5
+		l2Number             = l2geth.BlockNumber(ctx)
+		sendBodies, l2Header = getPreconfBodies(ctx, t, node, anvil.BlockNumber(ctx), batchSize)
+	)
+
+	t.Logf("the latest l2chain header, number: %d, hash: %s", l2Header.Number.Uint64(), l2Header.Hash())
+
+	// Waiting for p2p node is connected.
+	t.FailIfNotNil(p2pNode.WaitConnected(ctx, time.Minute))
+	time.Sleep(time.Minute)
+
+	slices.Reverse(sendBodies)
+
+	for _, requestBody := range sendBodies {
+		t.FailIfNotNil(p2pNode.PublishL2Payload(ctx, requestBody))
+		time.Sleep(time.Second)
+	}
+
+	// For DevDebug
+	if testnet.DevDebug {
+		driver.Shutdown()
+		time.Sleep(time.Hour * 2)
+	}
+
+	l2geth.WaitLatestNumber(ctx, time.Minute*3, l2Number.Uint64()+uint64(batchSize))
+}
+
+func getPreconfBodies(ctx context.Context, t *hivesim.T, node *clients.Node, l1Number *big.Int, batchSize int) ([]*eth.ExecutionPayloadEnvelope, *types.Header) {
+	var (
+		l2geth     = node.L2EthClient
+		driver     = node.DriverClient
 		l2Number   = l2geth.BlockNumber(ctx)
 		sendBodies []*eth.ExecutionPayloadEnvelope
 	)
 
 	for i := 0; i < batchSize; i++ {
-		requestBody, err := clients.BuildPreconfRequestBody(ctx, driver.Client, params.ChainAuths[1].PrivateKey, anvil.BlockNumber(ctx), nil)
+		requestBody, err := clients.BuildPreconfRequestBody(ctx, driver.Client, params.ChainAuths[1].PrivateKey, l1Number, nil)
 		t.FailIfNotNil(err, "cannot build preconf request body")
 
 		header, err := clients.SendPreconfBlock(driver.PreconfServerURL(), requestBody)
@@ -106,24 +138,9 @@ func (r AncientsTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 		time.Sleep(time.Second)
 	}
 
+	l2Header := l2geth.HeaderByNumber(ctx, nil)
+
 	l2geth.RevertTaikoGeth(ctx, l2Number)
 
-	// Waiting for p2p node is connected.
-	t.FailIfNotNil(p2pNode.WaitConnected(ctx, time.Minute))
-	time.Sleep(time.Minute)
-
-	slices.Reverse(sendBodies)
-
-	for _, requestBody := range sendBodies {
-		t.FailIfNotNil(p2pNode.PublishL2Payload(ctx, requestBody))
-		time.Sleep(time.Second)
-	}
-
-	// For DevDebug
-	if testnet.DevDebug {
-		driver.Shutdown()
-		time.Sleep(time.Hour * 2)
-	}
-
-	l2geth.WaitLatestNumber(ctx, time.Minute*3, l2Number.Uint64()+uint64(batchSize))
+	return sendBodies, l2Header
 }
