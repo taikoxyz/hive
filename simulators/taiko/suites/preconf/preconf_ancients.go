@@ -28,6 +28,15 @@ func init() {
 	})
 }
 
+// Test preconf p2p node can handle out-of-order preconf payload messages.
+
+// start one cluster(anvil, l2geth, driver, proposer, prover):
+// - Mint several blocks until over the pacaya fork.
+// - Mint 5 preconf blocks and collect preconf requestbodies.
+// - revert l2geth to pacaya fork hight.
+// - create p2pNode(connect to the driver p2p node) and send requestbodies in reversed order.
+// - Wait and check all the reverted preconf blocks are created again.
+
 type AncientsTestSpec struct {
 	PreconfTestSpec
 }

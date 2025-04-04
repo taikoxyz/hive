@@ -25,6 +25,16 @@ func init() {
 	})
 }
 
+//Test two rollback preconf chains,they are 5 blocks and 6 blocks.
+//
+//start two cluster(anvil, l2geth, driver, proposer, prover):
+//
+//- Mint several blocks until over the pacaya fork.
+//- Mint 5 preconf blocks and collect preconf requestbodies and revert l2geth.
+//- Mint 6 preconf blocks and collect preconf requestbodies and revert l2geth.
+//- create 2 p2pNodes(connect to the driver p2p node) and send requestbodies in reversed order.
+//- Wait and check all the reverted preconf blocks are created again.
+
 type CrossTestSpec struct {
 	PreconfTestSpec
 }
