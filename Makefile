@@ -55,8 +55,8 @@ test_reorg_finalize: hive_prysmctl
 	./build/bin/hive --docker.output --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/prover --sim taiko --sim.limit "reorg/reorg_finalize"
 
 test_preconf_preconf: hive_prysmctl
-	@echo "Running preconf/preconf test..."
-	./build/bin/hive --docker.output --sim taiko --sim.limit "preconf/preconf" --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/taiko-geth,taiko/driver
+	@echo "Running preconf/preconf_preconf test..."
+	./build/bin/hive --docker.output --sim taiko --sim.limit "preconf/preconf_preconf" --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/taiko-geth,taiko/driver
 
 test_preconf_ancients: hive_prysmctl
 	@echo "Running preconf/ancients test..."

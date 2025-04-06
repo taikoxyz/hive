@@ -20,7 +20,7 @@ func init() {
 	Tests = append(Tests,
 		PreconfTestSpec{
 			BaseTestSpec: suite_base.BaseTestSpec{
-				Name: "preconf",
+				Name: "preconf_preconf",
 			},
 		},
 	)
