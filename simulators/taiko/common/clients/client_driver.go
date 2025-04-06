@@ -66,7 +66,8 @@ func BuildPreconfRequestBody(
 	ctx context.Context,
 	rpccli *rpc.Client,
 	privateKey *ecdsa.PrivateKey,
-	l1Number, l2Number *big.Int,
+	l1Number *big.Int,
+	l2Parent *types.Header,
 ) (*preconfblocks.BuildPreconfBlockRequestBody, error) {
 	l1cli, l2cli := rpccli.L1, rpccli.L2
 
@@ -75,21 +76,13 @@ func BuildPreconfRequestBody(
 		return nil, fmt.Errorf("cannot get l1 header: %w", err)
 	}
 
-	var l2BlockID uint64
-	if l2Number != nil {
-		l2BlockID = l2Number.Uint64()
-	} else {
-		l2Header, err := l2cli.HeaderByNumber(ctx, nil)
+	if l2Parent == nil {
+		l2Parent, err = l2cli.HeaderByNumber(ctx, nil)
 		if err != nil {
-			return nil, fmt.Errorf("cannot get l2 header: %w", err)
+			return nil, fmt.Errorf("cannot get parent block number: %v", err)
 		}
-		l2BlockID = l2Header.Number.Uint64() + 1
 	}
-
-	parent, err := l2cli.HeaderByNumber(ctx, big.NewInt(0).SetUint64(l2BlockID-1))
-	if err != nil {
-		return nil, fmt.Errorf("cannot get parent block number, expect_number: %d: %v", l2BlockID-1, err)
-	}
+	l2BlockID := l2Parent.Number.Uint64() + 1
 
 	preconfCfg, err := rpccli.GetProtocolConfigs(nil)
 	if err != nil {
@@ -98,7 +91,7 @@ func BuildPreconfRequestBody(
 
 	baseFee, err := rpccli.CalculateBaseFee(
 		ctx,
-		parent,
+		l2Parent,
 		true,
 		preconfCfg.BaseFeeConfig(),
 		l1Header.Time,
@@ -113,10 +106,10 @@ func BuildPreconfRequestBody(
 		ctx,
 		l1Header.Number,
 		l1Header.Root,
-		parent.GasUsed,
+		l2Parent.GasUsed,
 		preconfCfg.BaseFeeConfig(),
 		[][32]byte{},
-		new(big.Int).Add(parent.Number, common.Big1),
+		new(big.Int).Add(l2Parent.Number, common.Big1),
 		baseFee,
 	)
 	if err != nil {
@@ -131,7 +124,7 @@ func BuildPreconfRequestBody(
 	extraData := encoding.EncodeBaseFeeConfig(preconfCfg.BaseFeeConfig())
 	reqBody := &preconfblocks.BuildPreconfBlockRequestBody{
 		ExecutableData: &preconfblocks.ExecutableData{
-			ParentHash:    parent.Hash(),
+			ParentHash:    l2Parent.Hash(),
 			FeeRecipient:  crypto.PubkeyToAddress(privateKey.PublicKey),
 			Number:        l2BlockID,
 			GasLimit:      uint64(preconfCfg.BlockMaxGasLimit()) + taiko.AnchorV3GasLimit,

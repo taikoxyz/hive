@@ -72,7 +72,7 @@ test_preconf_reorg_propose: hive_prysmctl
 
 test_preconf_reorg_preconf: hive_prysmctl
 	@echo "Running preconf/reorg_preconf test..."
-	./build/bin/hive --docker.output --sim taiko --sim.limit "preconf/reorg_preconf" --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer
+	./build/bin/hive --docker.output --sim taiko --sim.limit "preconf/reorg_preconf" --client anvil,taiko/taiko-geth,taiko/driver,taiko/proposer,taiko/taiko-geth,taiko/driver
 
 test_preconf_forced_inclusion: hive_prysmctl
 	@echo "Running preconf/forced-inclusion test..."

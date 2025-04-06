@@ -5,7 +5,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/rawdb"
+	ethrpc "github.com/ethereum/go-ethereum/rpc"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"math/big"
@@ -54,4 +56,19 @@ func ParsePriv(data string) (*crypto.Secp256k1PrivateKey, error) {
 		return nil, fmt.Errorf("failed to parse priv key from %d bytes", len(b))
 	}
 	return (p).(*crypto.Secp256k1PrivateKey), nil
+}
+
+func toBlockNumArg(number *big.Int) string {
+	if number == nil {
+		return "latest"
+	}
+	if number.Sign() >= 0 {
+		return hexutil.EncodeBig(number)
+	}
+	// It's negative.
+	if number.IsInt64() {
+		return ethrpc.BlockNumber(number.Int64()).String()
+	}
+	// It's negative and large, which is invalid.
+	return fmt.Sprintf("<invalid %d>", number)
 }

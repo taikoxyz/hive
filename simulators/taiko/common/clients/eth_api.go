@@ -18,13 +18,13 @@ func (ec *EthNode) BlockNumber(ctx context.Context) *big.Int {
 
 func (ec *EthNode) HeaderByNumber(ctx context.Context, number *big.Int) *types.Header {
 	header, err := ec.EthClient.HeaderByNumber(ctx, number)
-	ec.FailIfNotNil(err, fmt.Sprintf("%s: failed to get block header by number, number: %d", ec.ClientType(), number.Uint64()))
+	ec.FailIfNotNil(err, fmt.Sprintf("%s: failed to get block header by number, number: %s", ec.ClientType(), toBlockNumArg(number)))
 	return header
 }
 
 func (ec *EthNode) HeaderByHash(ctx context.Context, hash common.Hash) *types.Header {
 	header, err := ec.EthClient.HeaderByHash(ctx, hash)
-	ec.FailIfNotNil(err, fmt.Sprintf("%s: failed to get block header by hash, hash: %s", ec.ClientType(), hash))
+	ec.FailIfNotNil(err, fmt.Sprintf("%s: failed to get block header by hash, hash: %s", ec.ClientType(), hash.TerminalString()))
 	return header
 }
 
