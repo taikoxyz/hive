@@ -8,6 +8,7 @@ import (
 	"golang.org/x/exp/slices"
 	"golang.org/x/sync/errgroup"
 	"math/big"
+	"math/rand/v2"
 	"taiko/common/clients"
 	"taiko/common/testnet"
 	tn "taiko/common/testnet"
@@ -76,16 +77,16 @@ func (r CrossTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 	t.FailIfNotNil(proposer.Shutdown())
 
 	var (
-		batchSize = 3
+		batchSize = rand.IntN(50-10) + 10
 		l1Number  = anvil.BlockNumber(ctx)
 	)
 
-	sendBodies0, l2Header0 := getPreconfBodies(ctx, t, node, l1Number.Sub(l1Number, big.NewInt(1)), batchSize+2)
-	sendBodies1, l2Header1 := getPreconfBodies(ctx, t, node, l1Number, batchSize+3)
+	sendBodies0, l2Header0 := getPreconfBodies(ctx, t, node, l1Number.Sub(l1Number, big.NewInt(1)), batchSize)
+	sendBodies1, l2Header1 := getPreconfBodies(ctx, t, node, l1Number, batchSize+5)
 
 	slices.Reverse(sendBodies0)
 	slices.Reverse(sendBodies1)
-	
+
 	data0, _ := json.Marshal(sendBodies0)
 	data1, _ := json.Marshal(sendBodies1)
 	t.Logf("the latest l2chain header, number: %d, hash: %s, preconf_bodies: %s", l2Header0.Number.Uint64(), l2Header0.Hash(), string(data0))
