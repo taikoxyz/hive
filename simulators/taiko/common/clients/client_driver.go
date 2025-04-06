@@ -86,11 +86,6 @@ func BuildPreconfRequestBody(
 		l2BlockID = l2Header.Number.Uint64() + 1
 	}
 
-	signedTxs, err := utils.CreateL2Txs(context.Background(), l2cli, true)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create signed txs: %w", err)
-	}
-
 	parent, err := l2cli.HeaderByNumber(ctx, big.NewInt(0).SetUint64(l2BlockID-1))
 	if err != nil {
 		return nil, fmt.Errorf("cannot get parent block number, expect_number: %d: %v", l2BlockID-1, err)
@@ -128,7 +123,7 @@ func BuildPreconfRequestBody(
 		return nil, fmt.Errorf("failed to construct anchored tx: %w", err)
 	}
 
-	txBytes, err := utils.EncodeAndCompressTxList(append([]*types.Transaction{anchorTx}, signedTxs...))
+	txBytes, err := utils.EncodeAndCompressTxList([]*types.Transaction{anchorTx})
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode and compress anchor tx list: %w", err)
 	}
