@@ -9,6 +9,7 @@ import (
 	"github.com/holiman/uint256"
 	"golang.org/x/exp/slices"
 	"math/big"
+	"math/rand/v2"
 	"taiko/common/clients"
 	"taiko/common/testnet"
 	tn "taiko/common/testnet"
@@ -81,7 +82,7 @@ func (r AncientsTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 
 	// Create a batch of preconf blocks.
 	var (
-		batchSize            = 5
+		batchSize            = rand.IntN(50-10) + 10
 		l2Number             = l2geth.BlockNumber(ctx)
 		sendBodies, l2Header = getPreconfBodies(ctx, t, node, anvil.BlockNumber(ctx), batchSize)
 	)
