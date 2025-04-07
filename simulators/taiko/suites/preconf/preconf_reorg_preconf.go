@@ -88,7 +88,7 @@ func (r *ReorgPreconfTestSpec) reorgPreconfBlocks(ctx context.Context, t *hivesi
 	})
 
 	eg.Go(func() error {
-		preconfHeaders = createPreconfBlocks(ctx, t, testnet.Nodes[len(testnet.Nodes)-1], l1Number.Sub(l1Number, big.NewInt(1)), l2Header, batchSize+5)
+		preconfHeaders = createPreconfBlocks(ctx, t, testnet.Nodes[len(testnet.Nodes)-1], big.NewInt(l1Number.Int64()-1), l2Header, batchSize+5)
 		return nil
 	})
 

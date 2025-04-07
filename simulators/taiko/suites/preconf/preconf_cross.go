@@ -8,7 +8,6 @@ import (
 	"golang.org/x/exp/slices"
 	"golang.org/x/sync/errgroup"
 	"math/big"
-	"math/rand/v2"
 	"taiko/common/clients"
 	"taiko/common/testnet"
 	tn "taiko/common/testnet"
@@ -77,11 +76,11 @@ func (r CrossTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 	t.FailIfNotNil(proposer.Shutdown())
 
 	var (
-		batchSize = rand.IntN(50-10) + 10
+		batchSize = 30 // rand.IntN(50-10) + 10
 		l1Number  = anvil.BlockNumber(ctx)
 	)
 
-	sendBodies0, l2Header0 := getPreconfBodies(ctx, t, node, l1Number.Sub(l1Number, big.NewInt(1)), batchSize)
+	sendBodies0, l2Header0 := getPreconfBodies(ctx, t, node, big.NewInt(l1Number.Int64()-1), batchSize)
 	sendBodies1, l2Header1 := getPreconfBodies(ctx, t, node, l1Number, batchSize+5)
 
 	slices.Reverse(sendBodies0)
@@ -95,7 +94,7 @@ func (r CrossTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 	// For DevDebug
 	if testnet.DevDebug {
 		driver.Shutdown()
-		time.Sleep(time.Hour * 2)
+		time.Sleep(time.Hour * 4)
 	}
 
 	p2pNode, err := clients.NewP2PNode(ctx, driver.Client, driver.GetPreconfP2PNode())

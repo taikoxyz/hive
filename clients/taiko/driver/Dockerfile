@@ -1,5 +1,5 @@
 ARG baseimage=us-docker.pkg.dev/evmchain/images/taiko-client
-ARG tag=p2p-payloadQueue
+ARG tag=p2p-payloadQueue-2
 
 FROM $baseimage:$tag
 

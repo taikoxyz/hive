@@ -75,6 +75,7 @@ func BuildPreconfRequestBody(
 	if err != nil {
 		return nil, fmt.Errorf("cannot get l1 header: %w", err)
 	}
+	fmt.Printf("preconf l1 header, number: %d, hash: %s, timestamp: %d\n", l1Header.Number.Uint64(), l1Header.Hash().TerminalString(), l1Header.Time)
 
 	if l2Parent == nil {
 		l2Parent, err = l2cli.HeaderByNumber(ctx, nil)
