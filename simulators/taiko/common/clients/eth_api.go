@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/beacon/engine"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/taikoxyz/taiko-mono/packages/taiko-client/pkg/rpc"
 	"math/big"
 )
@@ -13,6 +14,18 @@ func (ec *EthNode) BlockNumber(ctx context.Context) *big.Int {
 	number, err := ec.EthClient.BlockNumber(ctx)
 	ec.FailIfNotNil(err, fmt.Sprintf("%s: failed to get block number, chainID: %d, err: %v", ec.ClientType(), ec.EthClient.ChainID.Uint64(), err))
 	return big.NewInt(int64(number))
+}
+
+func (ec *EthNode) HeaderByNumber(ctx context.Context, number *big.Int) *types.Header {
+	header, err := ec.EthClient.HeaderByNumber(ctx, number)
+	ec.FailIfNotNil(err, fmt.Sprintf("%s: failed to get block header by number, number: %s", ec.ClientType(), toBlockNumArg(number)))
+	return header
+}
+
+func (ec *EthNode) HeaderByHash(ctx context.Context, hash common.Hash) *types.Header {
+	header, err := ec.EthClient.HeaderByHash(ctx, hash)
+	ec.FailIfNotNil(err, fmt.Sprintf("%s: failed to get block header by hash, hash: %s", ec.ClientType(), hash.TerminalString()))
+	return header
 }
 
 func (ec *EthNode) RevertTaikoGeth(ctx context.Context, number *big.Int) {
