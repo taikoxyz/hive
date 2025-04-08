@@ -1,5 +1,5 @@
 ARG baseimage=us-docker.pkg.dev/evmchain/images/taiko-client
-ARG tag=main
+ARG tag=p2p-payloadQueue-2
 
 FROM $baseimage:$tag
 
@@ -14,6 +14,6 @@ ADD driver.sh .
 ADD common.sh .
 
 # expose soft server port.
-EXPOSE 7001/tcp 9222 9222/udp
+EXPOSE 7001/tcp 9222/tcp 9222/udp
 
 ENTRYPOINT ["sh", "/taiko-client/driver.sh"]

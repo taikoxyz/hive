@@ -24,6 +24,7 @@ type DriverClient struct {
 	Index int
 	*HiveManagedClient
 	Envs hivesim.Params
+
 	*State
 }
 
@@ -61,93 +62,104 @@ func (d *DriverClient) PreconfServerURL() string {
 	return fmt.Sprintf("http://%s:%v", d.NetworkIP(), PreconfServerPort)
 }
 
-func BuildPreconfBlock(
+func BuildPreconfRequestBody(
 	ctx context.Context,
 	rpccli *rpc.Client,
 	privateKey *ecdsa.PrivateKey,
-	preconfURL string,
-	anchoredL1Block *types.Header,
-	l2BlockID uint64,
-) (*types.Header, types.Transactions, error) {
-	l2cli := rpccli.L2
+	l1Number *big.Int,
+	l2Parent *types.Header,
+) (*preconfblocks.BuildPreconfBlockRequestBody, error) {
+	l1cli, l2cli := rpccli.L1, rpccli.L2
 
-	signedTxs, err := utils.CreateL2Txs(context.Background(), l2cli, true)
+	l1Header, err := l1cli.HeaderByNumber(ctx, l1Number)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create signed txs: %w", err)
+		return nil, fmt.Errorf("cannot get l1 header: %w", err)
 	}
+	fmt.Printf("preconf l1 header, number: %d, hash: %s, timestamp: %d\n", l1Header.Number.Uint64(), l1Header.Hash().TerminalString(), l1Header.Time)
 
-	parent, err := l2cli.HeaderByNumber(ctx, big.NewInt(0).SetUint64(l2BlockID-1))
-	if err != nil {
-		return nil, nil, fmt.Errorf("cannot get parent block number, expect_number: %d: %v", l2BlockID-1, err)
+	if l2Parent == nil {
+		l2Parent, err = l2cli.HeaderByNumber(ctx, nil)
+		if err != nil {
+			return nil, fmt.Errorf("cannot get parent block number: %v", err)
+		}
 	}
+	l2BlockID := l2Parent.Number.Uint64() + 1
 
 	preconfCfg, err := rpccli.GetProtocolConfigs(nil)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot get protocol configs: %w", err)
+		return nil, fmt.Errorf("cannot get protocol configs: %w", err)
 	}
 
 	baseFee, err := rpccli.CalculateBaseFee(
 		ctx,
-		parent,
+		l2Parent,
 		true,
 		preconfCfg.BaseFeeConfig(),
-		anchoredL1Block.Time,
+		l1Header.Time,
 	)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to calculate base fee: %w", err)
+		return nil, fmt.Errorf("failed to calculate base fee: %w", err)
 	}
 
 	constructor, _ := anchorTxConstructor.New(rpccli)
 	// Assemble a TaikoAnchor.anchorV3 transaction
 	anchorTx, err := constructor.AssembleAnchorV3Tx(
 		ctx,
-		anchoredL1Block.Number,
-		anchoredL1Block.Root,
-		parent.GasUsed,
+		l1Header.Number,
+		l1Header.Root,
+		l2Parent.GasUsed,
 		preconfCfg.BaseFeeConfig(),
 		[][32]byte{},
-		new(big.Int).Add(parent.Number, common.Big1),
+		new(big.Int).Add(l2Parent.Number, common.Big1),
 		baseFee,
 	)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to construct anchored tx: %w", err)
+		return nil, fmt.Errorf("failed to construct anchored tx: %w", err)
 	}
 
-	txBytes, err := utils.EncodeAndCompressTxList(append([]*types.Transaction{anchorTx}, signedTxs...))
+	txBytes, err := utils.EncodeAndCompressTxList([]*types.Transaction{anchorTx})
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to encode and compress anchor tx list: %w", err)
+		return nil, fmt.Errorf("failed to encode and compress anchor tx list: %w", err)
 	}
 
 	extraData := encoding.EncodeBaseFeeConfig(preconfCfg.BaseFeeConfig())
 	reqBody := &preconfblocks.BuildPreconfBlockRequestBody{
 		ExecutableData: &preconfblocks.ExecutableData{
-			ParentHash:    parent.Hash(),
+			ParentHash:    l2Parent.Hash(),
 			FeeRecipient:  crypto.PubkeyToAddress(privateKey.PublicKey),
 			Number:        l2BlockID,
 			GasLimit:      uint64(preconfCfg.BlockMaxGasLimit()) + taiko.AnchorV3GasLimit,
-			Timestamp:     anchoredL1Block.Time,
+			Timestamp:     l1Header.Time,
 			Transactions:  txBytes,
 			BaseFeePerGas: baseFee.Uint64(),
 			ExtraData:     hexutil.Bytes(extraData[:]),
 		},
 	}
 
+	return reqBody, nil
+}
+
+func SendPreconfBlock(
+	preconfURL string,
+	requestBody *preconfblocks.BuildPreconfBlockRequestBody,
+) (*types.Header, error) {
+
 	// Try to propose a soft block with batch ID 0
 	res, err := resty.New().
 		R().
-		SetBody(reqBody).
+		SetBody(requestBody).
 		Post(preconfURL + "/preconfBlocks")
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to build preconf blocks: %w", err)
+		return nil, fmt.Errorf("failed to build preconf blocks: %w", err)
 	}
 	if !res.IsSuccess() {
-		return nil, nil, fmt.Errorf("failed to build preconf blocks: %s", res.String())
+		return nil, fmt.Errorf("failed to build preconf blocks: %s", res.String())
 	}
 
 	var body *preconfblocks.BuildPreconfBlockResponseBody
 	if err = json.Unmarshal(res.Body(), &body); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return body.BlockHeader, signedTxs, nil
+	return body.BlockHeader, nil
 }

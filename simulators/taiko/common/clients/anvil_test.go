@@ -34,7 +34,6 @@ func init() {
 
 	anvil = &AnvilClient{
 		SecondsPerSlot: 3,
-		reorgCache:     make(map[uint64]*L1BlockInfo),
 		EthNode: &EthNode{
 			HiveManagedClient: &HiveManagedClient{
 				T: &hivesim.T{},

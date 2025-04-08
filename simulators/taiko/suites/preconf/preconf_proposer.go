@@ -2,6 +2,7 @@ package preconf
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"fmt"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -12,43 +13,35 @@ import (
 	"math/big"
 	"taiko/bindings/pacaya"
 	"taiko/common/clients"
-	"taiko/params"
 	"time"
 )
 
-func preconferBlock(index int, rpccli *rpc.Client, preconfURL string, preconfs int) (*types.Header, *types.Header, []types.Transactions, error) {
+func preconferBlock(privateKey *ecdsa.PrivateKey, rpccli *rpc.Client, preconfURL string, preconfs int, l1Number *big.Int) (*types.Header, *types.Header, error) {
 	// get txs from l2 node tx mempool.
 	var (
-		ctx          = context.Background()
-		l1cli, l2cli = rpccli.L1, rpccli.L2
+		ctx   = context.Background()
+		l1cli = rpccli.L1
 	)
 
-	anchorL1Header, err := l1cli.HeaderByNumber(ctx, nil)
+	anchorL1Header, err := l1cli.HeaderByNumber(ctx, l1Number)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to get anchor header: %v", err)
+		return nil, nil, fmt.Errorf("failed to get anchor header: %v", err)
 	}
 
-	l2BlockID, err := l2cli.BlockNumber(ctx)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	var (
-		latestL2Header *types.Header
-		allTxs         []types.Transactions
-	)
-	for idx := 1; idx <= preconfs; idx++ {
-
-		var signedTxs types.Transactions
-		latestL2Header, signedTxs, err = clients.BuildPreconfBlock(ctx, rpccli, params.ChainAuths[index*2+1].PrivateKey, preconfURL, anchorL1Header, l2BlockID+uint64(idx))
+	var latestL2Header *types.Header
+	for range preconfs {
+		requestBody, err := clients.BuildPreconfRequestBody(ctx, rpccli, privateKey, anchorL1Header.Number, nil)
 		if err != nil {
-			return nil, nil, nil, fmt.Errorf("failed to build preconf block: %v", err)
+			return nil, nil, err
 		}
-		allTxs = append(allTxs, signedTxs)
+		latestL2Header, err = clients.SendPreconfBlock(preconfURL, requestBody)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to build preconf block: %v", err)
+		}
 		time.Sleep(time.Second)
 	}
 
-	return latestL2Header, anchorL1Header, allTxs, nil
+	return latestL2Header, anchorL1Header, nil
 }
 
 func proposeBlock(ctx context.Context, envs hivesim.Params, rpccli *rpc.Client, anchorheader *types.Header) (*rawdb.L1Origin, error) {

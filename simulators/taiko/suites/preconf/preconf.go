@@ -18,9 +18,9 @@ import (
 
 func init() {
 	Tests = append(Tests,
-		&PreconfTestSpec{
+		PreconfTestSpec{
 			BaseTestSpec: suite_base.BaseTestSpec{
-				Name: "preconf",
+				Name: "preconf_preconf",
 			},
 		},
 	)
@@ -30,18 +30,17 @@ type PreconfTestSpec struct {
 	suite_base.BaseTestSpec
 }
 
-func (r *PreconfTestSpec) GetTestnetConfig() *testnet.Config {
+func (r PreconfTestSpec) GetTestnetConfig() *testnet.Config {
 	cfg := r.BaseTestSpec.GetTestnetConfig()
 	cfg.Network = "network_preconf_preconf"
 
 	preConfig := cfg.CreateConfig
 
-	var indexd = make(map[int]bool)
+	var indexd = make(map[int]hivesim.Params)
 	cfg.CreateConfig = func(index int, nodes clients.Nodes) (hivesim.Params, error) {
-		if indexd[index] {
-			return params.ClusterEnvs[index], nil
+		if len(indexd[index]) > 0 {
+			return indexd[index], nil
 		}
-		indexd[index] = true
 
 		envs, err := preConfig(index, nodes)
 		if err != nil {
@@ -58,7 +57,7 @@ func (r *PreconfTestSpec) GetTestnetConfig() *testnet.Config {
 
 		var staticPeers string
 		for i := 0; i < index; i++ {
-			sk, err := parsePriv(params.ChainAuths[i].Key)
+			sk, err := clients.ParsePriv(params.ChainAuths[i].Key)
 			if err != nil {
 				return nil, err
 			}
@@ -72,7 +71,11 @@ func (r *PreconfTestSpec) GetTestnetConfig() *testnet.Config {
 		}
 		envs["PRECONFIRMATION_P2P_STATIC"] = staticPeers
 
-		params.ClusterEnvs[index] = envs
+		indexd[index] = envs
+		// Load envs.
+		for k, v := range envs {
+			params.SetEnvParams(k, v)
+		}
 
 		return envs, nil
 	}
@@ -80,7 +83,7 @@ func (r *PreconfTestSpec) GetTestnetConfig() *testnet.Config {
 	return cfg
 }
 
-func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Testnet) {
+func (r PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Testnet) {
 	// Start all the cluster's nodes.
 	for _, node := range testnet.Nodes {
 		t.Nil(node.Start(), "cannot start L2EthClient")
@@ -108,7 +111,7 @@ func (r *PreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.
 		index := times % len(testnet.Nodes)
 		driver = testnet.Nodes[index].DriverClient
 
-		l2Header, anchorL1Header, _, err := preconferBlock(index, driver.Client, driver.PreconfServerURL(), 5)
+		l2Header, anchorL1Header, err := preconferBlock(params.ChainAuths[index*2+1].PrivateKey, driver.Client, driver.PreconfServerURL(), 5, nil)
 		t.FailIfNotNil(err, "cannot preconfirmer proposer")
 
 		// Verify latest preconf block.
