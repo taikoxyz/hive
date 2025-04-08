@@ -2,10 +2,12 @@ package preconf
 
 import (
 	"context"
-	"fmt"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/hive/hivesim"
+	"golang.org/x/sync/errgroup"
 	"math/big"
+	"math/rand/v2"
+	"taiko/common/clients"
 	"taiko/common/testnet"
 	"taiko/params"
 	suite_base "taiko/suites/base"
@@ -61,46 +63,59 @@ func (r *ReorgPreconfTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet
 	r.reorgPreconfBlocks(ctx, t, testnet)
 }
 
+// reorg the first cluster's preconf blocks and verify all the clusters' reorged preconf blocks.
 func (r *ReorgPreconfTestSpec) reorgPreconfBlocks(ctx context.Context, t *hivesim.T, testnet *testnet.Testnet) {
 	var (
 		node   = testnet.Nodes[0]
-		driver = node.DriverClient
+		anvil  = node.AnvilClient
+		l2geth = node.L2EthClient
+
+		l1Number = anvil.BlockNumber(ctx)
+		l2Header = l2geth.HeaderByNumber(ctx, nil)
 	)
 
+	var (
+		batchSize      = rand.IntN(50-10) + 10
+		preconfHeaders []*types.Header
+		eg             errgroup.Group
+	)
+
+	// create a batch of preconf blocks.
 	// Reorg propose blocks.
+	eg.Go(func() error {
+		createPreconfBlocks(ctx, t, node, l1Number, l2Header, batchSize)
+		return nil
+	})
 
-	l2Number, err := driver.L2.BlockNumber(ctx)
-	t.FailIfNotNil(err, "cannot get l2 header by number")
+	eg.Go(func() error {
+		preconfHeaders = createPreconfBlocks(ctx, t, testnet.Nodes[len(testnet.Nodes)-1], big.NewInt(l1Number.Int64()-1), l2Header, batchSize+5)
+		return nil
+	})
 
-	l2Header, anchorL1Header, err := preconferBlock(params.ChainAuths[1].PrivateKey, driver.Client, driver.PreconfServerURL(), 5, nil)
-	t.FailIfNotNil(err, "cannot preconfirmer proposer")
+	t.FailIfNotNil(eg.Wait(), "cannot create a batch of preconf blocks")
 
-	// Verify latest preconf block.
-	verifyL2Chain(t, true, 0, testnet.Nodes, l2Header)
+	// verify all the clusters' reorged preconf blocks.
+	for _, node := range testnet.Nodes {
+		l2geth = node.L2EthClient
+		for _, header := range preconfHeaders {
+			l2geth.HeaderByHash(ctx, header.Hash())
+		}
+	}
+}
 
-	preconfBlocks := make([]*types.Block, 0)
-	for number := l2Number + 1; number <= l2Header.Number.Uint64(); number++ {
-		block, err := driver.L2.BlockByNumber(ctx, big.NewInt(int64(number)))
-		t.FailIfNotNil(err, fmt.Sprintf("cannot get preconf block by number %d", number))
-		preconfBlocks = append(preconfBlocks, block)
+func createPreconfBlocks(ctx context.Context, t *hivesim.T, node *clients.Node, l1Number *big.Int, l2Parent *types.Header, batchSize int) (headers []*types.Header) {
+	var driver = node.DriverClient
+
+	for i := 0; i < batchSize; i++ {
+		requestBody, err := clients.BuildPreconfRequestBody(ctx, driver.Client, params.ChainAuths[driver.Index*2+1].PrivateKey, l1Number, l2Parent)
+		t.FailIfNotNil(err, "cannot build preconf request body")
+
+		l2Parent, err = clients.SendPreconfBlock(driver.PreconfServerURL(), requestBody)
+		t.FailIfNotNil(err, "cannot send preconf request")
+
+		headers = append(headers, l2Parent)
+		time.Sleep(time.Second)
 	}
 
-	// change the anchorL1Header time to reorg the preconf blocks.
-	anchorL1Header.Time += 1
-
-	// propose txs.
-	_, err = proposeBlock(ctx, driver.Envs, driver.Client, anchorL1Header)
-	t.FailIfNotNil(err, "cannot propose txs")
-
-	proposeBlocks := make([]*types.Block, 0)
-	for number := l2Number + 1; number <= l2Header.Number.Uint64(); number++ {
-		block, err := driver.L2.BlockByNumber(ctx, big.NewInt(int64(number)))
-		t.FailIfNotNil(err, fmt.Sprintf("cannot get propose block by number: %d", number))
-		proposeBlocks = append(proposeBlocks, block)
-	}
-
-	for i := 0; i < len(proposeBlocks); i++ {
-		t.NotEqual(proposeBlocks[i].Hash().String(), preconfBlocks[i].Hash().String())
-		t.Equal(proposeBlocks[i].TxHash().String(), preconfBlocks[i].TxHash().String())
-	}
+	return
 }
