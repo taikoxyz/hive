@@ -94,7 +94,7 @@ func (r CrossTestSpec) Verify(ctx context.Context, t *hivesim.T, testnet *tn.Tes
 	// For DevDebug
 	if testnet.DevDebug {
 		driver.Shutdown()
-		time.Sleep(time.Hour * 4)
+		time.Sleep(time.Hour * 6)
 	}
 
 	p2pNode, err := clients.NewP2PNode(ctx, driver.Client, driver.GetPreconfP2PNode())
