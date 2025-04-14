@@ -124,6 +124,23 @@ make test_blob_beacon
 make test_blob_server
 ```
 
+#### Run preconf tests:
+* how to test
+    * Start one cluster
+    * Wait for pacaya hardfork block high
+    * Stop proposer
+    * Call preconf api and create preconf blocks
+    * Verify preconf status
+    * Create propose block and verify propose status
+
+```shell
+make test_preocnf_reorg
+make test_reorg_reorg
+make test_reorg_shorter
+make test_reorg_longer
+make test_reorg_finalize
+```
+
 ### Hive framework
 
 * `./clients`: contains multi-docker images these are used for testing.
